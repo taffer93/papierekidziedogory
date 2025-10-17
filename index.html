@@ -6,21 +6,18 @@
   <title>Koszulki – panel</title>
   <style>
     :root {
-      /* jaśniejszy motyw */
       --bg:#141c26;
       --card:#1a2635;
       --muted:#9fb2c7;
       --text:#f1f6ff;
       --accent:#4cc9f0;
-
-      /* bardziej wyraźne kolory statusów (cały wiersz) */
-      --st-new:    rgba(116, 255, 156, .50);  /* ZAMÓWIENIE PRZYJĘTE – bardzo jasny zielony */
-      --st-prog:   rgba(255, 230, 120, .55);  /* W TRAKCIE REALIZACJI – żółty */
-      --st-ready:  rgba(160, 255, 210, .52);  /* GOTOWE DO WYSYŁKI – jasna mięta */
-      --st-sent:   rgba(120, 240, 160, .55);  /* WYSŁANE – zielony */
-      --st-return: rgba(255, 120, 120, .60);  /* ZWROT – czerwony */
-
-      --line:#2d4056;               /* pionowe linie kolumn */
+      /* wyraźniejsze kolory statusów – całe wiersze */
+      --st-new:    rgba(116,255,156,.55);  /* ZAMÓWIENIE PRZYJĘTE */
+      --st-prog:   rgba(255,230,120,.60);  /* W TRAKCIE REALIZACJI */
+      --st-ready:  rgba(160,255,210,.58);  /* GOTOWE DO WYSYŁKI */
+      --st-sent:   rgba(120,240,160,.60);  /* WYSŁANE */
+      --st-return: rgba(255,120,120,.68);  /* ZWROT */
+      --line:#2d4056;
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
@@ -39,24 +36,21 @@
     nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0;flex-wrap:wrap}
     nav.tabs button{flex:0 0 auto;padding:8px 12px;border-radius:10px}
     nav.tabs button.active{outline:2px solid var(--accent)}
-
-    /* tabela – pionowe linie i przyklejony nagłówek */
+    /* tabela */
     table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
     th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left;vertical-align:middle;border-right:1px solid var(--line)}
     th:last-child, td:last-child{border-right:none}
     th{background:#1d2a3a}
     tr:hover td{filter:brightness(1.03)}
-
-    /* kolor całego wiersza wg statusu (background-color),
-       a naprzemienna intensywność per zamówienie jako półprzezroczysta nakładka (background-image) */
+    /* kolory statusów na całych wierszach */
     tr.st-new td   { background-color:var(--st-new) }
     tr.st-prog td  { background-color:var(--st-prog) }
     tr.st-ready td { background-color:var(--st-ready) }
     tr.st-sent td  { background-color:var(--st-sent) }
     tr.st-ret td   { background-color:var(--st-return) }
-
-    /* tonowanie intensywności – co druga grupa jaśniejsza */
-    tr.tone1 td { background-image:linear-gradient(rgba(255,255,255,.10), rgba(255,255,255,.10)); }
+    /* mocniejsza naprzemienna intensywność per zamówienie (grupa) */
+    tr.toneA td { background-image:linear-gradient(rgba(255,255,255,.24), rgba(255,255,255,.24)); }
+    tr.toneB td { background-image:linear-gradient(rgba(0,0,0,.22), rgba(0,0,0,.22)); }
 
     .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
     .right{margin-left:auto}
@@ -66,7 +60,7 @@
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
     .design-card{border:1px solid #2a3a4d;border-radius:12px;padding:10px;cursor:pointer;background:#0f1823;text-align:center}
     .design-card:hover{border-color:#3c5875}
-    .design-card.selected{outline:2px solid var(--accent);background:#11202c}
+    .design-card.selected{outline:2px solid #56b7ff;background:#122334}
     .design-img{width:100%;height:110px;object-fit:cover;border-radius:10px;border:1px solid #2a3a4d;background:#0b1118}
     .design-name{margin-top:8px;font-weight:600}
     .add-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
@@ -75,22 +69,19 @@
     .rows-table thead th{position:sticky;top:0;background:#1d2a3a;z-index:1}
     .rows-table td .thumb{width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
     .rows-actions{display:flex;gap:6px}
-
     /* kompaktowa data */
     .date-compact{display:flex;gap:8px;align-items:center}
     .date-compact .small{max-width:90px;padding:8px}
-    .date-compact .month{max-width:160px;padding:8px}
+    .date-compact .month{max-width:180px;padding:8px}
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
     input[type=number]{ -moz-appearance:textfield;}
-
-    /* input file – spójny wygląd */
+    /* input file */
     input[type="file"]{padding:8px;background:#0f1823;border:1px solid #2a3a4d;color:var(--muted)}
     input[type="file"]::file-selector-button{
       margin-right:10px;border:1px solid #274d6a;background:#19344b;color:var(--text);
       padding:6px 10px;border-radius:8px;cursor:pointer
     }
-
     /* wzór i kolor w liście zamówień */
     .designCell{display:flex;align-items:center;gap:8px}
     .designThumb{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
@@ -134,9 +125,10 @@
   <!-- APP -->
   <div id="app" style="display:none">
     <nav class="tabs">
-      <button data-tab="orders" class="active">Zamówienia (miesiąc)</button>
+      <button data-tab="orders" class="active">Zamówienia</button>
       <button data-tab="add">Dodaj zamówienie</button>
       <button data-tab="designs">Wzory</button>
+      <button data-tab="expenses">Koszty</button>
     </nav>
 
     <!-- ORDERS TAB -->
@@ -150,7 +142,7 @@
           </div>
         </div>
         <div>
-          <label class="mini">Status</label>
+          <label class="mini">Status (widok)</label>
           <select id="filterStatus">
             <option value="ALL">Wszystkie</option>
             <option value="ZAMÓWIENIE PRZYJĘTE">ZAMÓWIENIE PRZYJĘTE</option>
@@ -160,7 +152,11 @@
             <option value="ZWROT">ZWROT</option>
           </select>
         </div>
-        <div class="right pill">Suma (m‑c): <b id="sumCena">0.00</b> zł</div>
+        <div class="right pill">
+          Przychody: <b id="sumRevenue">0.00</b> zł •
+          Koszty: <b id="sumExpenses">0.00</b> zł •
+          Wynik: <b id="sumNet">0.00</b> zł
+        </div>
       </div>
 
       <div style="overflow:auto">
@@ -181,7 +177,7 @@
           <tbody id="ordersTbody"></tbody>
         </table>
       </div>
-      <div class="hint">Zmiana statusu aktualizuje całe zamówienie (wszystkie pozycje w grupie). “ZWROT” nie liczy się do sumy.</div>
+      <div class="hint">Menu statusu jest tylko raz na zamówienie (pierwszy wiersz grupy). “ZWROT” nie wchodzi do sumy przychodów.</div>
     </div>
 
     <!-- ADD ORDER TAB -->
@@ -195,7 +191,6 @@
         </div>
       </div>
 
-      <!-- Dane wspólne zamówienia -->
       <div class="card" style="margin:0 0 10px 0">
         <h4 style="margin:0 0 8px 0">Dane zamówienia</h4>
         <div class="row center">
@@ -225,7 +220,6 @@
         </div>
       </div>
 
-      <!-- Pozycje -->
       <div class="card" style="margin:0">
         <h4 style="margin:0 0 8px 0">Pozycje</h4>
         <div class="rows-wrap">
@@ -261,6 +255,47 @@
       <div id="designsList" class="grid" style="margin-top:10px"></div>
       <div class="hint">“Edytuj” pozwala zmienić nazwę i/lub podmienić miniaturę.</div>
     </div>
+
+    <!-- EXPENSES TAB -->
+    <div id="tab-expenses" class="card" style="display:none">
+      <div class="toolbar">
+        <div>
+          <label class="mini">Miesiąc i rok</label>
+          <div class="row center" style="gap:6px">
+            <select id="expMonth" class="month" style="max-width:180px"></select>
+            <select id="expYear" style="max-width:120px"></select>
+          </div>
+        </div>
+        <div class="right pill">Koszty (m‑c): <b id="sumExpensesTop">0.00</b> zł</div>
+      </div>
+
+      <div class="card" style="margin:0 0 10px 0">
+        <h4 style="margin:0 0 8px 0">Dodaj koszt</h4>
+        <div class="row center">
+          <div class="col"><input id="expName" placeholder="Nazwa kosztu, np. zakup koszulek S/M" /></div>
+          <div class="col" style="max-width:220px"><input id="expAmount" type="number" step="0.01" placeholder="Kwota, np. 150.00" /></div>
+          <div class="col" style="max-width:120px"><input id="expDay" type="number" min="1" max="31" placeholder="Dzień" /></div>
+          <div class="col"><input id="expNote" placeholder="Uwagi (opcjonalnie)" /></div>
+          <div class="col" style="max-width:220px"><button id="addExpenseBtn" class="primary">Dodaj</button></div>
+        </div>
+        <div id="expMsg" class="hint" style="margin-top:6px"></div>
+      </div>
+
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Nazwa</th>
+              <th>Uwagi</th>
+              <th>Kwota</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="expTbody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -286,7 +321,6 @@
 </div>
 
 <script type="module">
-  /* Firebase SDK – stabilne wersje */
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
@@ -294,11 +328,11 @@
     getDocs, query, where, onSnapshot, serverTimestamp, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  /* mini detektor błędów */
+  // detektor błędów
   window.addEventListener('error', e => alert('Błąd skryptu: ' + (e.message || e.error?.message || 'unknown')));
   window.addEventListener('unhandledrejection', e => alert('Błąd (promise): ' + (e.reason?.message || e.reason || 'unknown')));
 
-  /* KONFIG – Twój projekt */
+  // KONFIG – Twój projekt
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -311,18 +345,17 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  /* helpers */
+  // helpers
   const $ = (id) => document.getElementById(id);
   const esc = (s)=> (s||"").replace(/</g,"&lt;");
   const fmt2 = (n) => (Number(n || 0)).toFixed(2);
   const monthsPL = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
   const monthsPLGen = ["stycznia","lutego","marca","kwietnia","maja","czerwca","lipca","sierpnia","września","października","listopada","grudnia"];
   const fmtDatePLLong = (d)=>{ const dt=d instanceof Date?d:(d?.toDate?d.toDate():new Date(d)); return `${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;};
-  const toMonthKeyFromParts = (y,mIndex)=> `${y}-${String(mIndex+1).padStart(2,"0")}`;
-  const STATUSES = ["ZAMÓWIENIE PRZYJĘTE","W TRAKCIE REALIZACJI","GOTOWE DO WYSYŁKI","WYSŁANE","ZWROT"];
-  const rowClassByStatus = (s)=> s==="ZWROT"?"st-ret":s==="WYSŁANE"?"st-sent":s==="GOTOWE DO WYSYŁKI"?"st-ready":s==="W TRAKCIE REALIZACJI"?"st-prog":"st-new";
+  const toMonthKey = (y,mIndex)=> `${y}-${String(mIndex+1).padStart(2,"0")}`;
+  const rowCls = (s)=> s==="ZWROT"?"st-ret":s==="WYSŁANE"?"st-sent":s==="GOTOWE DO WYSYŁKI"?"st-ready":s==="W TRAKCIE REALIZACJI"?"st-prog":"st-new";
 
-  /* kompresja obrazu do podglądu */
+  // miniatury jako dataURL
   async function fileToDataUrl(file, maxW=900, maxH=900, quality=0.82){
     return new Promise((resolve, reject)=>{
       const img = new Image();
@@ -346,43 +379,56 @@
     });
   }
 
-  /* Auth */
+  // Auth
   const loginCard=$("loginCard"), appWrap=$("app"), userEmail=$("userEmail"), loginBtn=$("loginBtn"), logoutBtn=$("logoutBtn"), loginMsg=$("loginMsg");
   loginBtn.onclick = async () => { loginMsg.textContent = "Logowanie…"; try{ await signInWithEmailAndPassword(auth, $("email").value, $("password").value); loginMsg.textContent=""; }catch(e){ loginMsg.textContent="Błąd: "+(e.message||e.code); } };
   logoutBtn.onclick = () => signOut(auth);
   onAuthStateChanged(auth, (u) => {
-    if (u) { loginCard.style.display="none"; appWrap.style.display=""; userEmail.textContent=u.email||""; logoutBtn.style.display=""; initAppAfterLogin(); }
+    if (u) { loginCard.style.display="none"; appWrap.style.display=""; userEmail.textContent=u.email||""; logoutBtn.style.display=""; initApp(); }
     else { loginCard.style.display=""; appWrap.style.display="none"; userEmail.textContent=""; logoutBtn.style.display="none"; }
   });
 
-  /* Designs + Order state */
+  // Data caches
   const designMap = new Map();
   let orderRows = [];
   let pickerRowIndex = null;
 
-  async function initAppAfterLogin(){
-    // miesiąc/rok – selecty
-    const now = new Date();
-    const om=$("ordersMonth"), oy=$("ordersYear");
-    om.innerHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
-    oy.innerHTML = Array.from({length:9},(_,k)=>now.getFullYear()-4+k)
-      .map(y=>`<option ${y===now.getFullYear()?"selected":""}>${y}</option>`).join("");
-    om.value = String(now.getMonth());
+  // sums
+  let revenueSumAll = 0;
+  let expensesSumAll = 0;
 
-    // w formularzu dodawania – te same selecty
-    $("addMonth").innerHTML = om.innerHTML;
-    $("addYear").innerHTML = oy.innerHTML;
+  async function initApp(){
+    // miesiąc/rok – selecty (zamówienia i koszty zsynchronizowane)
+    const now = new Date();
+    const years = Array.from({length:9},(_,k)=>now.getFullYear()-4+k);
+    $("ordersMonth").innerHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
+    $("ordersYear").innerHTML  = years.map(y=>`<option ${y===now.getFullYear()?"selected":""}>${y}</option>`).join("");
+    $("ordersMonth").value = String(now.getMonth());
+
+    $("addMonth").innerHTML = $("ordersMonth").innerHTML;
+    $("addYear").innerHTML  = $("ordersYear").innerHTML;
     $("addYear").value = String(now.getFullYear());
     $("addMonth").value = String(now.getMonth());
     $("addDay").value = now.getDate();
 
-    await reloadDesigns();
-    subscribeMonth();
+    $("expMonth").innerHTML = $("ordersMonth").innerHTML;
+    $("expYear").innerHTML  = $("ordersYear").innerHTML;
+    $("expMonth").value = String(now.getMonth());
+    $("expYear").value  = String(now.getFullYear());
+    $("expDay").value = now.getDate();
 
-    // Listeners
-    om.addEventListener("change", subscribeMonth);
-    oy.addEventListener("change", subscribeMonth);
-    $("filterStatus").addEventListener("change", subscribeMonth);
+    await reloadDesigns();
+    subscribeOrders();
+    subscribeExpenses();
+
+    // listeners – synchronizacja miesięcy między zakładkami
+    $("ordersMonth").addEventListener("change", ()=>{ syncMonthsFrom("orders"); });
+    $("ordersYear").addEventListener("change", ()=>{ syncMonthsFrom("orders"); });
+    $("filterStatus").addEventListener("change", renderOrdersFiltered);
+
+    $("expMonth").addEventListener("change", ()=>{ syncMonthsFrom("expenses"); });
+    $("expYear").addEventListener("change", ()=>{ syncMonthsFrom("expenses"); });
+
     $("addDesignBtn").addEventListener("click", onAddDesign);
     $("addRowBtn").addEventListener("click", ()=>addRow());
     $("clearOrderBtn").addEventListener("click", clearOrderForm);
@@ -390,10 +436,39 @@
     $("pickerClose").addEventListener("click", closePicker);
     $("pickerSearch").addEventListener("input", renderPickerGrid);
 
-    addRow(); // jedna pozycja startowo
+    $("addExpenseBtn").addEventListener("click", addExpense);
+
+    addRow();
+
+    // tabs
+    const tabsBtns = document.querySelectorAll("nav.tabs button");
+    const tabs = { orders: $("tab-orders"), add: $("tab-add"), designs: $("tab-designs"), expenses:$("tab-expenses") };
+    tabsBtns.forEach(btn => btn.addEventListener("click", () => {
+      tabsBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      Object.values(tabs).forEach(el => el.style.display="none");
+      tabs[btn.dataset.tab].style.display = "";
+    }));
   }
 
-  /* Designs (CRUD) */
+  function currentMonthKeyFrom(elPrefix){
+    const m = Number($(elPrefix==="orders"?"ordersMonth":"expMonth").value);
+    const y = Number($(elPrefix==="orders"?"ordersYear":"expYear").value);
+    return toMonthKey(y,m);
+  }
+  function syncMonthsFrom(source){
+    if (source==="orders"){
+      $("expMonth").value = $("ordersMonth").value;
+      $("expYear").value  = $("ordersYear").value;
+    } else {
+      $("ordersMonth").value = $("expMonth").value;
+      $("ordersYear").value  = $("expYear").value;
+    }
+    subscribeOrders();
+    subscribeExpenses();
+  }
+
+  // Designs CRUD
   async function reloadDesigns(){
     designMap.clear();
     const snap = await getDocs(query(collection(db,"designs")));
@@ -401,7 +476,6 @@
     renderDesignsList();
     renderPickerGrid();
   }
-
   function renderDesignsList(){
     const box = $("designsList");
     box.innerHTML = "";
@@ -417,7 +491,6 @@
         </div>
       `;
       box.appendChild(card);
-
       card.querySelector('[data-act="edit"]').onclick = () => openEdit(card, d);
       card.querySelector('[data-act="del"]').onclick = async () => {
         if (!confirm("Usunąć wzór?")) return;
@@ -428,7 +501,6 @@
       };
     }
   }
-
   function openEdit(card, d){
     card.innerHTML = `
       <div class="row center">
@@ -455,7 +527,6 @@
       }catch(e){ msg.textContent = "Błąd: " + (e.message||e.code); }
     };
   }
-
   async function onAddDesign(){
     const name = $("designName").value.trim();
     const file = $("designFile").files[0] || null;
@@ -473,7 +544,7 @@
     }catch(e){ out.textContent="Błąd: " + (e.message||e.code); }
   }
 
-  /* Picker (modal) */
+  // Picker
   function openPicker(forRowIndex){
     pickerRowIndex = forRowIndex;
     $("pickerCustomFile").value="";
@@ -482,7 +553,6 @@
     $("designPicker").style.display="flex";
   }
   function closePicker(){ $("designPicker").style.display="none"; pickerRowIndex=null; }
-
   function renderPickerGrid(){
     const grid = $("pickerGrid");
     const term = $("pickerSearch").value?.toLowerCase() || "";
@@ -508,7 +578,6 @@
       grid.appendChild(card);
     }
   }
-
   $("pickerCustomFile").addEventListener("change", async (e)=>{
     const file = e.target.files[0];
     if (!file || pickerRowIndex==null) return;
@@ -521,13 +590,10 @@
     closePicker();
   });
 
-  /* Order builder (rows) */
-  function defaultRow(){
-    return { size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null };
-  }
+  // Order builder
+  function defaultRow(){ return { size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; }
   function addRow(){ orderRows.push(defaultRow()); renderOrderRows(); }
   function removeRow(i){ orderRows.splice(i,1); renderOrderRows(); if(orderRows.length===0) addRow(); }
-
   function renderOrderRows(){
     const tb = $("rowsTbody"); tb.innerHTML="";
     orderRows.forEach((r,i)=>{
@@ -577,22 +643,13 @@
       tb.appendChild(tr);
     });
   }
-
-  function clearOrderForm(){
-    orderRows = [];
-    addRow();
-    $("orderCustomer").value = "";
-    $("orderTotalPrice").value = "";
-    $("saveMsg").textContent = "";
-  }
-
+  function clearOrderForm(){ orderRows = []; addRow(); $("orderCustomer").value = ""; $("orderTotalPrice").value = ""; $("saveMsg").textContent = ""; }
   function buildDateFromAddForm(){
     const d=Number($("addDay").value||1);
     const m=Number($("addMonth").value||0);
     const y=Number($("addYear").value||new Date().getFullYear());
     return new Date(y,m,d,12,0,0);
   }
-
   function genGroupId(date, customer){
     const dt = date instanceof Date ? date : new Date(date);
     const y=dt.getFullYear(), m=String(dt.getMonth()+1).padStart(2,"0"), d=String(dt.getDate()).padStart(2,"0");
@@ -600,7 +657,6 @@
     const cust = (customer||"order").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,8);
     return `${y}-${m}-${d}-${cust||"order"}-${rnd}`;
   }
-
   async function saveOrder(){
     const msg = $("saveMsg");
     if (orderRows.length===0){ msg.textContent="Dodaj przynajmniej jedną pozycję."; return; }
@@ -624,7 +680,7 @@
       for (const r of processed){
         const payload = {
           date: Timestamp.fromDate(date),
-          monthKey: toMonthKeyFromParts(date.getFullYear(), date.getMonth()),
+          monthKey: toMonthKey(date.getFullYear(), date.getMonth()),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           status: "ZAMÓWIENIE PRZYJĘTE",
@@ -642,27 +698,18 @@
       }
       msg.textContent = `Zapisano ${processed.length} pozycji ✅`;
       clearOrderForm();
-    }catch(e){
-      console.error(e);
-      msg.textContent = "Błąd: " + (e.message || e.code);
-    }
+    }catch(e){ console.error(e); msg.textContent = "Błąd: " + (e.message || e.code); }
     setTimeout(()=> msg.textContent="", 2000);
   }
 
-  /* Lista miesięczna – grupowanie po orderGroupId, sort: najnowsze na górze,
-     naprzemienna intensywność per grupa, suma bez ZWROT */
-  let unsub=null;
-  function subscribeMonth(){
-    if (unsub){unsub();unsub=null;}
-    const mIdx = Number($("ordersMonth").value);
-    const yVal = Number($("ordersYear").value);
-    const mk = toMonthKeyFromParts(yVal, mIdx);
-
+  // Orders monthly (grouped)
+  let unsubOrders=null, ordersGroupsAll=[];
+  function subscribeOrders(){
+    if (unsubOrders){unsubOrders();unsubOrders=null;}
+    const mk = currentMonthKeyFrom("orders");
     const q1=query(collection(db,"orderItems"), where("monthKey","==",mk));
-    unsub=onSnapshot(q1,(snap)=>{
+    unsubOrders=onSnapshot(q1,(snap)=>{
       const docs=[]; snap.forEach(d=> docs.push({id:d.id, ...d.data()}));
-
-      // grupuj po orderGroupId
       const groups = new Map();
       for (const d of docs){
         const gid = d.orderGroupId || d.id;
@@ -680,62 +727,28 @@
         const ct = d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0;
         if (ct && ct > g.createdMax) g.createdMax = ct;
       }
-
-      // sort – najnowsze na górze
-      const arr = Array.from(groups.values()).sort((a,b)=> b.createdMax - a.createdMax);
-
-      renderOrdersGrouped(arr);
-    },(err)=>{
-      console.error(err);
-      alert("Błąd odczytu: " + (err.message || err.code));
-    });
+      ordersGroupsAll = Array.from(groups.values()).sort((a,b)=> b.createdMax - a.createdMax);
+      // przychody (bez ZWROT) – niezależnie od filtra widoku
+      revenueSumAll = ordersGroupsAll.reduce((acc,g)=> acc + (g.status==="ZWROT"?0:Number(g.total||0)), 0);
+      renderOrdersFiltered();
+      updateTopSummary();
+    },(err)=>{ console.error(err); alert("Błąd odczytu zamówień: " + (err.message || err.code)); });
   }
 
-  async function updateGroupStatus(groupId, newStatus){
-    const qSnap = await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
-    const batch = writeBatch(db);
-    qSnap.forEach(d => batch.update(doc(db,"orderItems", d.id), { status:newStatus, updatedAt: serverTimestamp() }));
-    await batch.commit();
-  }
-
-  async function deleteGroup(groupId){
-    if (!confirm("Usunąć CAŁE zamówienie (wszystkie pozycje)?")) return;
-    const qSnap = await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
-    const batch = writeBatch(db);
-    qSnap.forEach(d => batch.delete(doc(db,"orderItems", d.id)));
-    await batch.commit();
-  }
-
-  function renderOrdersGrouped(groups){
+  function renderOrdersFiltered(){
     const statusFilter = $("filterStatus").value;
-    const filtered = statusFilter==="ALL" ? groups : groups.filter(g => (g.status||"ZAMÓWIENIE PRZYJĘTE")===statusFilter);
-
-    // suma miesięczna: ZWROT się nie liczy (nie dodajemy do sumy)
-    const sum = filtered.reduce((acc,g)=> acc + (g.status==="ZWROT" ? 0 : Number(g.total||0)), 0);
-    $("sumCena").textContent = fmt2(sum);
-
     const tbody = $("ordersTbody"); tbody.innerHTML="";
-    filtered.forEach((g, gi)=>{
-      // sort pozycji w grupie (np. po rozmiarze)
-      g.items.sort((a,b)=> (a.size||"").localeCompare(b.size||"") );
-      const rowClass = rowClassByStatus(g.status);
-      const toneClass = gi % 2 ? "tone1" : ""; // naprzemiennie jaśniej/ciemniej
+    const groups = statusFilter==="ALL" ? ordersGroupsAll : ordersGroupsAll.filter(g => (g.status||"ZAMÓWIENIE PRZYJĘTE")===statusFilter);
 
+    groups.forEach((g, gi)=>{
+      g.items.sort((a,b)=> (a.size||"").localeCompare(b.size||"") );
+      const cls = rowCls(g.status);
+      const tone = gi%2===0 ? "toneA" : "toneB"; // dużo większa różnica
       g.items.forEach((it, idx)=>{
         const tr = document.createElement("tr");
-        tr.className = `${rowClass} ${toneClass}`;
+        tr.className = `${cls} ${tone}`;
         const dt = it.date?.toDate ? it.date.toDate() : new Date(it.date);
         const dstr = `${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;
-
-        // select statusu – zmienia cały group
-        const sel = document.createElement("select");
-        sel.innerHTML = STATUSES.map(s=>`<option ${s===(g.status||"ZAMÓWIENIE PRZYJĘTE")?"selected":""}>${s}</option>`).join("");
-        sel.onchange = async (e)=>{
-          const val = e.target.value;
-          document.querySelectorAll(`select[data-gid="${g.id}"]`).forEach(x=> x.value = val);
-          await updateGroupStatus(g.id, val);
-        };
-        sel.setAttribute("data-gid", g.id);
 
         tr.innerHTML = `
           <td>${idx===0?dstr:""}</td>
@@ -758,24 +771,108 @@
           <td>${idx===0?`${fmt2(g.total)} zł`:"—"}</td>
           <td>${idx===0?`<button class="ghost mini danger" data-del="${g.id}">usuń</button>`:""}</td>
         `;
-        tr.querySelector('[data-status]').appendChild(sel);
+        // tylko JEDNO menu statusu (w pierwszym wierszu grupy)
         if (idx===0){
+          const sel = document.createElement("select");
+          const STATUSES = ["ZAMÓWIENIE PRZYJĘTE","W TRAKCIE REALIZACJI","GOTOWE DO WYSYŁKI","WYSŁANE","ZWROT"];
+          sel.innerHTML = STATUSES.map(s=>`<option ${s===g.status?"selected":""}>${s}</option>`).join("");
+          sel.onchange = async (e)=>{ await updateGroupStatus(g.id, e.target.value); };
+          tr.querySelector('[data-status]').appendChild(sel);
           tr.querySelector(`[data-del="${g.id}"]`).onclick = async ()=> { await deleteGroup(g.id); };
+        } else {
+          tr.querySelector('[data-status]').textContent = "";
         }
+
         tbody.appendChild(tr);
       });
     });
   }
 
-  /* Tabs */
-  const tabsBtns = document.querySelectorAll("nav.tabs button");
-  const tabs = { orders: $("tab-orders"), add: $("tab-add"), designs: $("tab-designs") };
-  tabsBtns.forEach(btn => btn.addEventListener("click", () => {
-    tabsBtns.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    Object.values(tabs).forEach(el => el.style.display="none");
-    tabs[btn.dataset.tab].style.display = "";
-  }));
+  async function updateGroupStatus(groupId, newStatus){
+    const qSnap = await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
+    const batch = writeBatch(db);
+    qSnap.forEach(d => batch.update(doc(db,"orderItems", d.id), { status:newStatus, updatedAt: serverTimestamp() }));
+    await batch.commit();
+  }
+  async function deleteGroup(groupId){
+    if (!confirm("Usunąć CAŁE zamówienie (wszystkie pozycje)?")) return;
+    const qSnap = await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
+    const batch = writeBatch(db);
+    qSnap.forEach(d => batch.delete(doc(db,"orderItems", d.id)));
+    await batch.commit();
+  }
+
+  // Expenses
+  let unsubExp=null, expensesList=[];
+  function subscribeExpenses(){
+    if (unsubExp){unsubExp();unsubExp=null;}
+    const mk = currentMonthKeyFrom("expenses");
+    const q1=query(collection(db,"expenses"), where("monthKey","==",mk));
+    unsubExp=onSnapshot(q1,(snap)=>{
+      expensesList=[]; snap.forEach(d=> expensesList.push({id:d.id, ...d.data()}));
+      expensesList.sort((a,b)=> (a.date?.toDate?a.date.toDate().getTime():0) - (b.date?.toDate?b.date.toDate().getTime():0));
+      expensesSumAll = expensesList.reduce((acc,x)=> acc + Number(x.amount||0), 0);
+      renderExpenses();
+      updateTopSummary();
+    },(err)=>{ console.error(err); alert("Błąd odczytu kosztów: " + (err.message || err.code)); });
+  }
+
+  function renderExpenses(){
+    $("sumExpensesTop").textContent = fmt2(expensesSumAll);
+    const tb = $("expTbody"); tb.innerHTML="";
+    for (const e of expensesList){
+      const dt = e.date?.toDate ? e.date.toDate() : new Date(e.date);
+      const dstr = `${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${dstr}</td>
+        <td>${esc(e.name||"")}</td>
+        <td>${esc(e.note||"")}</td>
+        <td>${fmt2(e.amount)} zł</td>
+        <td><button class="ghost mini danger" data-del="${e.id}">usuń</button></td>
+      `;
+      tr.querySelector('[data-del]').onclick = async ()=>{
+        if (!confirm("Usunąć koszt?")) return;
+        await deleteDoc(doc(db,"expenses", e.id));
+      };
+      tb.appendChild(tr);
+    }
+  }
+
+  async function addExpense(){
+    const msg = $("expMsg");
+    const name = $("expName").value.trim();
+    const amount = Number($("expAmount").value||0);
+    const note = $("expNote").value.trim();
+    const day = Number($("expDay").value||1);
+    const m = Number($("expMonth").value), y = Number($("expYear").value);
+    if (!name) { msg.textContent="Podaj nazwę kosztu."; return; }
+    if (!amount) { msg.textContent="Podaj kwotę."; return; }
+    const date = new Date(y,m,Math.min(Math.max(day,1),31),12,0,0);
+    try{
+      await addDoc(collection(db,"expenses"), {
+        name, amount, note,
+        date: Timestamp.fromDate(date),
+        monthKey: toMonthKey(y,m),
+        createdAt: serverTimestamp()
+      });
+      $("expName").value=""; $("expAmount").value=""; $("expNote").value="";
+      msg.textContent="Dodano koszt ✅";
+      setTimeout(()=> msg.textContent="", 1200);
+    }catch(e){ msg.textContent="Błąd: " + (e.message||e.code); }
+  }
+
+  // Sumary górne
+  function updateTopSummary(){
+    $("sumRevenue").textContent = fmt2(revenueSumAll);
+    $("sumExpenses").textContent = fmt2(expensesSumAll);
+    const net = revenueSumAll - expensesSumAll;
+    const el = $("sumNet");
+    el.textContent = fmt2(net);
+    el.classList.toggle("neg", net < 0);
+  }
+
+  // Tabs (inicjalizacja po initApp)
 </script>
 </body>
 </html>
