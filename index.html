@@ -46,7 +46,6 @@
     .design-name{margin-top:8px;font-weight:600}
     .add-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
     .add-header .right{display:flex;gap:10px;margin-left:auto}
-    .two-col{display:grid;grid-template-columns:1fr;gap:10px}
     .rows-wrap{overflow:auto}
     .rows-table thead th{position:sticky;top:0;background:#16202b;z-index:1}
     .rows-table td .thumb{width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
@@ -58,7 +57,7 @@
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
     input[type=number]{ -moz-appearance:textfield;}
-    /* input file – spójny wygląd i wysokość */
+    /* input file – spójny wygląd */
     input[type="file"]{padding:8px;background:#0d131b;border:1px solid #2a3a4d;color:var(--muted)}
     input[type="file"]::file-selector-button{
       margin-right:10px;border:1px solid #274d6a;background:#19344b;color:var(--text);
@@ -180,7 +179,7 @@
           </div>
 
           <div class="col">
-            <label class="mini">Zamawiaj��cy (login/imię)</label>
+            <label class="mini">Zamawiający (login/imię)</label>
             <input id="orderCustomer" type="text" />
           </div>
           <div class="col">
@@ -219,13 +218,13 @@
 
       <div class="row center">
         <div class="col"><input id="designName" placeholder="Nazwa wzoru, np. kitty red bull blue" /></div>
-        <div class="col"><input id="designFile" type="file" accept="image/*,.svg,.pdf" /></div>
+        <div class="col"><input id="designFile" type="file" accept="image/*" /></div>
         <div class="col" style="max-width:220px"><button id="addDesignBtn" class="primary">Dodaj wzór</button></div>
       </div>
       <div id="designMsg" class="hint" style="margin:6px 0 10px 0"></div>
 
       <div id="designsList" class="grid" style="margin-top:10px"></div>
-      <div class="hint">Klik “Edytuj” pozwala zmienić nazwę i/lub podmienić miniaturę. “Usuń” usuwa wzór (podgląd też jest usuwany).</div>
+      <div class="hint">“Edytuj” pozwala zmienić nazwę i/lub podmienić miniaturę.</div>
     </div>
   </div>
 </div>
@@ -243,7 +242,7 @@
       <div class="col"><input id="pickerSearch" placeholder="Szukaj wzoru po nazwie..." /></div>
       <div class="col">
         <label class="mini">Albo wgraj CUSTOM dla tej pozycji</label>
-        <input id="pickerCustomFile" type="file" accept="image/*,.svg,.pdf" />
+        <input id="pickerCustomFile" type="file" accept="image/*" />
       </div>
     </div>
     <div id="pickerGrid" class="grid" style="margin-top:10px"></div>
@@ -252,18 +251,14 @@
 </div>
 
 <script type="module">
-  // Firebase SDK (CDN)
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
   import {
     getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc,
     getDocs, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp
   } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-  import {
-    getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject
-  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
 
-  // Twój firebaseConfig
+  // KONFIG
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -272,12 +267,9 @@
     messagingSenderId: "1063966015801",
     appId: "1:1063966015801:web:72f412aa200a705276a8e8"
   };
-
-  // Init
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
-  const storage = getStorage(app);
 
   // Helpers
   const $ = (id) => document.getElementById(id);
@@ -289,24 +281,43 @@
   const toMonthKey = (d)=>{ const dt=d instanceof Date?d:(d?.toDate?d.toDate():new Date(d)); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;};
   const statusClass = (s)=> s==="WYSŁANE"?"s-wys":s==="ZWROT"?"s-zw":s==="W PRODUKCJI"?"s-wpr":"s-new";
 
+  // Kompresja obrazu → dataURL (bez Storage)
+  async function fileToDataUrl(file, maxW=900, maxH=900, quality=0.82){
+    return new Promise((resolve, reject)=>{
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = e => { img.src = e.target.result; };
+      reader.onerror = reject;
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        const scale = Math.min(maxW / w, maxH / h, 1);
+        const cw = Math.round(w * scale), ch = Math.round(h * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, cw, ch);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
   // Auth UI
   const loginCard=$("loginCard"), appWrap=$("app"), userEmail=$("userEmail"), loginBtn=$("loginBtn"), logoutBtn=$("logoutBtn"), loginMsg=$("loginMsg");
   loginBtn.onclick = async () => { loginMsg.textContent = "Logowanie…"; try{ await signInWithEmailAndPassword(auth, $("email").value, $("password").value); loginMsg.textContent=""; }catch(e){ loginMsg.textContent="Błąd: "+(e.message||e.code); } };
   logoutBtn.onclick = () => signOut(auth);
-
   onAuthStateChanged(auth, (u) => {
     if (u) { loginCard.style.display="none"; appWrap.style.display=""; userEmail.textContent=u.email||""; logoutBtn.style.display=""; initAppAfterLogin(); }
     else { loginCard.style.display=""; appWrap.style.display="none"; userEmail.textContent=""; logoutBtn.style.display="none"; }
   });
 
-  // Designs cache
+  // Designs cache + order state
   const designMap = new Map();
-
-  // Order builder state
   let orderRows = [];
   let pickerRowIndex = null;
 
-  // After login – init
   async function initAppAfterLogin(){
     // miesiąc w tabeli
     const now = new Date();
@@ -317,7 +328,7 @@
     $("addMonth").value = String(now.getMonth());
     $("addYear").value = now.getFullYear();
 
-    await reloadDesigns(); // ładuje mapę, listę i picker
+    await reloadDesigns();
     subscribeMonth();
 
     // Listeners
@@ -330,8 +341,7 @@
     $("pickerClose").addEventListener("click", closePicker);
     $("pickerSearch").addEventListener("input", renderPickerGrid);
 
-    // inicjalna jedna pozycja
-    addRow();
+    addRow(); // jedna pozycja startowo
   }
 
   // ----- Designs (CRUD) -----
@@ -361,16 +371,13 @@
 
       // Edycja
       card.querySelector('[data-act="edit"]').onclick = () => openEdit(card, d);
-      // Usuwanie
+      // Usuwanie (tylko dokument – nie ma czego usuwać w Storage)
       card.querySelector('[data-act="del"]').onclick = async () => {
         if (!confirm("Usunąć wzór?")) return;
-        try {
-          if (d.previewPath) { try { await deleteObject(sRef(storage, d.previewPath)); } catch(e){/* ignore */} }
-          await deleteDoc(doc(db,"designs", d.id));
-          $("designMsg").textContent = "Usunięto wzór.";
-          await reloadDesigns();
-        } catch(e){ $("designMsg").textContent = "Błąd: " + (e.message||e.code); }
-        setTimeout(()=>$("designMsg").textContent="",1500);
+        await deleteDoc(doc(db,"designs", d.id));
+        $("designMsg").textContent = "Usunięto wzór.";
+        await reloadDesigns();
+        setTimeout(()=> $("designMsg").textContent="", 1200);
       };
     }
   }
@@ -379,7 +386,7 @@
     card.innerHTML = `
       <div class="row center">
         <div class="col"><input value="${esc(d.name)}" data-role="name"/></div>
-        <div class="col"><input type="file" accept="image/*,.svg,.pdf" data-role="file"/></div>
+        <div class="col"><input type="file" accept="image/*" data-role="file"/></div>
       </div>
       <div class="row center" style="margin-top:8px">
         <button class="primary mini-btn" data-act="save">Zapisz</button>
@@ -394,19 +401,9 @@
       const msg = card.querySelector('[data-role="msg"]');
       if (!name) { msg.textContent="Podaj nazwę."; return; }
       try{
-        let previewUrl = d.previewUrl || null, previewPath = d.previewPath || null;
-        if (file){
-          // usuń poprzedni podgląd
-          if (previewPath){ try { await deleteObject(sRef(storage, previewPath)); } catch(e){} }
-          const ext = (file.name.split(".").pop()||"bin").toLowerCase();
-          previewPath = `designs/${d.id}-${Date.now()}.${ext}`;
-          const ref = sRef(storage, previewPath);
-          await uploadBytes(ref, file);
-          previewUrl = await getDownloadURL(ref);
-        }
-        await setDoc(doc(db,"designs", d.id), {
-          name, previewUrl, previewPath, updatedAt: serverTimestamp()
-        }, { merge:true });
+        let previewUrl = d.previewUrl || null;
+        if (file){ previewUrl = await fileToDataUrl(file); }
+        await setDoc(doc(db,"designs", d.id), { name, previewUrl, updatedAt: serverTimestamp() }, { merge:true });
         await reloadDesigns();
       }catch(e){ msg.textContent = "Błąd: " + (e.message||e.code); }
     };
@@ -419,22 +416,16 @@
     if (!name){ out.textContent="Podaj nazwę wzoru."; return; }
     const id = name.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,"");
     try{
-      let previewUrl=null, previewPath=null;
-      if (file){
-        const ext = (file.name.split(".").pop()||"bin").toLowerCase();
-        previewPath = `designs/${id}-${Date.now()}.${ext}`;
-        const ref = sRef(storage, previewPath);
-        await uploadBytes(ref, file);
-        previewUrl = await getDownloadURL(ref);
-      }
+      let previewUrl=null;
+      if (file){ previewUrl = await fileToDataUrl(file); }
       await setDoc(doc(db,"designs", id), {
-        name, active:true, previewUrl, previewPath, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        name, active:true, previewUrl, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
       }, { merge:true });
       $("designName").value=""; $("designFile").value="";
       out.textContent="Dodano wzór ✅";
       await reloadDesigns();
+      setTimeout(()=>out.textContent="",1200);
     }catch(e){ out.textContent="Błąd: " + (e.message||e.code); }
-    setTimeout(()=>out.textContent="",1500);
   }
 
   // ----- Picker (modal) -----
@@ -473,7 +464,7 @@
     }
   }
 
-  $("pickerCustomFile").addEventListener("change", (e)=>{
+  $("pickerCustomFile").addEventListener("change", async (e)=>{
     const file = e.target.files[0];
     if (!file || pickerRowIndex==null) return;
     const r = orderRows[pickerRowIndex];
@@ -504,7 +495,7 @@
             <div class="rows-actions">
               <button class="ghost mini-btn" data-act="pick">Wybierz wzór</button>
               <label class="ghost mini-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
-                <input data-act="custom" type="file" accept="image/*,.svg,.pdf" style="display:none"> Upload CUSTOM
+                <input data-act="custom" type="file" accept="image/*" style="display:none"> Upload CUSTOM
               </label>
             </div>
           </div>
@@ -525,7 +516,6 @@
           <button class="ghost mini-btn danger" data-act="remove">Usuń</button>
         </td>
       `;
-      // actions
       tr.querySelector('[data-act="pick"]').onclick = () => openPicker(i);
       tr.querySelector('[data-act="remove"]').onclick = () => removeRow(i);
       tr.querySelector('[data-act="size"]').onchange = (e)=> r.size = e.target.value;
@@ -570,8 +560,7 @@
 
   async function saveOrder(){
     const msg = $("saveMsg");
-    // walidacja listy pozycji
-    const invalid = orderRows.findIndex(r => !r.designId && !r.customFile || !Number(r.price));
+    const invalid = orderRows.findIndex(r => (!r.designId && !r.customFile) || !Number(r.price));
     if (invalid>=0){ msg.textContent = `Uzupełnij pozycję #${invalid+1}: wybierz wzór/CUSTOM i cenę.`; return; }
 
     const date = buildDateFromInputs();
@@ -581,22 +570,18 @@
     msg.textContent = "Zapisywanie…";
 
     try{
-      // uploady CUSTOM (jeśli są)
-      const uploaded = await Promise.all(orderRows.map(async (r)=>{
+      // Kompresja CUSTOM -> dataURL
+      const processed = await Promise.all(orderRows.map(async (r)=>{
         let previewUrl = r.previewUrl || null;
-        let previewPath = null;
         if (r.customFile){
-          const ext = (r.customFile.name.split(".").pop()||"bin").toLowerCase();
-          previewPath = `custom/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-          const ref = sRef(storage, previewPath);
-          await uploadBytes(ref, r.customFile);
-          previewUrl = await getDownloadURL(ref);
+          previewUrl = await fileToDataUrl(r.customFile);
+        } else if (r.designId){
+          previewUrl = designMap.get(r.designId)?.previewUrl || null;
         }
-        return { ...r, previewUrl, previewPath };
+        return { ...r, previewUrl };
       }));
 
-      // zapis pozycji
-      for (const r of uploaded){
+      for (const r of processed){
         const payload = {
           date: Timestamp.fromDate(date),
           monthKey: toMonthKey(date),
@@ -604,8 +589,7 @@
           size: r.size, color: r.color,
           designId: r.designId || (r.customFile ? "custom" : null),
           designText: r.designName || (r.designId ? designMap.get(r.designId)?.name : "") || "CUSTOM",
-          previewUrl: r.previewUrl || null,
-          previewPath: r.previewPath || null,
+          previewUrl: r.previewUrl || null, // tu jest dataURL (base64) lub link z katalogu
           customer,
           note: r.note || "",
           priceGross: Number(r.price || 0),
@@ -615,7 +599,7 @@
         };
         await addDoc(collection(db,"orderItems"), payload);
       }
-      msg.textContent = `Zapisano ${uploaded.length} pozycji ✅`;
+      msg.textContent = `Zapisano ${processed.length} pozycji ✅`;
       clearOrderForm();
     }catch(e){
       console.error(e);
@@ -650,7 +634,8 @@
     const tbody=$("ordersTbody"); tbody.innerHTML="";
     for(const it of items){
       const tr=document.createElement("tr");
-      const dstr=fmtDatePLLong(it.date);
+      const dt = it.date?.toDate ? it.date.toDate() : new Date(it.date);
+      const dstr = `${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;
       tr.innerHTML=`
         <td>${dstr}</td>
         <td><span class="status ${statusClass(it.status)}">${it.status||"ZAMÓWIENIE PRZYJĘTE"}</span></td>
