@@ -7,7 +7,7 @@
   <style>
     :root {
       --bg:#0b0f14; --card:#121820; --muted:#8aa0b6; --text:#e8f1ff; --accent:#4cc9f0;
-      --green:#2ec27e; --red:#ff6b6b; --amber:#f9a825; --blue:#64b5f6;
+      --green:#2ec27e; --red:#ff6b6b; --amber:#f9a825; --blue:#64b5f6; --ready:#8ecae6;
     }
     *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
     header{padding:16px 20px;border-bottom:1px solid #243344;display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -28,9 +28,10 @@
     table{width:100%;border-collapse:collapse;font-size:14px}
     th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left;vertical-align:middle}
     tr:hover{background:#0e1620}
-    .status{padding:3px 8px;border-radius:999px;font-weight:600;font-size:12px;display:inline-block}
+    .status-pill{padding:3px 8px;border-radius:999px;font-weight:600;font-size:12px;display:inline-block}
     .s-new{background:rgba(100,181,246,.15);color:var(--blue)}
     .s-wpr{background:rgba(249,168,37,.15);color:var(--amber)}
+    .s-ready{background:rgba(142,202,230,.15);color:var(--ready)}
     .s-wys{background:rgba(46,194,126,.15);color:var(--green)}
     .s-zw{background:rgba(255,107,107,.15);color:var(--red)}
     .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
@@ -63,9 +64,15 @@
       margin-right:10px;border:1px solid #274d6a;background:#19344b;color:var(--text);
       padding:6px 10px;border-radius:8px;cursor:pointer
     }
-    /* wzór w liście zamówień */
+    /* wzór i kolor w liście zamówień */
     .designCell{display:flex;align-items:center;gap:8px}
     .designThumb{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
+    .colorTag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4d;border-radius:999px;padding:2px 8px}
+    .dot{width:12px;height:12px;border-radius:50%;border:1px solid #2a3a4d;background:#fff}
+    .dot.black{background:#000}
+    /* grupowanie zamówień w tabeli */
+    tr.grp0 td{background:#0e1620}
+    tr.grp1 td{background:#0f1a24}
     /* modal wyboru wzoru */
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
     .modal .panel{background:var(--card);border:1px solid #1e2a39;border-radius:12px;width:min(900px,92vw);max-height:85vh;padding:14px;display:flex;flex-direction:column}
@@ -118,7 +125,8 @@
           <select id="filterStatus">
             <option value="ALL">Wszystkie</option>
             <option value="ZAMÓWIENIE PRZYJĘTE">ZAMÓWIENIE PRZYJĘTE</option>
-            <option value="W PRODUKCJI">W PRODUKCJI</option>
+            <option value="W TRAKCIE REALIZACJI">W TRAKCIE REALIZACJI</option>
+            <option value="GOTOWE DO WYSYŁKI">GOTOWE DO WYSYŁKI</option>
             <option value="WYSŁANE">WYSŁANE</option>
             <option value="ZWROT">ZWROT</option>
           </select>
@@ -137,7 +145,7 @@
               <th>Wzór</th>
               <th>Zamawiający</th>
               <th>Uwagi</th>
-              <th>Cena</th>
+              <th>Cena (łącznie)</th>
               <th>ID zamówienia</th>
               <th></th>
             </tr>
@@ -145,7 +153,7 @@
           <tbody id="ordersTbody"></tbody>
         </table>
       </div>
-      <div class="hint">Jeśli pojawi się link “Create index”, kliknij – to indeks monthKey + date (ale nie powinien być konieczny).</div>
+      <div class="hint">Po zmianie statusu w rozwijanym menu – aktualizowane są wszystkie pozycje w danym zamówieniu.</div>
     </div>
 
     <!-- ADD ORDER TAB -->
@@ -183,6 +191,10 @@
             <input id="orderCustomer" type="text" />
           </div>
           <div class="col">
+            <label class="mini">Cena łączna zamówienia (PLN)</label>
+            <input id="orderTotalPrice" type="number" step="0.01" placeholder="np. 210" />
+          </div>
+          <div class="col">
             <label class="mini">ID zamówienia (opcjonalnie)</label>
             <input id="orderGroupId" type="text" placeholder="np. 2025-10-03-iva766 (puste = automatycznie)" />
           </div>
@@ -196,10 +208,9 @@
           <table class="rows-table" style="width:100%">
             <thead>
               <tr>
-                <th style="width:30%">Wzór</th>
+                <th style="width:35%">Wzór</th>
                 <th style="width:10%">Rozmiar</th>
-                <th style="width:10%">Kolor</th>
-                <th style="width:15%">Cena (PLN)</th>
+                <th style="width:12%">Kolor</th>
                 <th>Uwagi</th>
                 <th style="width:120px"></th>
               </tr>
@@ -251,23 +262,19 @@
 </div>
 
 <script type="module">
-  // Stabilne wersje SDK (10.12.2)
+  // Stabilne SDK (10.12.2)
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc,
-    getDocs, query, where, onSnapshot, serverTimestamp, Timestamp
+    getDocs, query, where, onSnapshot, serverTimestamp, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // Prosty “detektor” błędów – pokaże alert, jeśli coś z JS pójdzie nie tak
-  window.addEventListener('error', e => {
-    alert('Błąd skryptu: ' + (e.message || e.error?.message || 'unknown'));
-  });
-  window.addEventListener('unhandledrejection', e => {
-    alert('Błąd (promise): ' + (e.reason?.message || e.reason || 'unknown'));
-  });
+  // Detektor błędów JS (ułatwia diagnozę)
+  window.addEventListener('error', e => alert('Błąd skryptu: ' + (e.message || e.error?.message || 'unknown')));
+  window.addEventListener('unhandledrejection', e => alert('Błąd (promise): ' + (e.reason?.message || e.reason || 'unknown')));
 
-  // KONFIG (Twój projekt)
+  // KONFIG – Twój projekt
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -288,7 +295,8 @@
   const monthsPLGen = ["stycznia","lutego","marca","kwietnia","maja","czerwca","lipca","sierpnia","września","października","listopada","grudnia"];
   const fmtDatePLLong = (d)=>{ const dt=d instanceof Date?d:(d?.toDate?d.toDate():new Date(d)); return `${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;};
   const toMonthKey = (d)=>{ const dt=d instanceof Date?d:(d?.toDate?d.toDate():new Date(d)); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;};
-  const statusClass = (s)=> s==="WYSŁANE"?"s-wys":s==="ZWROT"?"s-zw":s==="W PRODUKCJI"?"s-wpr":"s-new";
+  const STATUSES = ["ZAMÓWIENIE PRZYJĘTE","W TRAKCIE REALIZACJI","GOTOWE DO WYSYŁKI","WYSŁANE","ZWROT"];
+  const statusClass = (s)=> s==="WYSŁANE"?"s-wys":s==="ZWROT"?"s-zw":s==="W TRAKCIE REALIZACJI"?"s-wpr":s==="GOTOWE DO WYSYŁKI"?"s-ready":"s-new";
 
   // Kompresja obrazu → dataURL (miniatura w Firestore)
   async function fileToDataUrl(file, maxW=900, maxH=900, quality=0.82){
@@ -305,14 +313,9 @@
         canvas.width = cw; canvas.height = ch;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, cw, ch);
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
-        // prosta ochrona przed >1MB (limit dokumentu)
-        if (dataUrl.length > 950000) {
-          const dataUrl2 = canvas.toDataURL('image/jpeg', 0.7);
-          resolve(dataUrl2);
-        } else {
-          resolve(dataUrl);
-        }
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        if (dataUrl.length > 950000) dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
       };
       img.onerror = reject;
       reader.readAsDataURL(file);
@@ -493,7 +496,7 @@
 
   // ----- Order builder (rows) -----
   function defaultRow(){
-    return { size:"M", color:"BIAŁA", price:"", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null };
+    return { size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null };
   }
   function addRow(){ orderRows.push(defaultRow()); renderOrderRows(); }
   function removeRow(i){ orderRows.splice(i,1); renderOrderRows(); if(orderRows.length===0) addRow(); }
@@ -525,7 +528,6 @@
             ${["BIAŁA","CZARNA"].map(c=>`<option ${r.color===c?"selected":""}>${c}</option>`).join("")}
           </select>
         </td>
-        <td><input data-act="price" type="number" step="0.01" value="${r.price}" placeholder="np. 70"></td>
         <td><input data-act="note" type="text" value="${esc(r.note)}" placeholder="Uwagi do tej pozycji"></td>
         <td class="rows-actions">
           <button class="ghost mini-btn danger" data-act="remove">Usuń</button>
@@ -535,7 +537,6 @@
       tr.querySelector('[data-act="remove"]').onclick = () => removeRow(i);
       tr.querySelector('[data-act="size"]').onchange = (e)=> r.size = e.target.value;
       tr.querySelector('[data-act="color"]').onchange = (e)=> r.color = e.target.value;
-      tr.querySelector('[data-act="price"]').oninput = (e)=> r.price = e.target.value;
       tr.querySelector('[data-act="note"]').oninput = (e)=> r.note = e.target.value;
       tr.querySelector('[data-act="custom"]').onchange = (e)=>{
         const file = e.target.files[0];
@@ -555,6 +556,7 @@
     addRow();
     $("orderCustomer").value = "";
     $("orderGroupId").value = "";
+    $("orderTotalPrice").value = "";
     $("saveMsg").textContent = "";
   }
 
@@ -575,8 +577,10 @@
 
   async function saveOrder(){
     const msg = $("saveMsg");
-    const invalid = orderRows.findIndex(r => (!r.designId && !r.customFile) || !Number(r.price));
-    if (invalid>=0){ msg.textContent = `Uzupełnij pozycję #${invalid+1}: wybierz wzór/CUSTOM i cenę.`; return; }
+    if (orderRows.length===0){ msg.textContent="Dodaj przynajmniej jedną pozycję."; return; }
+    if (orderRows.some(r=>!r.designId && !r.customFile)){ msg.textContent="Każda pozycja musi mieć wybrany wzór lub CUSTOM."; return; }
+    const total = Number($("orderTotalPrice").value || 0);
+    if (!total){ msg.textContent="Podaj cenę łączną zamówienia."; return; }
 
     const date = buildDateFromInputs();
     const groupId = $("orderGroupId").value.trim() || genGroupId(date, $("orderCustomer").value.trim());
@@ -585,17 +589,15 @@
     msg.textContent = "Zapisywanie…";
 
     try{
-      // Kompresja CUSTOM -> dataURL (miniatura)
+      // Kompresja CUSTOM -> dataURL (miniatury)
       const processed = await Promise.all(orderRows.map(async (r)=>{
         let previewUrl = r.previewUrl || null;
-        if (r.customFile){
-          previewUrl = await fileToDataUrl(r.customFile);
-        } else if (r.designId){
-          previewUrl = designMap.get(r.designId)?.previewUrl || null;
-        }
+        if (r.customFile) previewUrl = await fileToDataUrl(r.customFile);
+        else if (r.designId) previewUrl = designMap.get(r.designId)?.previewUrl || null;
         return { ...r, previewUrl };
       }));
 
+      // zapis wszystkich pozycji; cena łączna zapisywana w polu orderTotalGross w każdej pozycji
       for (const r of processed){
         const payload = {
           date: Timestamp.fromDate(date),
@@ -607,7 +609,8 @@
           previewUrl: r.previewUrl || null,
           customer,
           note: r.note || "",
-          priceGross: Number(r.price || 0),
+          orderTotalGross: total,      // cena łączna zamówienia
+          priceGross: 0,               // dla kompatybilności – nie używamy
           orderGroupId: groupId,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
@@ -623,67 +626,119 @@
     setTimeout(()=> msg.textContent="", 2000);
   }
 
-  // ----- Lista miesięczna -----
+  // ----- Lista miesięczna (grupowanie po orderGroupId) -----
   let unsub=null;
   function subscribeMonth(){
     if (unsub){unsub();unsub=null;}
     const mk=$("monthPicker").value;
-    const statusFilter=$("filterStatus").value;
     const q1=query(collection(db,"orderItems"), where("monthKey","==",mk));
     unsub=onSnapshot(q1,(snap)=>{
-      const rows=[];
-      snap.forEach(docu=> rows.push({id:docu.id, ...docu.data()}));
-      // sortowanie po dacie malejąco po stronie klienta
-      rows.sort((a,b)=>{
+      const docs=[]; snap.forEach(docu=> docs.push({id:docu.id, ...docu.data()}));
+      // sortuj malejąco po dacie
+      docs.sort((a,b)=>{
         const ta = (a.date?.toDate ? a.date.toDate().getTime() : new Date(a.date).getTime());
         const tb = (b.date?.toDate ? b.date.toDate().getTime() : new Date(b.date).getTime());
         return tb - ta;
       });
-      const filtered = statusFilter==="ALL" ? rows : rows.filter(d=>d.status===statusFilter);
-      let sumC = filtered.reduce((acc, d)=> acc + (d.priceGross||0), 0);
-      renderOrders(filtered);
-      $("sumCena").textContent=fmt2(sumC);
+      // grupuj
+      const groups = new Map();
+      for (const d of docs){
+        const gid = d.orderGroupId || d.id;
+        if (!groups.has(gid)) groups.set(gid, { id:gid, items:[], date:d.date, customer:d.customer||"", status:d.status||"ZAMÓWIENIE PRZYJĘTE", total: Number(d.orderTotalGross||0) });
+        const g = groups.get(gid);
+        g.items.push(d);
+        // jeśli któryś dokument ma inną cenę/ status – bierzemy pierwszą/ostatnią (spójność)
+        if (d.orderTotalGross!=null) g.total = Number(d.orderTotalGross);
+        if (d.status) g.status = d.status;
+        if (d.customer) g.customer = d.customer;
+        if (d.date) g.date = d.date;
+      }
+      renderOrdersGrouped(Array.from(groups.values()));
     },(err)=>{
       console.error(err);
       alert("Błąd odczytu: " + (err.message || err.code));
     });
   }
 
-  function renderOrders(items){
-    const tbody=$("ordersTbody"); tbody.innerHTML="";
-    for(const it of items){
-      const tr=document.createElement("tr");
-      const dstr=fmtDatePLLong(it.date);
-      tr.innerHTML=`
-        <td>${dstr}</td>
-        <td><span class="status ${statusClass(it.status)}">${it.status||"ZAMÓWIENIE PRZYJĘTE"}</span></td>
-        <td>${it.size||""}</td>
-        <td>${it.color||""}</td>
-        <td>
-          <div class="designCell">
-            ${it.previewUrl?`<img class="designThumb" src="${it.previewUrl}" alt="">`:""}
-            <span>${esc(it.designText||"")}</span>
-          </div>
-        </td>
-        <td>${esc(it.customer||"")}</td>
-        <td>${esc(it.note||"")}</td>
-        <td>${fmt2(it.priceGross)} zł</td>
-        <td>${it.orderGroupId||""}</td>
-        <td>
-          <button class="ghost mini" data-act="status" data-id="${it.id}">↻ status</button>
-          <button class="ghost mini danger" data-act="del" data-id="${it.id}">usuń</button>
-        </td>
-      `;
-      tr.querySelector('[data-act="status"]').onclick=async()=>{
-        const nxt=prompt('Nowy status: ZAMÓWIENIE PRZYJĘTE / W PRODUKCJI / WYSŁANE / ZWROT', it.status||"ZAMÓWIENIE PRZYJĘTE");
-        if(!nxt) return;
-        await updateDoc(doc(db,"orderItems", it.id), { status:nxt, updatedAt: serverTimestamp() });
-      };
-      tr.querySelector('[data-act="del"]').onclick=async()=>{
-        if(!confirm("Usunąć tę pozycję?")) return;
-        await deleteDoc(doc(db,"orderItems", it.id));
-      };
-      tbody.appendChild(tr);
+  async function updateGroupStatus(groupId, newStatus){
+    const qSnap = await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
+    const batch = writeBatch(db);
+    qSnap.forEach(d => batch.update(doc(db,"orderItems", d.id), { status:newStatus, updatedAt: serverTimestamp() }));
+    await batch.commit();
+  }
+
+  async function deleteGroup(groupId){
+    if (!confirm("Usunąć CAŁE zamówienie (wszystkie pozycje)?")) return;
+    const qSnap = await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
+    const batch = writeBatch(db);
+    qSnap.forEach(d => batch.delete(doc(db,"orderItems", d.id)));
+    await batch.commit();
+  }
+
+  function renderOrdersGrouped(groups){
+    const statusFilter = $("filterStatus").value;
+    // filtr po statusie na poziomie grupy
+    const filtered = statusFilter==="ALL" ? groups : groups.filter(g => (g.status||"ZAMÓWIENIE PRZYJĘTE")===statusFilter);
+
+    // suma miesięczna = suma łącznych cen grup
+    const sum = filtered.reduce((acc,g)=> acc + (Number(g.total)||0), 0);
+    $("sumCena").textContent = fmt2(sum);
+
+    const tbody = $("ordersTbody"); tbody.innerHTML="";
+    let alt = 0;
+
+    for (const g of filtered){
+      // posortuj pozycje w grupie stabilnie (np. po rozmiarze)
+      g.items.sort((a,b)=> (a.size||"").localeCompare(b.size||"") );
+
+      g.items.forEach((it, idx)=>{
+        const tr = document.createElement("tr");
+        tr.className = "grp" + (alt % 2);
+        const dstr=fmtDatePLLong(g.date);
+        // status select (zmienia cały group)
+        const sel = document.createElement("select");
+        sel.innerHTML = STATUSES.map(s=>`<option ${s===(g.status||"ZAMÓWIENIE PRZYJĘTE")?"selected":""}>${s}</option>`).join("");
+        sel.onchange = async (e)=>{
+          const val = e.target.value;
+          // podmień w UI wszystkie selecty tej grupy
+          document.querySelectorAll(`select[data-gid="${g.id}"]`).forEach(x=> x.value = val);
+          await updateGroupStatus(g.id, val);
+        };
+        sel.setAttribute("data-gid", g.id);
+
+        tr.innerHTML = `
+          <td>${idx===0?dstr:""}</td>
+          <td data-status></td>
+          <td>${it.size||""}</td>
+          <td>
+            <span class="colorTag">
+              <span class="dot ${it.color==="CZARNA"?"black":""}"></span>
+              ${it.color||""}
+            </span>
+          </td>
+          <td>
+            <div class="designCell">
+              ${it.previewUrl?`<img class="designThumb" src="${it.previewUrl}" alt="">`:""}
+              <span>${esc(it.designText||"")}</span>
+            </div>
+          </td>
+          <td>${esc(g.customer||"")}</td>
+          <td>${esc(it.note||"")}</td>
+          <td>${idx===0?fmt2(g.total)+" zł":"—"}</td>
+          <td>${idx===0?g.id:""}</td>
+          <td>
+            ${idx===0?`<button class="ghost mini danger" data-del="${g.id}">usuń</button>`:""}
+          </td>
+        `;
+        tr.querySelector('[data-status]').appendChild(sel);
+        if (idx===0){
+          const delBtn = tr.querySelector(`[data-del="${g.id}"]`);
+          delBtn.onclick = async ()=> { await deleteGroup(g.id); };
+        }
+        tbody.appendChild(tr);
+      });
+
+      alt++;
     }
   }
 
