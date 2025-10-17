@@ -7,21 +7,20 @@
   <style>
     :root {
       /* jaśniejszy motyw */
-      --bg:#141c26;        /* było ciemniejsze */
-      --card:#1a2635;      /* jaśniejsze karty */
+      --bg:#141c26;
+      --card:#1a2635;
       --muted:#9fb2c7;
       --text:#f1f6ff;
       --accent:#4cc9f0;
 
-      /* kolory statusów (jasne pasy jak w Excelu – na ciemnym tle delikatnie półprzezroczyste) */
-      --st-new:    rgba(176, 255, 189, .25);  /* ZAMÓWIENIE PRZYJĘTE – bardzo jasny zielony */
-      --st-prog:   rgba(255, 223, 112, .28);  /* W TRAKCIE REALIZACJI – żółty */
-      --st-ready:  rgba(190, 255, 220, .24);  /* GOTOWE DO WYSYŁKI – jasny zielony/miętowy */
-      --st-sent:   rgba(120, 230, 150, .28);  /* WYSŁANE – zielony */
-      --st-return: rgba(255, 120, 120, .30);  /* ZWROT – czerwony */
+      /* bardziej wyraźne kolory statusów (cały wiersz) */
+      --st-new:    rgba(116, 255, 156, .50);  /* ZAMÓWIENIE PRZYJĘTE – bardzo jasny zielony */
+      --st-prog:   rgba(255, 230, 120, .55);  /* W TRAKCIE REALIZACJI – żółty */
+      --st-ready:  rgba(160, 255, 210, .52);  /* GOTOWE DO WYSYŁKI – jasna mięta */
+      --st-sent:   rgba(120, 240, 160, .55);  /* WYSŁANE – zielony */
+      --st-return: rgba(255, 120, 120, .60);  /* ZWROT – czerwony */
 
-      --line:#2d4056;      /* pionowe linie kolumn */
-      --row-alt:#ffffff07; /* delikatne naprzemienne tło */
+      --line:#2d4056;               /* pionowe linie kolumn */
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
@@ -40,19 +39,24 @@
     nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0;flex-wrap:wrap}
     nav.tabs button{flex:0 0 auto;padding:8px 12px;border-radius:10px}
     nav.tabs button.active{outline:2px solid var(--accent)}
+
+    /* tabela – pionowe linie i przyklejony nagłówek */
     table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
     th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left;vertical-align:middle;border-right:1px solid var(--line)}
     th:last-child, td:last-child{border-right:none}
     th{background:#1d2a3a}
     tr:hover td{filter:brightness(1.03)}
-    /* pionowe linie i naprzemienne, delikatne tła (niezależnie od statusu) */
-    tr.alt td{background:linear-gradient(var(--row-alt),var(--row-alt))}
-    /* kolor całego wiersza wg statusu (dominujące tło) */
-    tr.st-new td   { background:var(--st-new) }
-    tr.st-prog td  { background:var(--st-prog) }
-    tr.st-ready td { background:var(--st-ready) }
-    tr.st-sent td  { background:var(--st-sent) }
-    tr.st-ret td   { background:var(--st-return) }
+
+    /* kolor całego wiersza wg statusu (background-color),
+       a naprzemienna intensywność per zamówienie jako półprzezroczysta nakładka (background-image) */
+    tr.st-new td   { background-color:var(--st-new) }
+    tr.st-prog td  { background-color:var(--st-prog) }
+    tr.st-ready td { background-color:var(--st-ready) }
+    tr.st-sent td  { background-color:var(--st-sent) }
+    tr.st-ret td   { background-color:var(--st-return) }
+
+    /* tonowanie intensywności – co druga grupa jaśniejsza */
+    tr.tone1 td { background-image:linear-gradient(rgba(255,255,255,.10), rgba(255,255,255,.10)); }
 
     .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
     .right{margin-left:auto}
@@ -71,23 +75,26 @@
     .rows-table thead th{position:sticky;top:0;background:#1d2a3a;z-index:1}
     .rows-table td .thumb{width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
     .rows-actions{display:flex;gap:6px}
+
     /* kompaktowa data */
     .date-compact{display:flex;gap:8px;align-items:center}
     .date-compact .small{max-width:90px;padding:8px}
-    .date-compact .month{max-width:140px;padding:8px}
+    .date-compact .month{max-width:160px;padding:8px}
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
     input[type=number]{ -moz-appearance:textfield;}
+
     /* input file – spójny wygląd */
     input[type="file"]{padding:8px;background:#0f1823;border:1px solid #2a3a4d;color:var(--muted)}
     input[type="file"]::file-selector-button{
       margin-right:10px;border:1px solid #274d6a;background:#19344b;color:var(--text);
       padding:6px 10px;border-radius:8px;cursor:pointer
     }
+
     /* wzór i kolor w liście zamówień */
     .designCell{display:flex;align-items:center;gap:8px}
     .designThumb{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
-    .colorTag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4d;border-radius:999px;padding:2px 8px}
+    .colorTag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4d;border-radius:999px;padding:2px 8px;background:#0f1823}
     .dot{width:12px;height:12px;border-radius:50%;border:1px solid #2a3a4d;background:#fff}
     .dot.black{background:#000}
 
@@ -136,9 +143,9 @@
     <div id="tab-orders" class="card">
       <div class="toolbar">
         <div>
-          <label class="mini">Miesiąc</label>
+          <label class="mini">Miesiąc i rok</label>
           <div class="row center" style="gap:6px">
-            <select id="ordersMonth" class="month" style="max-width:160px"></select>
+            <select id="ordersMonth" class="month" style="max-width:180px"></select>
             <select id="ordersYear" style="max-width:120px"></select>
           </div>
         </div>
@@ -174,7 +181,7 @@
           <tbody id="ordersTbody"></tbody>
         </table>
       </div>
-      <div class="hint">Zmiana statusu aktualizuje całe zamówienie (wszystkie pozycje w grupie). “ZWROT” odejmuje kwotę od sumy.</div>
+      <div class="hint">Zmiana statusu aktualizuje całe zamówienie (wszystkie pozycje w grupie). “ZWROT” nie liczy się do sumy.</div>
     </div>
 
     <!-- ADD ORDER TAB -->
@@ -313,14 +320,7 @@
   const fmtDatePLLong = (d)=>{ const dt=d instanceof Date?d:(d?.toDate?d.toDate():new Date(d)); return `${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;};
   const toMonthKeyFromParts = (y,mIndex)=> `${y}-${String(mIndex+1).padStart(2,"0")}`;
   const STATUSES = ["ZAMÓWIENIE PRZYJĘTE","W TRAKCIE REALIZACJI","GOTOWE DO WYSYŁKI","WYSŁANE","ZWROT"];
-
-  function statusRowClass(s){
-    if (s==="ZWROT") return "st-ret";
-    if (s==="WYSŁANE") return "st-sent";
-    if (s==="GOTOWE DO WYSYŁKI") return "st-ready";
-    if (s==="W TRAKCIE REALIZACJI") return "st-prog";
-    return "st-new";
-  }
+  const rowClassByStatus = (s)=> s==="ZWROT"?"st-ret":s==="WYSŁANE"?"st-sent":s==="GOTOWE DO WYSYŁKI"?"st-ready":s==="W TRAKCIE REALIZACJI"?"st-prog":"st-new";
 
   /* kompresja obrazu do podglądu */
   async function fileToDataUrl(file, maxW=900, maxH=900, quality=0.82){
@@ -418,9 +418,7 @@
       `;
       box.appendChild(card);
 
-      // Edycja
       card.querySelector('[data-act="edit"]').onclick = () => openEdit(card, d);
-      // Usuwanie
       card.querySelector('[data-act="del"]').onclick = async () => {
         if (!confirm("Usunąć wzór?")) return;
         await deleteDoc(doc(db,"designs", d.id));
@@ -616,7 +614,6 @@
     msg.textContent = "Zapisywanie…";
 
     try{
-      // kompresja podglądów
       const processed = await Promise.all(orderRows.map(async (r)=>{
         let previewUrl = r.previewUrl || null;
         if (r.customFile) previewUrl = await fileToDataUrl(r.customFile);
@@ -637,8 +634,8 @@
           previewUrl: r.previewUrl || null,
           customer,
           note: r.note || "",
-          orderTotalGross: total,   // łączna kwota grupy
-          priceGross: 0,            // nieużywane przy grupach
+          orderTotalGross: total,
+          priceGross: 0,
           orderGroupId: groupId
         };
         await addDoc(collection(db,"orderItems"), payload);
@@ -652,7 +649,8 @@
     setTimeout(()=> msg.textContent="", 2000);
   }
 
-  /* Lista miesięczna (grupowanie po orderGroupId, sort wg stworzenia – najnowsze na górze) */
+  /* Lista miesięczna – grupowanie po orderGroupId, sort: najnowsze na górze,
+     naprzemienna intensywność per grupa, suma bez ZWROT */
   let unsub=null;
   function subscribeMonth(){
     if (unsub){unsub();unsub=null;}
@@ -671,7 +669,7 @@
         if (!groups.has(gid)) groups.set(gid, {
           id:gid, items:[], date:d.date, customer:d.customer||"",
           status:d.status||"ZAMÓWIENIE PRZYJĘTE", total:Number(d.orderTotalGross||0),
-          createdMax: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : Date.now()
+          createdMax: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0
         });
         const g = groups.get(gid);
         g.items.push(d);
@@ -712,28 +710,28 @@
     const statusFilter = $("filterStatus").value;
     const filtered = statusFilter==="ALL" ? groups : groups.filter(g => (g.status||"ZAMÓWIENIE PRZYJĘTE")===statusFilter);
 
-    // suma miesięczna (ZWROT odejmujemy)
-    const sum = filtered.reduce((acc,g)=> acc + (g.status==="ZWROT" ? -Number(g.total||0) : Number(g.total||0)), 0);
+    // suma miesięczna: ZWROT się nie liczy (nie dodajemy do sumy)
+    const sum = filtered.reduce((acc,g)=> acc + (g.status==="ZWROT" ? 0 : Number(g.total||0)), 0);
     $("sumCena").textContent = fmt2(sum);
 
     const tbody = $("ordersTbody"); tbody.innerHTML="";
     filtered.forEach((g, gi)=>{
       // sort pozycji w grupie (np. po rozmiarze)
       g.items.sort((a,b)=> (a.size||"").localeCompare(b.size||"") );
-      const rowClass = statusRowClass(g.status);
-      const altClass = gi % 2 ? "alt" : "";
+      const rowClass = rowClassByStatus(g.status);
+      const toneClass = gi % 2 ? "tone1" : ""; // naprzemiennie jaśniej/ciemniej
 
       g.items.forEach((it, idx)=>{
         const tr = document.createElement("tr");
-        tr.className = `${rowClass} ${altClass}`;
-        const dstr=fmtDatePLLong(g.date);
+        tr.className = `${rowClass} ${toneClass}`;
+        const dt = it.date?.toDate ? it.date.toDate() : new Date(it.date);
+        const dstr = `${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;
 
-        // select statusu – działa dla całej grupy
+        // select statusu – zmienia cały group
         const sel = document.createElement("select");
         sel.innerHTML = STATUSES.map(s=>`<option ${s===(g.status||"ZAMÓWIENIE PRZYJĘTE")?"selected":""}>${s}</option>`).join("");
         sel.onchange = async (e)=>{
           const val = e.target.value;
-          // podmień w UI wszystkie selecty tej grupy
           document.querySelectorAll(`select[data-gid="${g.id}"]`).forEach(x=> x.value = val);
           await updateGroupStatus(g.id, val);
         };
@@ -757,15 +755,12 @@
           </td>
           <td>${esc(g.customer||"")}</td>
           <td>${esc(it.note||"")}</td>
-          <td>${idx===0?(g.status==="ZWROT"?`<span class="neg">- ${fmt2(g.total)} zł</span>`:`${fmt2(g.total)} zł`):"—"}</td>
-          <td>
-            ${idx===0?`<button class="ghost mini danger" data-del="${g.id}">usuń</button>`:""}
-          </td>
+          <td>${idx===0?`${fmt2(g.total)} zł`:"—"}</td>
+          <td>${idx===0?`<button class="ghost mini danger" data-del="${g.id}">usuń</button>`:""}</td>
         `;
         tr.querySelector('[data-status]').appendChild(sel);
         if (idx===0){
-          const delBtn = tr.querySelector(`[data-del="${g.id}"]`);
-          delBtn.onclick = async ()=> { await deleteGroup(g.id); };
+          tr.querySelector(`[data-del="${g.id}"]`).onclick = async ()=> { await deleteGroup(g.id); };
         }
         tbody.appendChild(tr);
       });
