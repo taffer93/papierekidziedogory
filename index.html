@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Koszulki – zamówienia (Firebase MVP)</title>
+  <style>
+    :root {
+      --bg:#0b0f14; --card:#121820; --muted:#8aa0b6; --text:#e8f1ff; --accent:#4cc9f0;
+      --green:#2ec27e; --red:#ff6b6b; --amber:#f9a825; --blue:#64b5f6;
+    }
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    header{padding:16px 20px;border-bottom:1px solid #243344;display:flex;justify-content:space-between;align-items:center}
+    h1{font-size:18px;margin:0} .muted{color:var(--muted)}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .card{background:var(--card);border:1px solid #1e2a39;border-radius:10px;padding:14px;margin-bottom:14px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .col{flex:1 1 220px;min-width:220px}
+    input,select,button,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #2a3a4d;background:#0d131b;color:var(--text)}
+    input[type="date"],input[type="month"]{padding:8px}
+    button{cursor:pointer;background:#19344b;border-color:#274d6a}
+    button.primary{background:linear-gradient(180deg,#2a87b9,#1b5f86);border-color:#1b5f86}
+    button.ghost{background:#0d131b;border-color:#2a3a4d}
+    nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0}
+    nav.tabs button{flex:0 0 auto;padding:8px 12px;border-radius:8px}
+    nav.tabs button.active{outline:2px solid var(--accent)}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left}
+    tr:hover{background:#0e1620}
+    .status{padding:3px 8px;border-radius:999px;font-weight:600;font-size:12px;display:inline-block}
+    .s-now{background:rgba(100,181,246,.15);color:var(--blue)}
+    .s-wpr{background:rgba(249,168,37,.15);color:var(--amber)}
+    .s-wys{background:rgba(46,194,126,.15);color:var(--green)}
+    .s-zw{background:rgba(255,107,107,.15);color:var(--red)}
+    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+    .right{margin-left:auto}
+    .hint{font-size:12px;color:var(--muted)}
+    .pill{padding:4px 8px;border-radius:99px;background:#0d131b;border:1px solid #2a3a4d}
+    .danger{color:var(--red)}
+    .ok{color:var(--green)}
+    .mini{font-size:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+    .tag{display:inline-block;padding:2px 6px;border:1px solid #2a3a4d;border-radius:999px;margin:2px;font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Koszulki – panel</h1>
+  <div>
+    <span id="userEmail" class="muted"></span>
+    <button id="logoutBtn" class="ghost" style="display:none">Wyloguj</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- LOGIN -->
+  <div id="loginCard" class="card" style="max-width:420px;">
+    <h3>Zaloguj się</h3>
+    <div class="row">
+      <div class="col"><input id="email" type="email" placeholder="Email" /></div>
+      <div class="col"><input id="password" type="password" placeholder="Hasło" /></div>
+    </div>
+    <div class="row">
+      <div class="col"><button id="loginBtn" class="primary">Zaloguj</button></div>
+      <div class="col"><div id="loginMsg" class="hint"></div></div>
+    </div>
+    <div class="hint">Uwaga: użytkownika dodajesz w Firebase → Authentication → Users.</div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" style="display:none">
+    <nav class="tabs">
+      <button data-tab="orders" class="active">Zamówienia (miesiąc)</button>
+      <button data-tab="add">Dodaj pozycję</button>
+      <button data-tab="designs">Wzory (tekst)</button>
+    </nav>
+
+    <!-- ORDERS TAB -->
+    <div id="tab-orders" class="card">
+      <div class="toolbar">
+        <div>
+          <label class="mini">Miesiąc</label>
+          <input id="monthPicker" type="month" />
+        </div>
+        <div>
+          <label class="mini">Status</label>
+          <select id="filterStatus">
+            <option value="ALL">Wszystkie</option>
+            <option value="NOWE">NOWE</option>
+            <option value="W PRODUKCJI">W PRODUKCJI</option>
+            <option value="WYSŁANE">WYSŁANE</option>
+            <option value="ZWROT">ZWROT</option>
+          </select>
+        </div>
+        <div class="right pill">Suma (m‑c): <b id="sumCena">0.00</b> zł • Koszty koszulek: <b id="sumKoszt">0.00</b> zł</div>
+      </div>
+
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Status</th>
+              <th>Rozmiar</th>
+              <th>Kolor</th>
+              <th>Wzór</th>
+              <th>Zamawiający</th>
+              <th>Uwagi</th>
+              <th>Ilość</th>
+              <th>Cena</th>
+              <th>Koszt</th>
+              <th>ID zamówienia</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="ordersTbody"></tbody>
+        </table>
+      </div>
+      <div class="hint">Wskazówka: jeśli Firestore poprosi o indeks – kliknij link w konsoli przeglądarki i utwórz indeks (monthKey + date).</div>
+    </div>
+
+    <!-- ADD TAB -->
+    <div id="tab-add" class="card" style="display:none">
+      <h3>Dodaj pozycję (wiersz)</h3>
+      <div class="row">
+        <div class="col">
+          <label class="mini">Data</label>
+          <input id="addDate" type="date" />
+        </div>
+        <div class="col">
+          <label class="mini">Status</label>
+          <select id="addStatus">
+            <option>NOWE</option><option>W PRODUKCJI</option><option>WYSŁANE</option><option>ZWROT</option>
+          </select>
+        </div>
+        <div class="col">
+          <label class="mini">Rozmiar</label>
+          <select id="addSize">
+            <option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>3XL</option>
+          </select>
+        </div>
+        <div class="col">
+          <label class="mini">Kolor</label>
+          <select id="addColor"><option>BIAŁA</option><option>CZARNA</option></select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label class="mini">Wzór (z katalogu)</label>
+          <select id="addDesignSelect"></select>
+        </div>
+        <div class="col">
+          <label class="mini">Albo własny tekst (CUSTOM)</label>
+          <input id="addCustomText" type="text" placeholder="np. kitty jager butelka" />
+        </div>
+        <div class="col">
+          <label class="mini">Zamawiający (login/imię)</label>
+          <input id="addCustomer" type="text" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label class="mini">Uwagi</label>
+          <input id="addNote" type="text" placeholder="np. mały druk na środku" />
+        </div>
+        <div class="col">
+          <label class="mini">Ilość</label>
+          <input id="addQty" type="number" min="1" value="1" />
+        </div>
+        <div class="col">
+          <label class="mini">Cena (brutto, PLN)</label>
+          <input id="addPrice" type="number" step="0.01" placeholder="np. 70" />
+        </div>
+        <div class="col">
+          <label class="mini">Koszt koszulki (PLN)</label>
+          <input id="addBlankCost" type="number" step="0.01" placeholder="np. 12" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label class="mini">ID zamówienia (grupuj wiele pozycji)</label>
+          <input id="addOrderGroup" type="text" placeholder="np. 2025-10-03-iva766" />
+          <div class="hint">To pole pozwala zgrupować kilka wierszy w jedno zamówienie (opcjonalnie).</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col"><button id="saveItemBtn" class="primary">Zapisz pozycję</button></div>
+        <div class="col"><div id="saveMsg" class="hint"></div></div>
+      </div>
+    </div>
+
+    <!-- DESIGNS TAB -->
+    <div id="tab-designs" class="card" style="display:none">
+      <h3>Wzory (tekst)</h3>
+      <div class="row">
+        <div class="col"><input id="designName" placeholder="Nazwa wzoru, np. kitty red bull blue" /></div>
+        <div class="col"><button id="addDesignBtn" class="primary">Dodaj wzór</button></div>
+      </div>
+      <div class="hint">To tylko tekst (bez grafiki). W każdej chwili dodasz kolejne.</div>
+      <div id="designsList" class="grid" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  // Firebase SDK (CDN)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc,
+    getDocs, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp
+  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+  // Twój firebaseConfig – już wklejony
+  const firebaseConfig = {
+    apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
+    authDomain: "papierek-idzie-do-gory.firebaseapp.com",
+    projectId: "papierek-idzie-do-gory",
+    storageBucket: "papierek-idzie-do-gory.firebasestorage.app",
+    messagingSenderId: "1063966015801",
+    appId: "1:1063966015801:web:72f412aa200a705276a8e8"
+  };
+
+  // Init
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Helpers
+  const $ = (id) => document.getElementById(id);
+  const fmt2 = (n) => (Number(n || 0)).toFixed(2);
+  const toMonthKey = (d) => {
+    const dt = new Date(d);
+    const y = dt.getFullYear(), m = String(dt.getMonth()+1).padStart(2,"0");
+    return `${y}-${m}`;
+  };
+  const statusClass = (s) => {
+    if (s === "WYSŁANE") return "s-wys";
+    if (s === "ZWROT") return "s-zw";
+    if (s === "W PRODUKCJI") return "s-wpr";
+    return "s-now";
+  };
+
+  // UI refs
+  const loginCard = $("loginCard");
+  const appWrap = $("app");
+  const userEmail = $("userEmail");
+  const loginBtn = $("loginBtn");
+  const logoutBtn = $("logoutBtn");
+  const loginMsg = $("loginMsg");
+
+  // Tabs
+  const tabsBtns = document.querySelectorAll("nav.tabs button");
+  const tabs = {
+    orders: $("tab-orders"),
+    add: $("tab-add"),
+    designs: $("tab-designs")
+  };
+  tabsBtns.forEach(btn => btn.addEventListener("click", () => {
+    tabsBtns.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    Object.values(tabs).forEach(el => el.style.display="none");
+    const id = btn.dataset.tab;
+    tabs[id].style.display = "";
+  }));
+
+  // Auth
+  loginBtn.onclick = async () => {
+    loginMsg.textContent = "Logowanie…";
+    try {
+      await signInWithEmailAndPassword(auth, $("email").value, $("password").value);
+      loginMsg.textContent = "";
+    } catch (e) {
+      loginMsg.textContent = "Błąd logowania: " + (e.message || e.code);
+    }
+  };
+  logoutBtn.onclick = () => signOut(auth);
+
+  onAuthStateChanged(auth, (u) => {
+    if (u) {
+      loginCard.style.display = "none";
+      appWrap.style.display = "";
+      userEmail.textContent = u.email || "";
+      logoutBtn.style.display = "";
+      initAppAfterLogin();
+    } else {
+      loginCard.style.display = "";
+      appWrap.style.display = "none";
+      userEmail.textContent = "";
+      logoutBtn.style.display = "none";
+    }
+  });
+
+  // After login – initial load
+  async function initAppAfterLogin() {
+    // default month = current
+    const now = new Date();
+    $("monthPicker").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+    $("addDate").valueAsDate = now;
+
+    await loadDesignsSelect();
+    await loadDesignsList();
+    subscribeMonth(); // real-time table
+
+    $("monthPicker").addEventListener("change", subscribeMonth);
+    $("filterStatus").addEventListener("change", subscribeMonth);
+
+    $("saveItemBtn").addEventListener("click", saveItem);
+    $("addDesignBtn").addEventListener("click", addDesign);
+  }
+
+  // Designs
+  async function loadDesignsSelect() {
+    const sel = $("addDesignSelect");
+    sel.innerHTML = "";
+    const opt0 = document.createElement("option");
+    opt0.value = ""; opt0.textContent = "— wybierz wzór z listy —";
+    sel.appendChild(opt0);
+
+    const qSnap = await getDocs(query(collection(db,"designs"), orderBy("name")));
+    qSnap.forEach(d => {
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = d.data().name;
+      sel.appendChild(opt);
+    });
+  }
+
+  async function loadDesignsList() {
+    const box = $("designsList");
+    box.innerHTML = "";
+    const qSnap = await getDocs(query(collection(db,"designs"), orderBy("name")));
+    qSnap.forEach(d => {
+      const data = d.data();
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1">
+            <b>${data.name}</b><div class="hint">ID: ${d.id}</div>
+          </div>
+          <button data-id="${d.id}" class="ghost mini-btn">Usuń</button>
+        </div>
+      `;
+      box.appendChild(card);
+      card.querySelector("button").onclick = async () => {
+        if (!confirm("Usunąć wzór?")) return;
+        await deleteDoc(doc(db,"designs", d.id));
+        await loadDesignsSelect();
+        await loadDesignsList();
+      };
+    });
+  }
+
+  async function addDesign() {
+    const name = $("designName").value.trim();
+    if (!name) return alert("Podaj nazwę wzoru.");
+    const slug = name.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,"");
+    await setDoc(doc(db,"designs", slug), {
+      name, active: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+    }, { merge:true });
+    $("designName").value = "";
+    await loadDesignsSelect();
+    await loadDesignsList();
+  }
+
+  // Save order item (row)
+  async function saveItem() {
+    const dateStr = $("addDate").value;
+    if (!dateStr) return alert("Wybierz datę.");
+    const date = new Date(dateStr + "T12:00:00");
+    const payload = {
+      date: Timestamp.fromDate(date),
+      monthKey: toMonthKey(date),
+      status: $("addStatus").value,
+      size: $("addSize").value,
+      color: $("addColor").value,
+      designId: $("addDesignSelect").value || null,
+      designText: $("addCustomText").value.trim() || ($("addDesignSelect").selectedOptions[0]?.textContent || ""),
+      customer: $("addCustomer").value.trim(),
+      note: $("addNote").value.trim(),
+      quantity: Number($("addQty").value || 1),
+      priceGross: Number($("addPrice").value || 0),
+      blankCost: Number($("addBlankCost").value || 0),
+      orderGroupId: $("addOrderGroup").value.trim() || null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    if (!payload.designText) return alert("Wybierz wzór z listy albo wpisz własny tekst (CUSTOM).");
+
+    try {
+      $("saveMsg").textContent = "Zapisywanie…";
+      await addDoc(collection(db,"orderItems"), payload);
+      $("saveMsg").textContent = "Zapisano ✅";
+      $("addCustomText").value = "";
+      $("addNote").value = "";
+      $("addPrice").value = "";
+      $("addBlankCost").value = "";
+      $("addQty").value = 1;
+    } catch(e) {
+      $("saveMsg").textContent = "Błąd: " + (e.message || e.code);
+    }
+    setTimeout(()=>{$("saveMsg").textContent="";}, 1500);
+  }
+
+  // Subscribe monthly list
+  let unsub = null;
+  function subscribeMonth() {
+    if (unsub) { unsub(); unsub = null; }
+    const mk = $("monthPicker").value;
+    const statusFilter = $("filterStatus").value;
+
+    const q1 = query(
+      collection(db,"orderItems"),
+      where("monthKey","==", mk),
+      orderBy("date","desc")
+    );
+    unsub = onSnapshot(q1, (snap) => {
+      const rows = [];
+      let sumC = 0, sumK = 0;
+      snap.forEach(docu => {
+        const d = docu.data();
+        if (statusFilter !== "ALL" && d.status !== statusFilter) return;
+        const qty = d.quantity || 1;
+        sumC += (d.priceGross || 0) * qty;
+        sumK += (d.blankCost || 0) * qty;
+        rows.push({ id: docu.id, ...d });
+      });
+      renderRows(rows);
+      $("sumCena").textContent = fmt2(sumC);
+      $("sumKoszt").textContent = fmt2(sumK);
+    }, (err) => {
+      console.error(err);
+      alert("Błąd odczytu. Jeśli pojawił się link do indeksu – kliknij i utwórz indeks w Firestore.");
+    });
+  }
+
+  function renderRows(items) {
+    const tbody = $("ordersTbody");
+    tbody.innerHTML = "";
+    for (const it of items) {
+      const tr = document.createElement("tr");
+      const dt = it.date?.toDate ? it.date.toDate() : new Date(it.date);
+      const dstr = dt.toLocaleDateString("pl-PL");
+      tr.innerHTML = `
+        <td>${dstr}</td>
+        <td><span class="status ${statusClass(it.status)}">${it.status}</span></td>
+        <td>${it.size||""}</td>
+        <td>${it.color||""}</td>
+        <td>${(it.designText||"").replace(/</g,"&lt;")}</td>
+        <td>${(it.customer||"").replace(/</g,"&lt;")}</td>
+        <td>${(it.note||"").replace(/</g,"&lt;")}</td>
+        <td>${it.quantity||1}</td>
+        <td>${fmt2(it.priceGross)} zł</td>
+        <td>${fmt2(it.blankCost)} zł</td>
+        <td>${it.orderGroupId || ""}</td>
+        <td>
+          <button class="mini-btn ghost" data-act="status" data-id="${it.id}">↻ status</button>
+          <button class="mini-btn ghost danger" data-act="del" data-id="${it.id}">usuń</button>
+        </td>
+      `;
+      tr.querySelector('[data-act="status"]').onclick = async () => {
+        const nxt = prompt('Podaj nowy status: NOWE / W PRODUKCJI / WYSŁANE / ZWROT', it.status || "NOWE");
+        if (!nxt) return;
+        await updateDoc(doc(db,"orderItems", it.id), { status:nxt, updatedAt: serverTimestamp() });
+      };
+      tr.querySelector('[data-act="del"]').onclick = async () => {
+        if (!confirm("Usunąć ten wiersz?")) return;
+        await deleteDoc(doc(db,"orderItems", it.id));
+      };
+      tbody.appendChild(tr);
+    }
+  }
+</script>
+</body>
+</html>
