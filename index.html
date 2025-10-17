@@ -3,44 +3,48 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Koszulki – zamówienia (Firebase MVP)</title>
+  <title>Koszulki – panel</title>
   <style>
     :root {
       --bg:#0b0f14; --card:#121820; --muted:#8aa0b6; --text:#e8f1ff; --accent:#4cc9f0;
       --green:#2ec27e; --red:#ff6b6b; --amber:#f9a825; --blue:#64b5f6;
     }
     *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
-    header{padding:16px 20px;border-bottom:1px solid #243344;display:flex;justify-content:space-between;align-items:center}
+    header{padding:16px 20px;border-bottom:1px solid #243344;display:flex;justify-content:space-between;align-items:center;gap:10px}
     h1{font-size:18px;margin:0} .muted{color:var(--muted)}
-    .wrap{max-width:1100px;margin:0 auto;padding:16px}
-    .card{background:var(--card);border:1px solid #1e2a39;border-radius:10px;padding:14px;margin-bottom:14px}
+    .wrap{max-width:1200px;margin:0 auto;padding:16px}
+    .card{background:var(--card);border:1px solid #1e2a39;border-radius:12px;padding:14px;margin-bottom:14px}
     .row{display:flex;gap:10px;flex-wrap:wrap}
     .col{flex:1 1 220px;min-width:220px}
-    input,select,button,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #2a3a4d;background:#0d131b;color:var(--text)}
+    input,select,button,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a4d;background:#0d131b;color:var(--text)}
     input[type="date"],input[type="month"]{padding:8px}
     button{cursor:pointer;background:#19344b;border-color:#274d6a}
-    button.primary{background:linear-gradient(180deg,#2a87b9,#1b5f86);border-color:#1b5f86}
+    button.primary{background:linear-gradient(180deg,#2a87b9,#1b5f86);border-color:#1b5f86;font-weight:600}
     button.ghost{background:#0d131b;border-color:#2a3a4d}
-    nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0}
-    nav.tabs button{flex:0 0 auto;padding:8px 12px;border-radius:8px}
+    nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0;flex-wrap:wrap}
+    nav.tabs button{flex:0 0 auto;padding:8px 12px;border-radius:10px}
     nav.tabs button.active{outline:2px solid var(--accent)}
     table{width:100%;border-collapse:collapse;font-size:14px}
     th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left}
     tr:hover{background:#0e1620}
     .status{padding:3px 8px;border-radius:999px;font-weight:600;font-size:12px;display:inline-block}
-    .s-now{background:rgba(100,181,246,.15);color:var(--blue)}
+    .s-new{background:rgba(100,181,246,.15);color:var(--blue)}
     .s-wpr{background:rgba(249,168,37,.15);color:var(--amber)}
     .s-wys{background:rgba(46,194,126,.15);color:var(--green)}
     .s-zw{background:rgba(255,107,107,.15);color:var(--red)}
     .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
     .right{margin-left:auto}
     .hint{font-size:12px;color:var(--muted)}
-    .pill{padding:4px 8px;border-radius:99px;background:#0d131b;border:1px solid #2a3a4d}
-    .danger{color:var(--red)}
-    .ok{color:var(--green)}
+    .pill{padding:6px 10px;border-radius:99px;background:#0d131b;border:1px solid #2a3a4d}
     .mini{font-size:12px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-    .tag{display:inline-block;padding:2px 6px;border:1px solid #2a3a4d;border-radius:999px;margin:2px;font-size:12px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+    .design-card{border:1px solid #2a3a4d;border-radius:12px;padding:14px;cursor:pointer;background:#0d131b;display:flex;align-items:center;justify-content:center;text-align:center;min-height:84px}
+    .design-card:hover{border-color:#3c5875}
+    .design-card.selected{outline:2px solid var(--accent);background:#11202c}
+    .add-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .add-header .right{display:flex;gap:10px;margin-left:auto}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width:800px){.two-col{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -55,7 +59,7 @@
 <div class="wrap">
 
   <!-- LOGIN -->
-  <div id="loginCard" class="card" style="max-width:420px;">
+  <div id="loginCard" class="card" style="max-width:460px;">
     <h3>Zaloguj się</h3>
     <div class="row">
       <div class="col"><input id="email" type="email" placeholder="Email" /></div>
@@ -65,7 +69,6 @@
       <div class="col"><button id="loginBtn" class="primary">Zaloguj</button></div>
       <div class="col"><div id="loginMsg" class="hint"></div></div>
     </div>
-    <div class="hint">Uwaga: użytkownika dodajesz w Firebase → Authentication → Users.</div>
   </div>
 
   <!-- APP -->
@@ -73,7 +76,7 @@
     <nav class="tabs">
       <button data-tab="orders" class="active">Zamówienia (miesiąc)</button>
       <button data-tab="add">Dodaj pozycję</button>
-      <button data-tab="designs">Wzory (tekst)</button>
+      <button data-tab="designs">Wzory</button>
     </nav>
 
     <!-- ORDERS TAB -->
@@ -87,13 +90,13 @@
           <label class="mini">Status</label>
           <select id="filterStatus">
             <option value="ALL">Wszystkie</option>
-            <option value="NOWE">NOWE</option>
+            <option value="ZAMÓWIENIE PRZYJĘTE">ZAMÓWIENIE PRZYJĘTE</option>
             <option value="W PRODUKCJI">W PRODUKCJI</option>
             <option value="WYSŁANE">WYSŁANE</option>
             <option value="ZWROT">ZWROT</option>
           </select>
         </div>
-        <div class="right pill">Suma (m‑c): <b id="sumCena">0.00</b> zł • Koszty koszulek: <b id="sumKoszt">0.00</b> zł</div>
+        <div class="right pill">Suma (m‑c): <b id="sumCena">0.00</b> zł</div>
       </div>
 
       <div style="overflow:auto">
@@ -107,9 +110,7 @@
               <th>Wzór</th>
               <th>Zamawiający</th>
               <th>Uwagi</th>
-              <th>Ilość</th>
               <th>Cena</th>
-              <th>Koszt</th>
               <th>ID zamówienia</th>
               <th></th>
             </tr>
@@ -117,81 +118,99 @@
           <tbody id="ordersTbody"></tbody>
         </table>
       </div>
-      <div class="hint">Wskazówka: jeśli Firestore poprosi o indeks – kliknij link w konsoli przeglądarki i utwórz indeks (monthKey + date).</div>
+      <div class="hint">Jeśli pojawi się link “Create index”, kliknij – to indeks monthKey + date.</div>
     </div>
 
     <!-- ADD TAB -->
     <div id="tab-add" class="card" style="display:none">
-      <h3>Dodaj pozycję (wiersz)</h3>
-      <div class="row">
-        <div class="col">
-          <label class="mini">Data</label>
-          <input id="addDate" type="date" />
-        </div>
-        <div class="col">
-          <label class="mini">Status</label>
-          <select id="addStatus">
-            <option>NOWE</option><option>W PRODUKCJI</option><option>WYSŁANE</option><option>ZWROT</option>
-          </select>
-        </div>
-        <div class="col">
-          <label class="mini">Rozmiar</label>
-          <select id="addSize">
-            <option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>3XL</option>
-          </select>
-        </div>
-        <div class="col">
-          <label class="mini">Kolor</label>
-          <select id="addColor"><option>BIAŁA</option><option>CZARNA</option></select>
+      <div class="add-header">
+        <h3 style="margin:0">Dodaj pozycję</h3>
+        <div class="right">
+          <button id="clearBtn" class="ghost">Wyczyść</button>
+          <button id="saveItemBtn" class="primary">Zapisz</button>
         </div>
       </div>
 
-      <div class="row">
-        <div class="col">
-          <label class="mini">Wzór (z katalogu)</label>
-          <select id="addDesignSelect"></select>
+      <div class="two-col">
+        <!-- LEWA: DANE -->
+        <div class="card" style="margin:0">
+          <h4 style="margin:0 0 8px 0">Dane pozycji</h4>
+          <div class="row">
+            <div class="col">
+              <label class="mini">Dzień</label>
+              <input id="addDay" type="number" min="1" max="31" />
+            </div>
+            <div class="col">
+              <label class="mini">Miesiąc</label>
+              <select id="addMonth"></select>
+            </div>
+            <div class="col">
+              <label class="mini">Rok</label>
+              <input id="addYear" type="number" min="2020" max="2100" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label class="mini">Status (domyślnie: ZAMÓWIENIE PRZYJĘTE)</label>
+              <select id="addStatus">
+                <option selected>ZAMÓWIENIE PRZYJĘTE</option>
+                <option>W PRODUKCJI</option>
+                <option>WYSŁANE</option>
+                <option>ZWROT</option>
+              </select>
+            </div>
+            <div class="col">
+              <label class="mini">Rozmiar</label>
+              <select id="addSize">
+                <option>S</option><option>M</option><option>L</option>
+                <option>XL</option><option>XXL</option><option>3XL</option>
+              </select>
+            </div>
+            <div class="col">
+              <label class="mini">Kolor</label>
+              <select id="addColor"><option>BIAŁA</option><option>CZARNA</option></select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label class="mini">Zamawiający (login/imię)</label>
+              <input id="addCustomer" type="text" />
+            </div>
+            <div class="col">
+              <label class="mini">Cena (brutto, PLN)</label>
+              <input id="addPrice" type="number" step="0.01" placeholder="np. 70" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label class="mini">Uwagi</label>
+              <input id="addNote" type="text" placeholder="np. mały druk na środku" />
+            </div>
+            <div class="col">
+              <label class="mini">ID zamówienia (grupowanie pozycji)</label>
+              <input id="addOrderGroup" type="text" placeholder="np. 2025-10-03-iva766" />
+            </div>
+          </div>
+
+          <div class="hint">Po zapisaniu pozycja trafi od razu do listy w statusie “ZAMÓWIENIE PRZYJĘTE”.</div>
         </div>
-        <div class="col">
-          <label class="mini">Albo własny tekst (CUSTOM)</label>
-          <input id="addCustomText" type="text" placeholder="np. kitty jager butelka" />
-        </div>
-        <div class="col">
-          <label class="mini">Zamawiający (login/imię)</label>
-          <input id="addCustomer" type="text" />
+
+        <!-- PRAWA: WZÓR -->
+        <div class="card" style="margin:0">
+          <h4 style="margin:0 0 8px 0">Wybierz wzór</h4>
+          <div class="row">
+            <div class="col"><input id="designSearch" placeholder="Szukaj wzoru po nazwie..." /></div>
+            <div class="col"><input id="customText" placeholder="Albo wpisz własny tekst (CUSTOM)" /></div>
+          </div>
+          <div id="designGridAdd" class="grid" style="margin-top:10px"></div>
+          <div class="hint">Kliknij kafelek, żeby wybrać wzór. Wybrany podświetli się obwódką.</div>
         </div>
       </div>
 
-      <div class="row">
-        <div class="col">
-          <label class="mini">Uwagi</label>
-          <input id="addNote" type="text" placeholder="np. mały druk na środku" />
-        </div>
-        <div class="col">
-          <label class="mini">Ilość</label>
-          <input id="addQty" type="number" min="1" value="1" />
-        </div>
-        <div class="col">
-          <label class="mini">Cena (brutto, PLN)</label>
-          <input id="addPrice" type="number" step="0.01" placeholder="np. 70" />
-        </div>
-        <div class="col">
-          <label class="mini">Koszt koszulki (PLN)</label>
-          <input id="addBlankCost" type="number" step="0.01" placeholder="np. 12" />
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col">
-          <label class="mini">ID zamówienia (grupuj wiele pozycji)</label>
-          <input id="addOrderGroup" type="text" placeholder="np. 2025-10-03-iva766" />
-          <div class="hint">To pole pozwala zgrupować kilka wierszy w jedno zamówienie (opcjonalnie).</div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col"><button id="saveItemBtn" class="primary">Zapisz pozycję</button></div>
-        <div class="col"><div id="saveMsg" class="hint"></div></div>
-      </div>
+      <div id="saveMsg" class="hint" style="margin-top:8px"></div>
     </div>
 
     <!-- DESIGNS TAB -->
@@ -199,10 +218,10 @@
       <h3>Wzory (tekst)</h3>
       <div class="row">
         <div class="col"><input id="designName" placeholder="Nazwa wzoru, np. kitty red bull blue" /></div>
-        <div class="col"><button id="addDesignBtn" class="primary">Dodaj wzór</button></div>
+        <div class="col" style="max-width:220px"><button id="addDesignBtn" class="primary">Dodaj wzór</button></div>
       </div>
-      <div class="hint">To tylko tekst (bez grafiki). W każdej chwili dodasz kolejne.</div>
       <div id="designsList" class="grid" style="margin-top:10px"></div>
+      <div class="hint">Klik “Usuń” na kafelku usuwa wzór z katalogu (nie usuwa historii zamówień).</div>
     </div>
   </div>
 </div>
@@ -216,7 +235,7 @@
     getDocs, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp
   } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-  // Twój firebaseConfig – już wklejony
+  // Twój firebaseConfig
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -234,16 +253,27 @@
   // Helpers
   const $ = (id) => document.getElementById(id);
   const fmt2 = (n) => (Number(n || 0)).toFixed(2);
+  const monthsPL = [
+    "styczeń","luty","marzec","kwiecień","maj","czerwiec",
+    "lipiec","sierpień","wrzesień","październik","listopad","grudzień"
+  ];
+  const monthsPLGen = [ // do wyświetlania pełnej daty: 3 października 2025
+    "stycznia","lutego","marca","kwietnia","maja","czerwca",
+    "lipca","sierpnia","września","października","listopada","grudnia"
+  ];
+  const fmtDatePLLong = (d)=> {
+    const dt = d instanceof Date ? d : (d?.toDate ? d.toDate() : new Date(d));
+    return `${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;
+  };
   const toMonthKey = (d) => {
-    const dt = new Date(d);
-    const y = dt.getFullYear(), m = String(dt.getMonth()+1).padStart(2,"0");
-    return `${y}-${m}`;
+    const dt = d instanceof Date ? d : (d?.toDate ? d.toDate() : new Date(d));
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;
   };
   const statusClass = (s) => {
     if (s === "WYSŁANE") return "s-wys";
     if (s === "ZWROT") return "s-zw";
     if (s === "W PRODUKCJI") return "s-wpr";
-    return "s-now";
+    return "s-new"; // ZAMÓWIENIE PRZYJĘTE
   };
 
   // UI refs
@@ -256,17 +286,12 @@
 
   // Tabs
   const tabsBtns = document.querySelectorAll("nav.tabs button");
-  const tabs = {
-    orders: $("tab-orders"),
-    add: $("tab-add"),
-    designs: $("tab-designs")
-  };
+  const tabs = { orders: $("tab-orders"), add: $("tab-add"), designs: $("tab-designs") };
   tabsBtns.forEach(btn => btn.addEventListener("click", () => {
     tabsBtns.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     Object.values(tabs).forEach(el => el.style.display="none");
-    const id = btn.dataset.tab;
-    tabs[id].style.display = "";
+    tabs[btn.dataset.tab].style.display = "";
   }));
 
   // Auth
@@ -296,63 +321,92 @@
     }
   });
 
+  // State for ADD
+  let selectedDesignId = null;
+  let selectedDesignName = "";
+
   // After login – initial load
   async function initAppAfterLogin() {
     // default month = current
     const now = new Date();
     $("monthPicker").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
-    $("addDate").valueAsDate = now;
 
-    await loadDesignsSelect();
-    await loadDesignsList();
+    // init date inputs (dzień, miesiąc, rok)
+    $("addDay").value = now.getDate();
+    // miesiące PL do selecta
+    $("addMonth").innerHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
+    $("addMonth").value = String(now.getMonth());
+    $("addYear").value = now.getFullYear();
+
+    // load designs
+    await loadDesignsList();       // dla zakładki "Wzory"
+    await loadDesignsGridForAdd(); // dla formularza "Dodaj pozycję"
+
     subscribeMonth(); // real-time table
 
     $("monthPicker").addEventListener("change", subscribeMonth);
     $("filterStatus").addEventListener("change", subscribeMonth);
 
     $("saveItemBtn").addEventListener("click", saveItem);
+    $("clearBtn").addEventListener("click", clearAddForm);
     $("addDesignBtn").addEventListener("click", addDesign);
+    $("designSearch").addEventListener("input", loadDesignsGridForAdd);
   }
 
-  // Designs
-  async function loadDesignsSelect() {
-    const sel = $("addDesignSelect");
-    sel.innerHTML = "";
-    const opt0 = document.createElement("option");
-    opt0.value = ""; opt0.textContent = "— wybierz wzór z listy —";
-    sel.appendChild(opt0);
+  // Build Date from inputs
+  function buildDateFromInputs() {
+    const d = Number($("addDay").value || 1);
+    const m = Number($("addMonth").value || 0); // 0-11
+    const y = Number($("addYear").value || new Date().getFullYear());
+    return new Date(y, m, d, 12, 0, 0); // południe, żeby uniknąć przesunięć stref
+  }
 
-    const qSnap = await getDocs(query(collection(db,"designs"), orderBy("name")));
-    qSnap.forEach(d => {
-      const opt = document.createElement("option");
-      opt.value = d.id;
-      opt.textContent = d.data().name;
-      sel.appendChild(opt);
+  // Designs grid for ADD
+  async function loadDesignsGridForAdd() {
+    const grid = $("designGridAdd");
+    grid.innerHTML = "";
+    const term = $("designSearch").value?.toLowerCase() || "";
+    const snap = await getDocs(query(collection(db,"designs"), orderBy("name")));
+    const items = [];
+    snap.forEach(d => items.push({ id:d.id, ...d.data() }));
+    const filtered = term ? items.filter(x => x.name.toLowerCase().includes(term)) : items;
+
+    filtered.forEach(d => {
+      const div = document.createElement("div");
+      div.className = "design-card" + (selectedDesignId===d.id ? " selected" : "");
+      div.textContent = d.name;
+      div.title = d.name;
+      div.onclick = () => {
+        selectedDesignId = d.id;
+        selectedDesignName = d.name;
+        $("customText").value = ""; // odznacz CUSTOM
+        document.querySelectorAll(".design-card").forEach(el => el.classList.remove("selected"));
+        div.classList.add("selected");
+      };
+      grid.appendChild(div);
     });
   }
 
+  // Designs tab: list + remove
   async function loadDesignsList() {
     const box = $("designsList");
     box.innerHTML = "";
-    const qSnap = await getDocs(query(collection(db,"designs"), orderBy("name")));
-    qSnap.forEach(d => {
+    const snap = await getDocs(query(collection(db,"designs"), orderBy("name")));
+    snap.forEach(d => {
       const data = d.data();
       const card = document.createElement("div");
-      card.className = "card";
+      card.className = "design-card";
+      card.style.justifyContent = "space-between";
       card.innerHTML = `
-        <div style="display:flex;align-items:center;gap:8px">
-          <div style="flex:1">
-            <b>${data.name}</b><div class="hint">ID: ${d.id}</div>
-          </div>
-          <button data-id="${d.id}" class="ghost mini-btn">Usuń</button>
-        </div>
+        <div style="text-align:left;flex:1">${data.name}</div>
+        <button data-id="${d.id}" class="ghost" style="flex:0 0 auto">Usuń</button>
       `;
       box.appendChild(card);
       card.querySelector("button").onclick = async () => {
         if (!confirm("Usunąć wzór?")) return;
         await deleteDoc(doc(db,"designs", d.id));
-        await loadDesignsSelect();
         await loadDesignsList();
+        await loadDesignsGridForAdd();
       };
     });
   }
@@ -365,43 +419,60 @@
       name, active: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
     }, { merge:true });
     $("designName").value = "";
-    await loadDesignsSelect();
     await loadDesignsList();
+    await loadDesignsGridForAdd();
+  }
+
+  function clearAddForm() {
+    selectedDesignId = null;
+    selectedDesignName = "";
+    $("customText").value = "";
+    $("addCustomer").value = "";
+    $("addNote").value = "";
+    $("addPrice").value = "";
+    document.querySelectorAll(".design-card").forEach(el => el.classList.remove("selected"));
+    $("saveMsg").textContent = "";
   }
 
   // Save order item (row)
   async function saveItem() {
-    const dateStr = $("addDate").value;
-    if (!dateStr) return alert("Wybierz datę.");
-    const date = new Date(dateStr + "T12:00:00");
+    const date = buildDateFromInputs();
+    const custom = $("customText").value.trim();
+
+    let designText = "";
+    let designId = null;
+    if (custom) {
+      designText = custom;
+      designId = "custom";
+    } else if (selectedDesignId) {
+      designText = selectedDesignName;
+      designId = selectedDesignId;
+    } else {
+      return alert("Wybierz wzór z kafelków albo wpisz własny tekst (CUSTOM).");
+    }
+
     const payload = {
       date: Timestamp.fromDate(date),
       monthKey: toMonthKey(date),
-      status: $("addStatus").value,
+      status: $("addStatus").value || "ZAMÓWIENIE PRZYJĘTE",
       size: $("addSize").value,
       color: $("addColor").value,
-      designId: $("addDesignSelect").value || null,
-      designText: $("addCustomText").value.trim() || ($("addDesignSelect").selectedOptions[0]?.textContent || ""),
+      designId,
+      designText,
       customer: $("addCustomer").value.trim(),
       note: $("addNote").value.trim(),
-      quantity: Number($("addQty").value || 1),
       priceGross: Number($("addPrice").value || 0),
-      blankCost: Number($("addBlankCost").value || 0),
       orderGroupId: $("addOrderGroup").value.trim() || null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
-    if (!payload.designText) return alert("Wybierz wzór z listy albo wpisz własny tekst (CUSTOM).");
+    if (!payload.priceGross) return alert("Podaj cenę.");
 
     try {
       $("saveMsg").textContent = "Zapisywanie…";
       await addDoc(collection(db,"orderItems"), payload);
       $("saveMsg").textContent = "Zapisano ✅";
-      $("addCustomText").value = "";
-      $("addNote").value = "";
-      $("addPrice").value = "";
-      $("addBlankCost").value = "";
-      $("addQty").value = 1;
+      clearAddForm();
     } catch(e) {
       $("saveMsg").textContent = "Błąd: " + (e.message || e.code);
     }
@@ -422,18 +493,15 @@
     );
     unsub = onSnapshot(q1, (snap) => {
       const rows = [];
-      let sumC = 0, sumK = 0;
+      let sumC = 0;
       snap.forEach(docu => {
         const d = docu.data();
         if (statusFilter !== "ALL" && d.status !== statusFilter) return;
-        const qty = d.quantity || 1;
-        sumC += (d.priceGross || 0) * qty;
-        sumK += (d.blankCost || 0) * qty;
+        sumC += (d.priceGross || 0);
         rows.push({ id: docu.id, ...d });
       });
       renderRows(rows);
       $("sumCena").textContent = fmt2(sumC);
-      $("sumKoszt").textContent = fmt2(sumK);
     }, (err) => {
       console.error(err);
       alert("Błąd odczytu. Jeśli pojawił się link do indeksu – kliknij i utwórz indeks w Firestore.");
@@ -445,32 +513,29 @@
     tbody.innerHTML = "";
     for (const it of items) {
       const tr = document.createElement("tr");
-      const dt = it.date?.toDate ? it.date.toDate() : new Date(it.date);
-      const dstr = dt.toLocaleDateString("pl-PL");
+      const dstr = fmtDatePLLong(it.date);
       tr.innerHTML = `
         <td>${dstr}</td>
-        <td><span class="status ${statusClass(it.status)}">${it.status}</span></td>
+        <td><span class="status ${statusClass(it.status)}">${it.status || "ZAMÓWIENIE PRZYJĘTE"}</span></td>
         <td>${it.size||""}</td>
         <td>${it.color||""}</td>
         <td>${(it.designText||"").replace(/</g,"&lt;")}</td>
         <td>${(it.customer||"").replace(/</g,"&lt;")}</td>
         <td>${(it.note||"").replace(/</g,"&lt;")}</td>
-        <td>${it.quantity||1}</td>
         <td>${fmt2(it.priceGross)} zł</td>
-        <td>${fmt2(it.blankCost)} zł</td>
         <td>${it.orderGroupId || ""}</td>
         <td>
-          <button class="mini-btn ghost" data-act="status" data-id="${it.id}">↻ status</button>
-          <button class="mini-btn ghost danger" data-act="del" data-id="${it.id}">usuń</button>
+          <button class="ghost mini" data-act="status" data-id="${it.id}">↻ status</button>
+          <button class="ghost mini" data-act="del" data-id="${it.id}" style="color:var(--red)">usuń</button>
         </td>
       `;
       tr.querySelector('[data-act="status"]').onclick = async () => {
-        const nxt = prompt('Podaj nowy status: NOWE / W PRODUKCJI / WYSŁANE / ZWROT', it.status || "NOWE");
+        const nxt = prompt('Nowy status: ZAMÓWIENIE PRZYJĘTE / W PRODUKCJI / WYSŁANE / ZWROT', it.status || "ZAMÓWIENIE PRZYJĘTE");
         if (!nxt) return;
         await updateDoc(doc(db,"orderItems", it.id), { status:nxt, updatedAt: serverTimestamp() });
       };
       tr.querySelector('[data-act="del"]').onclick = async () => {
-        if (!confirm("Usunąć ten wiersz?")) return;
+        if (!confirm("Usunąć tę pozycję?")) return;
         await deleteDoc(doc(db,"orderItems", it.id));
       };
       tbody.appendChild(tr);
