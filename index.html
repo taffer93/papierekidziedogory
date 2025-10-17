@@ -145,7 +145,7 @@
           <tbody id="ordersTbody"></tbody>
         </table>
       </div>
-      <div class="hint">Jeśli pojawi się link “Create index”, kliknij – to indeks monthKey + date.</div>
+      <div class="hint">Jeśli pojawi się link “Create index”, kliknij – to indeks monthKey + date (ale nie powinien być konieczny).</div>
     </div>
 
     <!-- ADD ORDER TAB -->
@@ -251,14 +251,23 @@
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+  // Stabilne wersje SDK (10.12.2)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc,
-    getDocs, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp
-  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    getDocs, query, where, onSnapshot, serverTimestamp, Timestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // KONFIG
+  // Prosty “detektor” błędów – pokaże alert, jeśli coś z JS pójdzie nie tak
+  window.addEventListener('error', e => {
+    alert('Błąd skryptu: ' + (e.message || e.error?.message || 'unknown'));
+  });
+  window.addEventListener('unhandledrejection', e => {
+    alert('Błąd (promise): ' + (e.reason?.message || e.reason || 'unknown'));
+  });
+
+  // KONFIG (Twój projekt)
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -281,7 +290,7 @@
   const toMonthKey = (d)=>{ const dt=d instanceof Date?d:(d?.toDate?d.toDate():new Date(d)); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;};
   const statusClass = (s)=> s==="WYSŁANE"?"s-wys":s==="ZWROT"?"s-zw":s==="W PRODUKCJI"?"s-wpr":"s-new";
 
-  // Kompresja obrazu → dataURL (bez Storage)
+  // Kompresja obrazu → dataURL (miniatura w Firestore)
   async function fileToDataUrl(file, maxW=900, maxH=900, quality=0.82){
     return new Promise((resolve, reject)=>{
       const img = new Image();
@@ -297,7 +306,13 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, cw, ch);
         const dataUrl = canvas.toDataURL('image/jpeg', quality);
-        resolve(dataUrl);
+        // prosta ochrona przed >1MB (limit dokumentu)
+        if (dataUrl.length > 950000) {
+          const dataUrl2 = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(dataUrl2);
+        } else {
+          resolve(dataUrl);
+        }
       };
       img.onerror = reject;
       reader.readAsDataURL(file);
@@ -347,7 +362,7 @@
   // ----- Designs (CRUD) -----
   async function reloadDesigns(){
     designMap.clear();
-    const snap = await getDocs(query(collection(db,"designs"), orderBy("name")));
+    const snap = await getDocs(query(collection(db,"designs")));
     snap.forEach(d => designMap.set(d.id, { id:d.id, ...d.data() }));
     renderDesignsList();
     renderPickerGrid();
@@ -371,7 +386,7 @@
 
       // Edycja
       card.querySelector('[data-act="edit"]').onclick = () => openEdit(card, d);
-      // Usuwanie (tylko dokument – nie ma czego usuwać w Storage)
+      // Usuwanie
       card.querySelector('[data-act="del"]').onclick = async () => {
         if (!confirm("Usunąć wzór?")) return;
         await deleteDoc(doc(db,"designs", d.id));
@@ -570,7 +585,7 @@
     msg.textContent = "Zapisywanie…";
 
     try{
-      // Kompresja CUSTOM -> dataURL
+      // Kompresja CUSTOM -> dataURL (miniatura)
       const processed = await Promise.all(orderRows.map(async (r)=>{
         let previewUrl = r.previewUrl || null;
         if (r.customFile){
@@ -589,7 +604,7 @@
           size: r.size, color: r.color,
           designId: r.designId || (r.customFile ? "custom" : null),
           designText: r.designName || (r.designId ? designMap.get(r.designId)?.name : "") || "CUSTOM",
-          previewUrl: r.previewUrl || null, // tu jest dataURL (base64) lub link z katalogu
+          previewUrl: r.previewUrl || null,
           customer,
           note: r.note || "",
           priceGross: Number(r.price || 0),
@@ -614,19 +629,23 @@
     if (unsub){unsub();unsub=null;}
     const mk=$("monthPicker").value;
     const statusFilter=$("filterStatus").value;
-    const q1=query(collection(db,"orderItems"), where("monthKey","==",mk), orderBy("date","desc"));
+    const q1=query(collection(db,"orderItems"), where("monthKey","==",mk));
     unsub=onSnapshot(q1,(snap)=>{
-      const rows=[]; let sumC=0;
-      snap.forEach(docu=>{
-        const d=docu.data();
-        if (statusFilter!=="ALL" && d.status!==statusFilter) return;
-        sumC += (d.priceGross||0);
-        rows.push({id:docu.id, ...d});
+      const rows=[];
+      snap.forEach(docu=> rows.push({id:docu.id, ...docu.data()}));
+      // sortowanie po dacie malejąco po stronie klienta
+      rows.sort((a,b)=>{
+        const ta = (a.date?.toDate ? a.date.toDate().getTime() : new Date(a.date).getTime());
+        const tb = (b.date?.toDate ? b.date.toDate().getTime() : new Date(b.date).getTime());
+        return tb - ta;
       });
-      renderOrders(rows); $("sumCena").textContent=fmt2(sumC);
+      const filtered = statusFilter==="ALL" ? rows : rows.filter(d=>d.status===statusFilter);
+      let sumC = filtered.reduce((acc, d)=> acc + (d.priceGross||0), 0);
+      renderOrders(filtered);
+      $("sumCena").textContent=fmt2(sumC);
     },(err)=>{
       console.error(err);
-      alert("Błąd odczytu. Jeśli pojawił się link do indeksu – kliknij i utwórz indeks w Firestore.");
+      alert("Błąd odczytu: " + (err.message || err.code));
     });
   }
 
@@ -634,8 +653,7 @@
     const tbody=$("ordersTbody"); tbody.innerHTML="";
     for(const it of items){
       const tr=document.createElement("tr");
-      const dt = it.date?.toDate ? it.date.toDate() : new Date(it.date);
-      const dstr = `${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;
+      const dstr=fmtDatePLLong(it.date);
       tr.innerHTML=`
         <td>${dstr}</td>
         <td><span class="status ${statusClass(it.status)}">${it.status||"ZAMÓWIENIE PRZYJĘTE"}</span></td>
@@ -668,6 +686,16 @@
       tbody.appendChild(tr);
     }
   }
+
+  // Tabs
+  const tabsBtns = document.querySelectorAll("nav.tabs button");
+  const tabs = { orders: $("tab-orders"), add: $("tab-add"), designs: $("tab-designs") };
+  tabsBtns.forEach(btn => btn.addEventListener("click", () => {
+    tabsBtns.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    Object.values(tabs).forEach(el => el.style.display="none");
+    tabs[btn.dataset.tab].style.display = "";
+  }));
 </script>
 </body>
 </html>
