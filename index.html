@@ -6,41 +6,61 @@
   <title>Koszulki – panel</title>
   <style>
     :root {
-      --bg:#0b0f14; --card:#121820; --muted:#8aa0b6; --text:#e8f1ff; --accent:#4cc9f0;
-      --green:#2ec27e; --red:#ff6b6b; --amber:#f9a825; --blue:#64b5f6; --ready:#8ecae6;
+      /* jaśniejszy motyw */
+      --bg:#141c26;        /* było ciemniejsze */
+      --card:#1a2635;      /* jaśniejsze karty */
+      --muted:#9fb2c7;
+      --text:#f1f6ff;
+      --accent:#4cc9f0;
+
+      /* kolory statusów (jasne pasy jak w Excelu – na ciemnym tle delikatnie półprzezroczyste) */
+      --st-new:    rgba(176, 255, 189, .25);  /* ZAMÓWIENIE PRZYJĘTE – bardzo jasny zielony */
+      --st-prog:   rgba(255, 223, 112, .28);  /* W TRAKCIE REALIZACJI – żółty */
+      --st-ready:  rgba(190, 255, 220, .24);  /* GOTOWE DO WYSYŁKI – jasny zielony/miętowy */
+      --st-sent:   rgba(120, 230, 150, .28);  /* WYSŁANE – zielony */
+      --st-return: rgba(255, 120, 120, .30);  /* ZWROT – czerwony */
+
+      --line:#2d4056;      /* pionowe linie kolumn */
+      --row-alt:#ffffff07; /* delikatne naprzemienne tło */
     }
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
     header{padding:16px 20px;border-bottom:1px solid #243344;display:flex;justify-content:space-between;align-items:center;gap:10px}
     h1{font-size:18px;margin:0} .muted{color:var(--muted)}
     .wrap{max-width:1200px;margin:0 auto;padding:16px}
-    .card{background:var(--card);border:1px solid #1e2a39;border-radius:12px;padding:14px;margin-bottom:14px}
+    .card{background:var(--card);border:1px solid #203145;border-radius:12px;padding:14px;margin-bottom:14px}
     .row{display:flex;gap:10px;flex-wrap:wrap}
     .row.center{align-items:center}
     .col{flex:1 1 220px;min-width:220px}
-    input,select,button,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a4d;background:#0d131b;color:var(--text)}
+    input,select,button,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a4d;background:#0f1823;color:var(--text)}
     button{cursor:pointer;background:#19344b;border-color:#274d6a}
     button.primary{background:linear-gradient(180deg,#2a87b9,#1b5f86);border-color:#1b5f86;font-weight:600}
-    button.ghost{background:#0d131b;border-color:#2a3a4d}
+    button.ghost{background:#0f1823;border-color:#2a3a4d}
     .mini-btn{padding:6px 10px;border-radius:8px}
     nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0;flex-wrap:wrap}
     nav.tabs button{flex:0 0 auto;padding:8px 12px;border-radius:10px}
     nav.tabs button.active{outline:2px solid var(--accent)}
-    table{width:100%;border-collapse:collapse;font-size:14px}
-    th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left;vertical-align:middle}
-    tr:hover{background:#0e1620}
-    .status-pill{padding:3px 8px;border-radius:999px;font-weight:600;font-size:12px;display:inline-block}
-    .s-new{background:rgba(100,181,246,.15);color:var(--blue)}
-    .s-wpr{background:rgba(249,168,37,.15);color:var(--amber)}
-    .s-ready{background:rgba(142,202,230,.15);color:var(--ready)}
-    .s-wys{background:rgba(46,194,126,.15);color:var(--green)}
-    .s-zw{background:rgba(255,107,107,.15);color:var(--red)}
+    table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+    th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left;vertical-align:middle;border-right:1px solid var(--line)}
+    th:last-child, td:last-child{border-right:none}
+    th{background:#1d2a3a}
+    tr:hover td{filter:brightness(1.03)}
+    /* pionowe linie i naprzemienne, delikatne tła (niezależnie od statusu) */
+    tr.alt td{background:linear-gradient(var(--row-alt),var(--row-alt))}
+    /* kolor całego wiersza wg statusu (dominujące tło) */
+    tr.st-new td   { background:var(--st-new) }
+    tr.st-prog td  { background:var(--st-prog) }
+    tr.st-ready td { background:var(--st-ready) }
+    tr.st-sent td  { background:var(--st-sent) }
+    tr.st-ret td   { background:var(--st-return) }
+
     .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
     .right{margin-left:auto}
     .hint{font-size:12px;color:var(--muted)}
-    .pill{padding:6px 10px;border-radius:99px;background:#0d131b;border:1px solid #2a3a4d}
+    .pill{padding:6px 10px;border-radius:99px;background:#0f1823;border:1px solid #2a3a4d}
     .mini{font-size:12px}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-    .design-card{border:1px solid #2a3a4d;border-radius:12px;padding:10px;cursor:pointer;background:#0d131b;text-align:center}
+    .design-card{border:1px solid #2a3a4d;border-radius:12px;padding:10px;cursor:pointer;background:#0f1823;text-align:center}
     .design-card:hover{border-color:#3c5875}
     .design-card.selected{outline:2px solid var(--accent);background:#11202c}
     .design-img{width:100%;height:110px;object-fit:cover;border-radius:10px;border:1px solid #2a3a4d;background:#0b1118}
@@ -48,7 +68,7 @@
     .add-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
     .add-header .right{display:flex;gap:10px;margin-left:auto}
     .rows-wrap{overflow:auto}
-    .rows-table thead th{position:sticky;top:0;background:#16202b;z-index:1}
+    .rows-table thead th{position:sticky;top:0;background:#1d2a3a;z-index:1}
     .rows-table td .thumb{width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
     .rows-actions{display:flex;gap:6px}
     /* kompaktowa data */
@@ -59,7 +79,7 @@
     input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
     input[type=number]{ -moz-appearance:textfield;}
     /* input file – spójny wygląd */
-    input[type="file"]{padding:8px;background:#0d131b;border:1px solid #2a3a4d;color:var(--muted)}
+    input[type="file"]{padding:8px;background:#0f1823;border:1px solid #2a3a4d;color:var(--muted)}
     input[type="file"]::file-selector-button{
       margin-right:10px;border:1px solid #274d6a;background:#19344b;color:var(--text);
       padding:6px 10px;border-radius:8px;cursor:pointer
@@ -70,15 +90,14 @@
     .colorTag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4d;border-radius:999px;padding:2px 8px}
     .dot{width:12px;height:12px;border-radius:50%;border:1px solid #2a3a4d;background:#fff}
     .dot.black{background:#000}
-    /* grupowanie zamówień w tabeli */
-    tr.grp0 td{background:#0e1620}
-    tr.grp1 td{background:#0f1a24}
+
     /* modal wyboru wzoru */
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
-    .modal .panel{background:var(--card);border:1px solid #1e2a39;border-radius:12px;width:min(900px,92vw);max-height:85vh;padding:14px;display:flex;flex-direction:column}
+    .modal .panel{background:var(--card);border:1px solid #203145;border-radius:12px;width:min(900px,92vw);max-height:85vh;padding:14px;display:flex;flex-direction:column}
     .modal .panel .head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
     .modal .panel .head .right{margin-left:auto}
-    .danger{color:var(--red)}
+    .danger{color:#ff6b6b}
+    .neg{color:#ff9e9e}
   </style>
 </head>
 <body>
@@ -118,7 +137,10 @@
       <div class="toolbar">
         <div>
           <label class="mini">Miesiąc</label>
-          <input id="monthPicker" type="month" />
+          <div class="row center" style="gap:6px">
+            <select id="ordersMonth" class="month" style="max-width:160px"></select>
+            <select id="ordersYear" style="max-width:120px"></select>
+          </div>
         </div>
         <div>
           <label class="mini">Status</label>
@@ -146,14 +168,13 @@
               <th>Zamawiający</th>
               <th>Uwagi</th>
               <th>Cena (łącznie)</th>
-              <th>ID zamówienia</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="ordersTbody"></tbody>
         </table>
       </div>
-      <div class="hint">Po zmianie statusu w rozwijanym menu – aktualizowane są wszystkie pozycje w danym zamówieniu.</div>
+      <div class="hint">Zmiana statusu aktualizuje całe zamówienie (wszystkie pozycje w grupie). “ZWROT” odejmuje kwotę od sumy.</div>
     </div>
 
     <!-- ADD ORDER TAB -->
@@ -182,7 +203,7 @@
             </div>
             <div class="col" style="min-width:auto;flex:0 0 auto">
               <label class="mini">Rok</label>
-              <input id="addYear" class="small" type="number" min="2020" max="2100" />
+              <select id="addYear" class="small"></select>
             </div>
           </div>
 
@@ -193,10 +214,6 @@
           <div class="col">
             <label class="mini">Cena łączna zamówienia (PLN)</label>
             <input id="orderTotalPrice" type="number" step="0.01" placeholder="np. 210" />
-          </div>
-          <div class="col">
-            <label class="mini">ID zamówienia (opcjonalnie)</label>
-            <input id="orderGroupId" type="text" placeholder="np. 2025-10-03-iva766 (puste = automatycznie)" />
           </div>
         </div>
       </div>
@@ -262,7 +279,7 @@
 </div>
 
 <script type="module">
-  // Stabilne SDK (10.12.2)
+  /* Firebase SDK – stabilne wersje */
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
@@ -270,11 +287,11 @@
     getDocs, query, where, onSnapshot, serverTimestamp, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // Detektor błędów JS (ułatwia diagnozę)
+  /* mini detektor błędów */
   window.addEventListener('error', e => alert('Błąd skryptu: ' + (e.message || e.error?.message || 'unknown')));
   window.addEventListener('unhandledrejection', e => alert('Błąd (promise): ' + (e.reason?.message || e.reason || 'unknown')));
 
-  // KONFIG – Twój projekt
+  /* KONFIG – Twój projekt */
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -287,18 +304,25 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Helpers
+  /* helpers */
   const $ = (id) => document.getElementById(id);
   const esc = (s)=> (s||"").replace(/</g,"&lt;");
   const fmt2 = (n) => (Number(n || 0)).toFixed(2);
   const monthsPL = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
   const monthsPLGen = ["stycznia","lutego","marca","kwietnia","maja","czerwca","lipca","sierpnia","września","października","listopada","grudnia"];
   const fmtDatePLLong = (d)=>{ const dt=d instanceof Date?d:(d?.toDate?d.toDate():new Date(d)); return `${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;};
-  const toMonthKey = (d)=>{ const dt=d instanceof Date?d:(d?.toDate?d.toDate():new Date(d)); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;};
+  const toMonthKeyFromParts = (y,mIndex)=> `${y}-${String(mIndex+1).padStart(2,"0")}`;
   const STATUSES = ["ZAMÓWIENIE PRZYJĘTE","W TRAKCIE REALIZACJI","GOTOWE DO WYSYŁKI","WYSŁANE","ZWROT"];
-  const statusClass = (s)=> s==="WYSŁANE"?"s-wys":s==="ZWROT"?"s-zw":s==="W TRAKCIE REALIZACJI"?"s-wpr":s==="GOTOWE DO WYSYŁKI"?"s-ready":"s-new";
 
-  // Kompresja obrazu → dataURL (miniatura w Firestore)
+  function statusRowClass(s){
+    if (s==="ZWROT") return "st-ret";
+    if (s==="WYSŁANE") return "st-sent";
+    if (s==="GOTOWE DO WYSYŁKI") return "st-ready";
+    if (s==="W TRAKCIE REALIZACJI") return "st-prog";
+    return "st-new";
+  }
+
+  /* kompresja obrazu do podglądu */
   async function fileToDataUrl(file, maxW=900, maxH=900, quality=0.82){
     return new Promise((resolve, reject)=>{
       const img = new Image();
@@ -322,7 +346,7 @@
     });
   }
 
-  // Auth UI
+  /* Auth */
   const loginCard=$("loginCard"), appWrap=$("app"), userEmail=$("userEmail"), loginBtn=$("loginBtn"), logoutBtn=$("logoutBtn"), loginMsg=$("loginMsg");
   loginBtn.onclick = async () => { loginMsg.textContent = "Logowanie…"; try{ await signInWithEmailAndPassword(auth, $("email").value, $("password").value); loginMsg.textContent=""; }catch(e){ loginMsg.textContent="Błąd: "+(e.message||e.code); } };
   logoutBtn.onclick = () => signOut(auth);
@@ -331,26 +355,33 @@
     else { loginCard.style.display=""; appWrap.style.display="none"; userEmail.textContent=""; logoutBtn.style.display="none"; }
   });
 
-  // Designs cache + order state
+  /* Designs + Order state */
   const designMap = new Map();
   let orderRows = [];
   let pickerRowIndex = null;
 
   async function initAppAfterLogin(){
-    // miesiąc w tabeli
+    // miesiąc/rok – selecty
     const now = new Date();
-    $("monthPicker").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
-    // data w formularzu
-    $("addDay").value = now.getDate();
-    $("addMonth").innerHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
+    const om=$("ordersMonth"), oy=$("ordersYear");
+    om.innerHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
+    oy.innerHTML = Array.from({length:9},(_,k)=>now.getFullYear()-4+k)
+      .map(y=>`<option ${y===now.getFullYear()?"selected":""}>${y}</option>`).join("");
+    om.value = String(now.getMonth());
+
+    // w formularzu dodawania – te same selecty
+    $("addMonth").innerHTML = om.innerHTML;
+    $("addYear").innerHTML = oy.innerHTML;
+    $("addYear").value = String(now.getFullYear());
     $("addMonth").value = String(now.getMonth());
-    $("addYear").value = now.getFullYear();
+    $("addDay").value = now.getDate();
 
     await reloadDesigns();
     subscribeMonth();
 
     // Listeners
-    $("monthPicker").addEventListener("change", subscribeMonth);
+    om.addEventListener("change", subscribeMonth);
+    oy.addEventListener("change", subscribeMonth);
     $("filterStatus").addEventListener("change", subscribeMonth);
     $("addDesignBtn").addEventListener("click", onAddDesign);
     $("addRowBtn").addEventListener("click", ()=>addRow());
@@ -362,7 +393,7 @@
     addRow(); // jedna pozycja startowo
   }
 
-  // ----- Designs (CRUD) -----
+  /* Designs (CRUD) */
   async function reloadDesigns(){
     designMap.clear();
     const snap = await getDocs(query(collection(db,"designs")));
@@ -378,7 +409,7 @@
       const card = document.createElement("div");
       card.className = "design-card";
       card.innerHTML = `
-        ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#5a6c81">brak podglądu</div>`}
+        ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`}
         <div class="design-name">${esc(d.name)}</div>
         <div class="row center" style="margin-top:8px">
           <button class="ghost mini-btn" data-act="edit">Edytuj</button>
@@ -436,9 +467,7 @@
     try{
       let previewUrl=null;
       if (file){ previewUrl = await fileToDataUrl(file); }
-      await setDoc(doc(db,"designs", id), {
-        name, active:true, previewUrl, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
-      }, { merge:true });
+      await setDoc(doc(db,"designs", id), { name, active:true, previewUrl, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge:true });
       $("designName").value=""; $("designFile").value="";
       out.textContent="Dodano wzór ✅";
       await reloadDesigns();
@@ -446,7 +475,7 @@
     }catch(e){ out.textContent="Błąd: " + (e.message||e.code); }
   }
 
-  // ----- Picker (modal) -----
+  /* Picker (modal) */
   function openPicker(forRowIndex){
     pickerRowIndex = forRowIndex;
     $("pickerCustomFile").value="";
@@ -468,7 +497,7 @@
       const card = document.createElement("div");
       card.className = "design-card";
       card.innerHTML = `
-        ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#5a6c81">brak podglądu</div>`}
+        ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`}
         <div class="design-name">${esc(d.name)}</div>
       `;
       card.onclick = () => {
@@ -494,7 +523,7 @@
     closePicker();
   });
 
-  // ----- Order builder (rows) -----
+  /* Order builder (rows) */
   function defaultRow(){
     return { size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null };
   }
@@ -508,7 +537,7 @@
       tr.innerHTML = `
         <td>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            ${r.previewUrl?`<img class="thumb" src="${r.previewUrl}" alt="">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#5a6c81">?</div>`}
+            ${r.previewUrl?`<img class="thumb" src="${r.previewUrl}" alt="">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#6d8096">?</div>`}
             <div style="min-width:180px"><b>${esc(r.designName||"Nie wybrano")}</b></div>
             <div class="rows-actions">
               <button class="ghost mini-btn" data-act="pick">Wybierz wzór</button>
@@ -555,12 +584,11 @@
     orderRows = [];
     addRow();
     $("orderCustomer").value = "";
-    $("orderGroupId").value = "";
     $("orderTotalPrice").value = "";
     $("saveMsg").textContent = "";
   }
 
-  function buildDateFromInputs(){
+  function buildDateFromAddForm(){
     const d=Number($("addDay").value||1);
     const m=Number($("addMonth").value||0);
     const y=Number($("addYear").value||new Date().getFullYear());
@@ -582,14 +610,13 @@
     const total = Number($("orderTotalPrice").value || 0);
     if (!total){ msg.textContent="Podaj cenę łączną zamówienia."; return; }
 
-    const date = buildDateFromInputs();
-    const groupId = $("orderGroupId").value.trim() || genGroupId(date, $("orderCustomer").value.trim());
+    const date = buildDateFromAddForm();
     const customer = $("orderCustomer").value.trim();
-
+    const groupId = genGroupId(date, customer);
     msg.textContent = "Zapisywanie…";
 
     try{
-      // Kompresja CUSTOM -> dataURL (miniatury)
+      // kompresja podglądów
       const processed = await Promise.all(orderRows.map(async (r)=>{
         let previewUrl = r.previewUrl || null;
         if (r.customFile) previewUrl = await fileToDataUrl(r.customFile);
@@ -597,11 +624,12 @@
         return { ...r, previewUrl };
       }));
 
-      // zapis wszystkich pozycji; cena łączna zapisywana w polu orderTotalGross w każdej pozycji
       for (const r of processed){
         const payload = {
           date: Timestamp.fromDate(date),
-          monthKey: toMonthKey(date),
+          monthKey: toMonthKeyFromParts(date.getFullYear(), date.getMonth()),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
           status: "ZAMÓWIENIE PRZYJĘTE",
           size: r.size, color: r.color,
           designId: r.designId || (r.customFile ? "custom" : null),
@@ -609,11 +637,9 @@
           previewUrl: r.previewUrl || null,
           customer,
           note: r.note || "",
-          orderTotalGross: total,      // cena łączna zamówienia
-          priceGross: 0,               // dla kompatybilności – nie używamy
-          orderGroupId: groupId,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
+          orderTotalGross: total,   // łączna kwota grupy
+          priceGross: 0,            // nieużywane przy grupach
+          orderGroupId: groupId
         };
         await addDoc(collection(db,"orderItems"), payload);
       }
@@ -626,34 +652,41 @@
     setTimeout(()=> msg.textContent="", 2000);
   }
 
-  // ----- Lista miesięczna (grupowanie po orderGroupId) -----
+  /* Lista miesięczna (grupowanie po orderGroupId, sort wg stworzenia – najnowsze na górze) */
   let unsub=null;
   function subscribeMonth(){
     if (unsub){unsub();unsub=null;}
-    const mk=$("monthPicker").value;
+    const mIdx = Number($("ordersMonth").value);
+    const yVal = Number($("ordersYear").value);
+    const mk = toMonthKeyFromParts(yVal, mIdx);
+
     const q1=query(collection(db,"orderItems"), where("monthKey","==",mk));
     unsub=onSnapshot(q1,(snap)=>{
-      const docs=[]; snap.forEach(docu=> docs.push({id:docu.id, ...docu.data()}));
-      // sortuj malejąco po dacie
-      docs.sort((a,b)=>{
-        const ta = (a.date?.toDate ? a.date.toDate().getTime() : new Date(a.date).getTime());
-        const tb = (b.date?.toDate ? b.date.toDate().getTime() : new Date(b.date).getTime());
-        return tb - ta;
-      });
-      // grupuj
+      const docs=[]; snap.forEach(d=> docs.push({id:d.id, ...d.data()}));
+
+      // grupuj po orderGroupId
       const groups = new Map();
       for (const d of docs){
         const gid = d.orderGroupId || d.id;
-        if (!groups.has(gid)) groups.set(gid, { id:gid, items:[], date:d.date, customer:d.customer||"", status:d.status||"ZAMÓWIENIE PRZYJĘTE", total: Number(d.orderTotalGross||0) });
+        if (!groups.has(gid)) groups.set(gid, {
+          id:gid, items:[], date:d.date, customer:d.customer||"",
+          status:d.status||"ZAMÓWIENIE PRZYJĘTE", total:Number(d.orderTotalGross||0),
+          createdMax: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : Date.now()
+        });
         const g = groups.get(gid);
         g.items.push(d);
-        // jeśli któryś dokument ma inną cenę/ status – bierzemy pierwszą/ostatnią (spójność)
         if (d.orderTotalGross!=null) g.total = Number(d.orderTotalGross);
         if (d.status) g.status = d.status;
         if (d.customer) g.customer = d.customer;
         if (d.date) g.date = d.date;
+        const ct = d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0;
+        if (ct && ct > g.createdMax) g.createdMax = ct;
       }
-      renderOrdersGrouped(Array.from(groups.values()));
+
+      // sort – najnowsze na górze
+      const arr = Array.from(groups.values()).sort((a,b)=> b.createdMax - a.createdMax);
+
+      renderOrdersGrouped(arr);
     },(err)=>{
       console.error(err);
       alert("Błąd odczytu: " + (err.message || err.code));
@@ -677,25 +710,25 @@
 
   function renderOrdersGrouped(groups){
     const statusFilter = $("filterStatus").value;
-    // filtr po statusie na poziomie grupy
     const filtered = statusFilter==="ALL" ? groups : groups.filter(g => (g.status||"ZAMÓWIENIE PRZYJĘTE")===statusFilter);
 
-    // suma miesięczna = suma łącznych cen grup
-    const sum = filtered.reduce((acc,g)=> acc + (Number(g.total)||0), 0);
+    // suma miesięczna (ZWROT odejmujemy)
+    const sum = filtered.reduce((acc,g)=> acc + (g.status==="ZWROT" ? -Number(g.total||0) : Number(g.total||0)), 0);
     $("sumCena").textContent = fmt2(sum);
 
     const tbody = $("ordersTbody"); tbody.innerHTML="";
-    let alt = 0;
-
-    for (const g of filtered){
-      // posortuj pozycje w grupie stabilnie (np. po rozmiarze)
+    filtered.forEach((g, gi)=>{
+      // sort pozycji w grupie (np. po rozmiarze)
       g.items.sort((a,b)=> (a.size||"").localeCompare(b.size||"") );
+      const rowClass = statusRowClass(g.status);
+      const altClass = gi % 2 ? "alt" : "";
 
       g.items.forEach((it, idx)=>{
         const tr = document.createElement("tr");
-        tr.className = "grp" + (alt % 2);
+        tr.className = `${rowClass} ${altClass}`;
         const dstr=fmtDatePLLong(g.date);
-        // status select (zmienia cały group)
+
+        // select statusu – działa dla całej grupy
         const sel = document.createElement("select");
         sel.innerHTML = STATUSES.map(s=>`<option ${s===(g.status||"ZAMÓWIENIE PRZYJĘTE")?"selected":""}>${s}</option>`).join("");
         sel.onchange = async (e)=>{
@@ -724,8 +757,7 @@
           </td>
           <td>${esc(g.customer||"")}</td>
           <td>${esc(it.note||"")}</td>
-          <td>${idx===0?fmt2(g.total)+" zł":"—"}</td>
-          <td>${idx===0?g.id:""}</td>
+          <td>${idx===0?(g.status==="ZWROT"?`<span class="neg">- ${fmt2(g.total)} zł</span>`:`${fmt2(g.total)} zł`):"—"}</td>
           <td>
             ${idx===0?`<button class="ghost mini danger" data-del="${g.id}">usuń</button>`:""}
           </td>
@@ -737,12 +769,10 @@
         }
         tbody.appendChild(tr);
       });
-
-      alt++;
-    }
+    });
   }
 
-  // Tabs
+  /* Tabs */
   const tabsBtns = document.querySelectorAll("nav.tabs button");
   const tabs = { orders: $("tab-orders"), add: $("tab-add"), designs: $("tab-designs") };
   tabsBtns.forEach(btn => btn.addEventListener("click", () => {
