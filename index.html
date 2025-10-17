@@ -15,16 +15,18 @@
     .wrap{max-width:1200px;margin:0 auto;padding:16px}
     .card{background:var(--card);border:1px solid #1e2a39;border-radius:12px;padding:14px;margin-bottom:14px}
     .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row.center{align-items:center}
     .col{flex:1 1 220px;min-width:220px}
     input,select,button,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a4d;background:#0d131b;color:var(--text)}
     button{cursor:pointer;background:#19344b;border-color:#274d6a}
     button.primary{background:linear-gradient(180deg,#2a87b9,#1b5f86);border-color:#1b5f86;font-weight:600}
     button.ghost{background:#0d131b;border-color:#2a3a4d}
+    .mini-btn{padding:6px 10px;border-radius:8px}
     nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0;flex-wrap:wrap}
     nav.tabs button{flex:0 0 auto;padding:8px 12px;border-radius:10px}
     nav.tabs button.active{outline:2px solid var(--accent)}
     table{width:100%;border-collapse:collapse;font-size:14px}
-    th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left}
+    th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left;vertical-align:middle}
     tr:hover{background:#0e1620}
     .status{padding:3px 8px;border-radius:999px;font-weight:600;font-size:12px;display:inline-block}
     .s-new{background:rgba(100,181,246,.15);color:var(--blue)}
@@ -44,18 +46,33 @@
     .design-name{margin-top:8px;font-weight:600}
     .add-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
     .add-header .right{display:flex;gap:10px;margin-left:auto}
-    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    @media (max-width:800px){.two-col{grid-template-columns:1fr}}
+    .two-col{display:grid;grid-template-columns:1fr;gap:10px}
+    .rows-wrap{overflow:auto}
+    .rows-table thead th{position:sticky;top:0;background:#16202b;z-index:1}
+    .rows-table td .thumb{width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
+    .rows-actions{display:flex;gap:6px}
     /* kompaktowa data */
     .date-compact{display:flex;gap:8px;align-items:center}
-    .date-compact .small{max-width:100px;padding:8px}
+    .date-compact .small{max-width:90px;padding:8px}
     .date-compact .month{max-width:140px;padding:8px}
     input[type=number]::-webkit-outer-spin-button,
-    input[type=number]::-webkit-inner-spin-button{ -webkit-appearance: none; margin: 0;}
+    input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
     input[type=number]{ -moz-appearance:textfield;}
-    /* wzór w tabeli */
+    /* input file – spójny wygląd i wysokość */
+    input[type="file"]{padding:8px;background:#0d131b;border:1px solid #2a3a4d;color:var(--muted)}
+    input[type="file"]::file-selector-button{
+      margin-right:10px;border:1px solid #274d6a;background:#19344b;color:var(--text);
+      padding:6px 10px;border-radius:8px;cursor:pointer
+    }
+    /* wzór w liście zamówień */
     .designCell{display:flex;align-items:center;gap:8px}
     .designThumb{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
+    /* modal wyboru wzoru */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
+    .modal .panel{background:var(--card);border:1px solid #1e2a39;border-radius:12px;width:min(900px,92vw);max-height:85vh;padding:14px;display:flex;flex-direction:column}
+    .modal .panel .head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+    .modal .panel .head .right{margin-left:auto}
+    .danger{color:var(--red)}
   </style>
 </head>
 <body>
@@ -72,11 +89,11 @@
   <!-- LOGIN -->
   <div id="loginCard" class="card" style="max-width:460px;">
     <h3>Zaloguj się</h3>
-    <div class="row">
+    <div class="row center">
       <div class="col"><input id="email" type="email" placeholder="Email" /></div>
       <div class="col"><input id="password" type="password" placeholder="Hasło" /></div>
     </div>
-    <div class="row">
+    <div class="row center">
       <div class="col"><button id="loginBtn" class="primary">Zaloguj</button></div>
       <div class="col"><div id="loginMsg" class="hint"></div></div>
     </div>
@@ -86,7 +103,7 @@
   <div id="app" style="display:none">
     <nav class="tabs">
       <button data-tab="orders" class="active">Zamówienia (miesiąc)</button>
-      <button data-tab="add">Dodaj pozycję</button>
+      <button data-tab="add">Dodaj zamówienie</button>
       <button data-tab="designs">Wzory</button>
     </nav>
 
@@ -132,22 +149,22 @@
       <div class="hint">Jeśli pojawi się link “Create index”, kliknij – to indeks monthKey + date.</div>
     </div>
 
-    <!-- ADD TAB -->
+    <!-- ADD ORDER TAB -->
     <div id="tab-add" class="card" style="display:none">
       <div class="add-header">
-        <h3 style="margin:0">Dodaj pozycję</h3>
+        <h3 style="margin:0">Dodaj zamówienie</h3>
         <div class="right">
-          <button id="clearBtn" class="ghost">Wyczyść</button>
-          <button id="saveItemBtn" class="primary">Zapisz</button>
+          <button id="addRowBtn" class="ghost">+ Dodaj pozycję</button>
+          <button id="clearOrderBtn" class="ghost">Wyczyść</button>
+          <button id="saveOrderBtn" class="primary">Zapisz wszystkie pozycje</button>
         </div>
       </div>
 
-      <div class="two-col">
-        <!-- LEWA: DANE -->
-        <div class="card" style="margin:0">
-          <h4 style="margin:0 0 8px 0">Dane pozycji</h4>
-
-          <div class="date-compact" style="margin-bottom:10px">
+      <!-- Dane wspólne zamówienia -->
+      <div class="card" style="margin:0 0 10px 0">
+        <h4 style="margin:0 0 8px 0">Dane zamówienia</h4>
+        <div class="row center">
+          <div class="date-compact">
             <div class="col" style="min-width:auto;flex:0 0 auto">
               <label class="mini">Dzień</label>
               <input id="addDay" class="small" type="number" min="1" max="31" />
@@ -162,54 +179,34 @@
             </div>
           </div>
 
-          <div class="row">
-            <div class="col">
-              <label class="mini">Rozmiar</label>
-              <select id="addSize">
-                <option>S</option><option>M</option><option>L</option>
-                <option>XL</option><option>XXL</option><option>3XL</option>
-              </select>
-            </div>
-            <div class="col">
-              <label class="mini">Kolor</label>
-              <select id="addColor"><option>BIAŁA</option><option>CZARNA</option></select>
-            </div>
-            <div class="col">
-              <label class="mini">Cena (brutto, PLN)</label>
-              <input id="addPrice" type="number" step="0.01" placeholder="np. 70" />
-            </div>
+          <div class="col">
+            <label class="mini">Zamawiaj��cy (login/imię)</label>
+            <input id="orderCustomer" type="text" />
           </div>
-
-          <div class="row">
-            <div class="col">
-              <label class="mini">Zamawiający (login/imię)</label>
-              <input id="addCustomer" type="text" />
-            </div>
-            <div class="col">
-              <label class="mini">Uwagi</label>
-              <input id="addNote" type="text" placeholder="np. mały druk na środku" />
-            </div>
-            <div class="col">
-              <label class="mini">ID zamówienia (grupowanie pozycji)</label>
-              <input id="addOrderGroup" type="text" placeholder="np. 2025-10-03-iva766" />
-            </div>
+          <div class="col">
+            <label class="mini">ID zamówienia (opcjonalnie)</label>
+            <input id="orderGroupId" type="text" placeholder="np. 2025-10-03-iva766 (puste = automatycznie)" />
           </div>
-
-          <div class="hint">Po zapisaniu status = “ZAMÓWIENIE PRZYJĘTE”. Zmienisz go później na liście.</div>
         </div>
+      </div>
 
-        <!-- PRAWA: WZÓR -->
-        <div class="card" style="margin:0">
-          <h4 style="margin:0 0 8px 0">Wybierz wzór lub dodaj CUSTOM</h4>
-          <div class="row">
-            <div class="col"><input id="designSearch" placeholder="Szukaj wzoru po nazwie..." /></div>
-            <div class="col">
-              <label class="mini">Własna grafika (CUSTOM) – podgląd</label>
-              <input id="customFile" type="file" accept="image/*,.svg,.pdf" />
-            </div>
-          </div>
-          <div id="designGridAdd" class="grid" style="margin-top:10px"></div>
-          <div class="hint">Kliknij kafelek, żeby wybrać wzór. Jeśli wgrasz plik CUSTOM – to on zostanie użyty.</div>
+      <!-- Pozycje -->
+      <div class="card" style="margin:0">
+        <h4 style="margin:0 0 8px 0">Pozycje</h4>
+        <div class="rows-wrap">
+          <table class="rows-table" style="width:100%">
+            <thead>
+              <tr>
+                <th style="width:30%">Wzór</th>
+                <th style="width:10%">Rozmiar</th>
+                <th style="width:10%">Kolor</th>
+                <th style="width:15%">Cena (PLN)</th>
+                <th>Uwagi</th>
+                <th style="width:120px"></th>
+              </tr>
+            </thead>
+            <tbody id="rowsTbody"></tbody>
+          </table>
         </div>
       </div>
 
@@ -218,15 +215,39 @@
 
     <!-- DESIGNS TAB -->
     <div id="tab-designs" class="card" style="display:none">
-      <h3>Wzory (tekst + podgląd)</h3>
-      <div class="row">
+      <h3>Wzory (z podglądem)</h3>
+
+      <div class="row center">
         <div class="col"><input id="designName" placeholder="Nazwa wzoru, np. kitty red bull blue" /></div>
         <div class="col"><input id="designFile" type="file" accept="image/*,.svg,.pdf" /></div>
         <div class="col" style="max-width:220px"><button id="addDesignBtn" class="primary">Dodaj wzór</button></div>
       </div>
+      <div id="designMsg" class="hint" style="margin:6px 0 10px 0"></div>
+
       <div id="designsList" class="grid" style="margin-top:10px"></div>
-      <div class="hint">Miniatura jest tylko podglądem (np. PNG/JPG/SVG). Wzór usuniesz przyciskiem na kafelku.</div>
+      <div class="hint">Klik “Edytuj” pozwala zmienić nazwę i/lub podmienić miniaturę. “Usuń” usuwa wzór (podgląd też jest usuwany).</div>
     </div>
+  </div>
+</div>
+
+<!-- MODAL – wybór wzoru do pozycji -->
+<div id="designPicker" class="modal">
+  <div class="panel">
+    <div class="head">
+      <strong>Wybierz wzór</strong>
+      <div class="right">
+        <button id="pickerClose" class="ghost mini-btn">Zamknij</button>
+      </div>
+    </div>
+    <div class="row center">
+      <div class="col"><input id="pickerSearch" placeholder="Szukaj wzoru po nazwie..." /></div>
+      <div class="col">
+        <label class="mini">Albo wgraj CUSTOM dla tej pozycji</label>
+        <input id="pickerCustomFile" type="file" accept="image/*,.svg,.pdf" />
+      </div>
+    </div>
+    <div id="pickerGrid" class="grid" style="margin-top:10px"></div>
+    <div class="hint">Kliknij kafelek, aby przypisać wzór do tej pozycji. Wgranie pliku ustawi tę pozycję jako CUSTOM.</div>
   </div>
 </div>
 
@@ -260,33 +281,17 @@
 
   // Helpers
   const $ = (id) => document.getElementById(id);
+  const esc = (s)=> (s||"").replace(/</g,"&lt;");
   const fmt2 = (n) => (Number(n || 0)).toFixed(2);
   const monthsPL = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
   const monthsPLGen = ["stycznia","lutego","marca","kwietnia","maja","czerwca","lipca","sierpnia","września","października","listopada","grudnia"];
   const fmtDatePLLong = (d)=>{ const dt=d instanceof Date?d:(d?.toDate?d.toDate():new Date(d)); return `${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;};
   const toMonthKey = (d)=>{ const dt=d instanceof Date?d:(d?.toDate?d.toDate():new Date(d)); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;};
   const statusClass = (s)=> s==="WYSŁANE"?"s-wys":s==="ZWROT"?"s-zw":s==="W PRODUKCJI"?"s-wpr":"s-new";
-  const esc = (s)=> (s||"").replace(/</g,"&lt;");
 
-  // UI refs
+  // Auth UI
   const loginCard=$("loginCard"), appWrap=$("app"), userEmail=$("userEmail"), loginBtn=$("loginBtn"), logoutBtn=$("logoutBtn"), loginMsg=$("loginMsg");
-
-  // Tabs
-  const tabsBtns = document.querySelectorAll("nav.tabs button");
-  const tabs = { orders:$("tab-orders"), add:$("tab-add"), designs:$("tab-designs") };
-  tabsBtns.forEach(btn=>btn.addEventListener("click",()=>{
-    tabsBtns.forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    Object.values(tabs).forEach(el=>el.style.display="none");
-    tabs[btn.dataset.tab].style.display="";
-  }));
-
-  // Auth
-  loginBtn.onclick = async () => {
-    loginMsg.textContent = "Logowanie…";
-    try { await signInWithEmailAndPassword(auth, $("email").value, $("password").value); loginMsg.textContent=""; }
-    catch(e){ loginMsg.textContent = "Błąd logowania: " + (e.message || e.code); }
-  };
+  loginBtn.onclick = async () => { loginMsg.textContent = "Logowanie…"; try{ await signInWithEmailAndPassword(auth, $("email").value, $("password").value); loginMsg.textContent=""; }catch(e){ loginMsg.textContent="Błąd: "+(e.message||e.code); } };
   logoutBtn.onclick = () => signOut(auth);
 
   onAuthStateChanged(auth, (u) => {
@@ -294,34 +299,258 @@
     else { loginCard.style.display=""; appWrap.style.display="none"; userEmail.textContent=""; logoutBtn.style.display="none"; }
   });
 
-  // State for ADD
-  let selectedDesignId = null;
-  let selectedDesignName = "";
-  let selectedDesignPreview = "";
+  // Designs cache
   const designMap = new Map();
 
-  // After login – initial load
-  async function initAppAfterLogin() {
+  // Order builder state
+  let orderRows = [];
+  let pickerRowIndex = null;
+
+  // After login – init
+  async function initAppAfterLogin(){
+    // miesiąc w tabeli
     const now = new Date();
     $("monthPicker").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
-
+    // data w formularzu
     $("addDay").value = now.getDate();
     $("addMonth").innerHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
     $("addMonth").value = String(now.getMonth());
     $("addYear").value = now.getFullYear();
 
-    await loadDesignsList();       // karta "Wzory"
-    await loadDesignsGridForAdd(); // kafelki do wyboru
-
+    await reloadDesigns(); // ładuje mapę, listę i picker
     subscribeMonth();
 
+    // Listeners
     $("monthPicker").addEventListener("change", subscribeMonth);
     $("filterStatus").addEventListener("change", subscribeMonth);
+    $("addDesignBtn").addEventListener("click", onAddDesign);
+    $("addRowBtn").addEventListener("click", ()=>addRow());
+    $("clearOrderBtn").addEventListener("click", clearOrderForm);
+    $("saveOrderBtn").addEventListener("click", saveOrder);
+    $("pickerClose").addEventListener("click", closePicker);
+    $("pickerSearch").addEventListener("input", renderPickerGrid);
 
-    $("saveItemBtn").addEventListener("click", saveItem);
-    $("clearBtn").addEventListener("click", clearAddForm);
-    $("addDesignBtn").addEventListener("click", addDesign);
-    $("designSearch").addEventListener("input", loadDesignsGridForAdd);
+    // inicjalna jedna pozycja
+    addRow();
+  }
+
+  // ----- Designs (CRUD) -----
+  async function reloadDesigns(){
+    designMap.clear();
+    const snap = await getDocs(query(collection(db,"designs"), orderBy("name")));
+    snap.forEach(d => designMap.set(d.id, { id:d.id, ...d.data() }));
+    renderDesignsList();
+    renderPickerGrid();
+  }
+
+  function renderDesignsList(){
+    const box = $("designsList");
+    box.innerHTML = "";
+    for (const d of Array.from(designMap.values()).sort((a,b)=>a.name.localeCompare(b.name,"pl"))){
+      const card = document.createElement("div");
+      card.className = "design-card";
+      card.innerHTML = `
+        ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#5a6c81">brak podglądu</div>`}
+        <div class="design-name">${esc(d.name)}</div>
+        <div class="row center" style="margin-top:8px">
+          <button class="ghost mini-btn" data-act="edit">Edytuj</button>
+          <button class="ghost mini-btn danger" data-act="del">Usuń</button>
+        </div>
+      `;
+      box.appendChild(card);
+
+      // Edycja
+      card.querySelector('[data-act="edit"]').onclick = () => openEdit(card, d);
+      // Usuwanie
+      card.querySelector('[data-act="del"]').onclick = async () => {
+        if (!confirm("Usunąć wzór?")) return;
+        try {
+          if (d.previewPath) { try { await deleteObject(sRef(storage, d.previewPath)); } catch(e){/* ignore */} }
+          await deleteDoc(doc(db,"designs", d.id));
+          $("designMsg").textContent = "Usunięto wzór.";
+          await reloadDesigns();
+        } catch(e){ $("designMsg").textContent = "Błąd: " + (e.message||e.code); }
+        setTimeout(()=>$("designMsg").textContent="",1500);
+      };
+    }
+  }
+
+  function openEdit(card, d){
+    card.innerHTML = `
+      <div class="row center">
+        <div class="col"><input value="${esc(d.name)}" data-role="name"/></div>
+        <div class="col"><input type="file" accept="image/*,.svg,.pdf" data-role="file"/></div>
+      </div>
+      <div class="row center" style="margin-top:8px">
+        <button class="primary mini-btn" data-act="save">Zapisz</button>
+        <button class="ghost mini-btn" data-act="cancel">Anuluj</button>
+      </div>
+      <div class="hint mini" data-role="msg"></div>
+    `;
+    card.querySelector('[data-act="cancel"]').onclick = renderDesignsList;
+    card.querySelector('[data-act="save"]').onclick = async () => {
+      const name = card.querySelector('[data-role="name"]').value.trim();
+      const file = card.querySelector('[data-role="file"]').files[0] || null;
+      const msg = card.querySelector('[data-role="msg"]');
+      if (!name) { msg.textContent="Podaj nazwę."; return; }
+      try{
+        let previewUrl = d.previewUrl || null, previewPath = d.previewPath || null;
+        if (file){
+          // usuń poprzedni podgląd
+          if (previewPath){ try { await deleteObject(sRef(storage, previewPath)); } catch(e){} }
+          const ext = (file.name.split(".").pop()||"bin").toLowerCase();
+          previewPath = `designs/${d.id}-${Date.now()}.${ext}`;
+          const ref = sRef(storage, previewPath);
+          await uploadBytes(ref, file);
+          previewUrl = await getDownloadURL(ref);
+        }
+        await setDoc(doc(db,"designs", d.id), {
+          name, previewUrl, previewPath, updatedAt: serverTimestamp()
+        }, { merge:true });
+        await reloadDesigns();
+      }catch(e){ msg.textContent = "Błąd: " + (e.message||e.code); }
+    };
+  }
+
+  async function onAddDesign(){
+    const name = $("designName").value.trim();
+    const file = $("designFile").files[0] || null;
+    const out = $("designMsg");
+    if (!name){ out.textContent="Podaj nazwę wzoru."; return; }
+    const id = name.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,"");
+    try{
+      let previewUrl=null, previewPath=null;
+      if (file){
+        const ext = (file.name.split(".").pop()||"bin").toLowerCase();
+        previewPath = `designs/${id}-${Date.now()}.${ext}`;
+        const ref = sRef(storage, previewPath);
+        await uploadBytes(ref, file);
+        previewUrl = await getDownloadURL(ref);
+      }
+      await setDoc(doc(db,"designs", id), {
+        name, active:true, previewUrl, previewPath, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+      }, { merge:true });
+      $("designName").value=""; $("designFile").value="";
+      out.textContent="Dodano wzór ✅";
+      await reloadDesigns();
+    }catch(e){ out.textContent="Błąd: " + (e.message||e.code); }
+    setTimeout(()=>out.textContent="",1500);
+  }
+
+  // ----- Picker (modal) -----
+  function openPicker(forRowIndex){
+    pickerRowIndex = forRowIndex;
+    $("pickerCustomFile").value="";
+    $("pickerSearch").value="";
+    renderPickerGrid();
+    $("designPicker").style.display="flex";
+  }
+  function closePicker(){ $("designPicker").style.display="none"; pickerRowIndex=null; }
+
+  function renderPickerGrid(){
+    const grid = $("pickerGrid");
+    const term = $("pickerSearch").value?.toLowerCase() || "";
+    grid.innerHTML = "";
+    const list = Array.from(designMap.values())
+      .filter(d=> d.active!==false)
+      .filter(d=> term ? d.name.toLowerCase().includes(term) : true)
+      .sort((a,b)=>a.name.localeCompare(b.name,"pl"));
+    for (const d of list){
+      const card = document.createElement("div");
+      card.className = "design-card";
+      card.innerHTML = `
+        ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#5a6c81">brak podglądu</div>`}
+        <div class="design-name">${esc(d.name)}</div>
+      `;
+      card.onclick = () => {
+        const r = orderRows[pickerRowIndex];
+        r.designId = d.id; r.designName = d.name; r.previewUrl = d.previewUrl || null;
+        r.customFile = null; r.customLocalUrl = null;
+        renderOrderRows();
+        closePicker();
+      };
+      grid.appendChild(card);
+    }
+  }
+
+  $("pickerCustomFile").addEventListener("change", (e)=>{
+    const file = e.target.files[0];
+    if (!file || pickerRowIndex==null) return;
+    const r = orderRows[pickerRowIndex];
+    r.designId = "custom"; r.designName = "CUSTOM";
+    r.customFile = file;
+    r.customLocalUrl = URL.createObjectURL(file);
+    r.previewUrl = r.customLocalUrl;
+    renderOrderRows();
+    closePicker();
+  });
+
+  // ----- Order builder (rows) -----
+  function defaultRow(){
+    return { size:"M", color:"BIAŁA", price:"", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null };
+  }
+  function addRow(){ orderRows.push(defaultRow()); renderOrderRows(); }
+  function removeRow(i){ orderRows.splice(i,1); renderOrderRows(); if(orderRows.length===0) addRow(); }
+
+  function renderOrderRows(){
+    const tb = $("rowsTbody"); tb.innerHTML="";
+    orderRows.forEach((r,i)=>{
+      const tr = document.createElement("tr"); tr.dataset.idx = i;
+      tr.innerHTML = `
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            ${r.previewUrl?`<img class="thumb" src="${r.previewUrl}" alt="">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#5a6c81">?</div>`}
+            <div style="min-width:180px"><b>${esc(r.designName||"Nie wybrano")}</b></div>
+            <div class="rows-actions">
+              <button class="ghost mini-btn" data-act="pick">Wybierz wzór</button>
+              <label class="ghost mini-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+                <input data-act="custom" type="file" accept="image/*,.svg,.pdf" style="display:none"> Upload CUSTOM
+              </label>
+            </div>
+          </div>
+        </td>
+        <td>
+          <select data-act="size">
+            ${["S","M","L","XL","XXL","3XL"].map(s=>`<option ${r.size===s?"selected":""}>${s}</option>`).join("")}
+          </select>
+        </td>
+        <td>
+          <select data-act="color">
+            ${["BIAŁA","CZARNA"].map(c=>`<option ${r.color===c?"selected":""}>${c}</option>`).join("")}
+          </select>
+        </td>
+        <td><input data-act="price" type="number" step="0.01" value="${r.price}" placeholder="np. 70"></td>
+        <td><input data-act="note" type="text" value="${esc(r.note)}" placeholder="Uwagi do tej pozycji"></td>
+        <td class="rows-actions">
+          <button class="ghost mini-btn danger" data-act="remove">Usuń</button>
+        </td>
+      `;
+      // actions
+      tr.querySelector('[data-act="pick"]').onclick = () => openPicker(i);
+      tr.querySelector('[data-act="remove"]').onclick = () => removeRow(i);
+      tr.querySelector('[data-act="size"]').onchange = (e)=> r.size = e.target.value;
+      tr.querySelector('[data-act="color"]').onchange = (e)=> r.color = e.target.value;
+      tr.querySelector('[data-act="price"]').oninput = (e)=> r.price = e.target.value;
+      tr.querySelector('[data-act="note"]').oninput = (e)=> r.note = e.target.value;
+      tr.querySelector('[data-act="custom"]').onchange = (e)=>{
+        const file = e.target.files[0];
+        if (!file) return;
+        r.designId = "custom"; r.designName = "CUSTOM";
+        r.customFile = file;
+        r.customLocalUrl = URL.createObjectURL(file);
+        r.previewUrl = r.customLocalUrl;
+        renderOrderRows();
+      };
+      tb.appendChild(tr);
+    });
+  }
+
+  function clearOrderForm(){
+    orderRows = [];
+    addRow();
+    $("orderCustomer").value = "";
+    $("orderGroupId").value = "";
+    $("saveMsg").textContent = "";
   }
 
   function buildDateFromInputs(){
@@ -331,139 +560,71 @@
     return new Date(y,m,d,12,0,0);
   }
 
-  async function loadDesignsGridForAdd(){
-    const grid=$("designGridAdd"); grid.innerHTML="";
-    const term = $("designSearch").value?.toLowerCase() || "";
-    designMap.clear();
-    const snap = await getDocs(query(collection(db,"designs"), orderBy("name")));
-    const items=[]; snap.forEach(d=>{ const obj={id:d.id, ...d.data()}; items.push(obj); designMap.set(d.id,obj); });
-    const filtered = term? items.filter(x=>x.name.toLowerCase().includes(term)): items;
-    filtered.forEach(d=>{
-      const div=document.createElement("div");
-      div.className = "design-card" + (selectedDesignId===d.id?" selected":"");
-      div.innerHTML = `
-        ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#5a6c81">brak podglądu</div>`}
-        <div class="design-name">${esc(d.name)}</div>`;
-      div.onclick=()=>{
-        selectedDesignId=d.id; selectedDesignName=d.name; selectedDesignPreview=d.previewUrl||"";
-        document.querySelectorAll(".design-card").forEach(el=>el.classList.remove("selected"));
-        div.classList.add("selected");
-        $("customFile").value = ""; // jeśli wybierzesz wzór – czyścimy CUSTOM
-      };
-      grid.appendChild(div);
-    });
+  function genGroupId(date, customer){
+    const dt = date instanceof Date ? date : new Date(date);
+    const y=dt.getFullYear(), m=String(dt.getMonth()+1).padStart(2,"0"), d=String(dt.getDate()).padStart(2,"0");
+    const rnd = Math.random().toString(36).slice(2,6);
+    const cust = (customer||"order").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,8);
+    return `${y}-${m}-${d}-${cust||"order"}-${rnd}`;
   }
 
-  async function loadDesignsList(){
-    const box=$("designsList"); box.innerHTML="";
-    const snap = await getDocs(query(collection(db,"designs"), orderBy("name")));
-    snap.forEach(d=>{
-      const data=d.data();
-      const card=document.createElement("div");
-      card.className="design-card";
-      card.style.justifyContent="space-between";
-      card.innerHTML=`
-        ${data.previewUrl?`<img class="design-img" src="${data.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#5a6c81">brak podglądu</div>`}
-        <div class="design-name">${esc(data.name)}</div>
-        <button data-id="${d.id}" class="ghost" style="margin-top:8px">Usuń</button>
-      `;
-      box.appendChild(card);
-      card.querySelector("button").onclick=async()=>{
-        if(!confirm("Usunąć wzór?")) return;
-        // jeśli mamy ścieżkę pliku – spróbuj usunąć
-        if (data.previewPath) {
-          try { await deleteObject(sRef(storage, data.previewPath)); } catch(e){ console.warn("Nie udało się usunąć pliku podglądu:", e.message); }
-        }
-        await deleteDoc(doc(db,"designs", d.id));
-        await loadDesignsList();
-        await loadDesignsGridForAdd();
-      };
-    });
-  }
+  async function saveOrder(){
+    const msg = $("saveMsg");
+    // walidacja listy pozycji
+    const invalid = orderRows.findIndex(r => !r.designId && !r.customFile || !Number(r.price));
+    if (invalid>=0){ msg.textContent = `Uzupełnij pozycję #${invalid+1}: wybierz wzór/CUSTOM i cenę.`; return; }
 
-  async function addDesign(){
-    const name = $("designName").value.trim();
-    const file = $("designFile").files[0] || null;
-    if (!name) return alert("Podaj nazwę wzoru.");
-    const slug = name.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,"");
-    let previewUrl=null, previewPath=null;
-    if (file){
-      const ext = (file.name.split(".").pop()||"bin").toLowerCase();
-      previewPath = `designs/${slug}-${Date.now()}.${ext}`;
-      const ref = sRef(storage, previewPath);
-      await uploadBytes(ref, file);
-      previewUrl = await getDownloadURL(ref);
-    }
-    await setDoc(doc(db,"designs", slug), {
-      name, slug, active:true, previewUrl:previewUrl||null, previewPath:previewPath||null,
-      createdAt: serverTimestamp(), updatedAt: serverTimestamp()
-    }, { merge:true });
-    $("designName").value=""; $("designFile").value="";
-    await loadDesignsList();
-    await loadDesignsGridForAdd();
-  }
-
-  function clearAddForm(){
-    selectedDesignId=null; selectedDesignName=""; selectedDesignPreview="";
-    $("customFile").value=""; $("addCustomer").value=""; $("addNote").value=""; $("addPrice").value="";
-    document.querySelectorAll(".design-card").forEach(el=>el.classList.remove("selected"));
-    $("saveMsg").textContent="";
-  }
-
-  async function saveItem(){
     const date = buildDateFromInputs();
-    const price = Number($("addPrice").value || 0);
-    if (!price) return alert("Podaj cenę.");
-    // CUSTOM file?
-    const cFile = $("customFile").files[0] || null;
-    let designId = null, designText = "", previewUrl = null, previewPath = null;
+    const groupId = $("orderGroupId").value.trim() || genGroupId(date, $("orderCustomer").value.trim());
+    const customer = $("orderCustomer").value.trim();
 
-    if (cFile){
-      const ext = (cFile.name.split(".").pop()||"bin").toLowerCase();
-      previewPath = `custom/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const ref = sRef(storage, previewPath);
-      await uploadBytes(ref, cFile);
-      previewUrl = await getDownloadURL(ref);
-      designId = "custom";
-      designText = "CUSTOM";
-    } else if (selectedDesignId){
-      designId = selectedDesignId;
-      designText = selectedDesignName;
-      previewUrl = selectedDesignPreview || null;
-    } else {
-      return alert("Wybierz wzór z kafelków lub wgraj plik CUSTOM.");
-    }
-
-    const payload = {
-      date: Timestamp.fromDate(date),
-      monthKey: toMonthKey(date),
-      status: "ZAMÓWIENIE PRZYJĘTE", // domyślnie
-      size: $("addSize").value,
-      color: $("addColor").value,
-      designId,
-      designText,
-      previewUrl: previewUrl || null,
-      previewPath: previewPath || null,
-      customer: $("addCustomer").value.trim(),
-      note: $("addNote").value.trim(),
-      priceGross: price,
-      orderGroupId: $("addOrderGroup").value.trim() || null,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
+    msg.textContent = "Zapisywanie…";
 
     try{
-      $("saveMsg").textContent="Zapisywanie…";
-      await addDoc(collection(db,"orderItems"), payload);
-      $("saveMsg").textContent="Zapisano ✅";
-      clearAddForm();
+      // uploady CUSTOM (jeśli są)
+      const uploaded = await Promise.all(orderRows.map(async (r)=>{
+        let previewUrl = r.previewUrl || null;
+        let previewPath = null;
+        if (r.customFile){
+          const ext = (r.customFile.name.split(".").pop()||"bin").toLowerCase();
+          previewPath = `custom/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+          const ref = sRef(storage, previewPath);
+          await uploadBytes(ref, r.customFile);
+          previewUrl = await getDownloadURL(ref);
+        }
+        return { ...r, previewUrl, previewPath };
+      }));
+
+      // zapis pozycji
+      for (const r of uploaded){
+        const payload = {
+          date: Timestamp.fromDate(date),
+          monthKey: toMonthKey(date),
+          status: "ZAMÓWIENIE PRZYJĘTE",
+          size: r.size, color: r.color,
+          designId: r.designId || (r.customFile ? "custom" : null),
+          designText: r.designName || (r.designId ? designMap.get(r.designId)?.name : "") || "CUSTOM",
+          previewUrl: r.previewUrl || null,
+          previewPath: r.previewPath || null,
+          customer,
+          note: r.note || "",
+          priceGross: Number(r.price || 0),
+          orderGroupId: groupId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+        await addDoc(collection(db,"orderItems"), payload);
+      }
+      msg.textContent = `Zapisano ${uploaded.length} pozycji ✅`;
+      clearOrderForm();
     }catch(e){
-      $("saveMsg").textContent="Błąd: " + (e.message || e.code);
+      console.error(e);
+      msg.textContent = "Błąd: " + (e.message || e.code);
     }
-    setTimeout(()=>{$("saveMsg").textContent="";},1500);
+    setTimeout(()=> msg.textContent="", 2000);
   }
 
-  // Subscribe monthly list
+  // ----- Lista miesięczna -----
   let unsub=null;
   function subscribeMonth(){
     if (unsub){unsub();unsub=null;}
@@ -478,14 +639,14 @@
         sumC += (d.priceGross||0);
         rows.push({id:docu.id, ...d});
       });
-      renderRows(rows); $("sumCena").textContent=fmt2(sumC);
+      renderOrders(rows); $("sumCena").textContent=fmt2(sumC);
     },(err)=>{
       console.error(err);
       alert("Błąd odczytu. Jeśli pojawił się link do indeksu – kliknij i utwórz indeks w Firestore.");
     });
   }
 
-  function renderRows(items){
+  function renderOrders(items){
     const tbody=$("ordersTbody"); tbody.innerHTML="";
     for(const it of items){
       const tr=document.createElement("tr");
@@ -507,7 +668,7 @@
         <td>${it.orderGroupId||""}</td>
         <td>
           <button class="ghost mini" data-act="status" data-id="${it.id}">↻ status</button>
-          <button class="ghost mini" data-act="del" data-id="${it.id}" style="color:var(--red)">usuń</button>
+          <button class="ghost mini danger" data-act="del" data-id="${it.id}">usuń</button>
         </td>
       `;
       tr.querySelector('[data-act="status"]').onclick=async()=>{
