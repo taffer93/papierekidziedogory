@@ -12,14 +12,14 @@
       --text:#f1f6ff;
       --accent:#4cc9f0;
 
-      /* mocno zróżnicowane kolory statusów (całe wiersze) */
-      --st-new:    rgba( 90, 245, 140,.70); /* PRZYJĘTE – jasna zieleń */
-      --st-prog:   rgba(255, 210,  90,.78); /* W TRAKCIE – żółty/amber */
-      --st-ready:  rgba(120, 235, 255,.72); /* GOTOWE – jasny cyjan */
-      --st-sent:   rgba(130, 170, 255,.72); /* WYSŁANE – jasny niebieski */
-      --st-return: rgba(255, 110, 110,.82); /* ZWROT – czerwony */
+      /* wyraźne kolory statusów (całe wiersze) */
+      --st-new:    rgba( 90, 245, 140,.70);
+      --st-prog:   rgba(255, 210,  90,.78);
+      --st-ready:  rgba(120, 235, 255,.72);
+      --st-sent:   rgba(130, 170, 255,.72);
+      --st-return: rgba(255, 110, 110,.82);
 
-      --line:#2d4056; /* pionowe linie kolumn */
+      --line:#2d4056;
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
@@ -77,26 +77,23 @@
     .rows-table td .thumb{width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
     .rows-actions{display:flex;gap:6px}
 
-    /* kompaktowa data */
     .date-compact{display:flex;gap:8px;align-items:center}
     .date-compact .small{max-width:90px;padding:8px}
     .date-compact .month{max-width:180px;padding:8px}
+
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
     input[type=number]{ -moz-appearance:textfield;}
 
-    /* input file */
     input[type="file"]{padding:8px;background:#0f1823;border:1px solid #2a3a4d;color:var(--muted)}
     input[type="file"]::file-selector-button{margin-right:10px;border:1px solid #274d6a;background:#19344b;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}
 
-    /* wzór i kolor w liście zamówień */
     .designCell{display:flex;align-items:center;gap:8px}
     .designThumb{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
     .colorTag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4d;border-radius:999px;padding:2px 8px;background:#0f1823}
     .dot{width:12px;height:12px;border-radius:50%;border:1px solid #2a3a4d;background:#fff}
     .dot.black{background:#000}
 
-    /* modal */
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
     .modal .panel{background:var(--card);border:1px solid #203145;border-radius:12px;width:min(1000px,94vw);max-height:88vh;padding:14px;display:flex;flex-direction:column}
     .modal .panel .head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
@@ -161,6 +158,10 @@
             <option value="ZWROT">ZWROT</option>
           </select>
         </div>
+        <div class="row center" style="gap:6px">
+          <button id="exportItemsBtn" class="ghost mini-btn">Eksport CSV (pozycje)</button>
+          <button id="exportGroupsBtn" class="ghost mini-btn">Eksport CSV (zamówienia)</button>
+        </div>
         <div class="right pill">
           Przychody: <b id="sumRevenue">0.00</b> zł •
           Koszty: <b id="sumExpenses">0.00</b> zł •
@@ -186,7 +187,7 @@
           <tbody id="ordersTbody"></tbody>
         </table>
       </div>
-      <div class="hint">Status i nazwa klienta wyświetlane są tylko raz na zamówienie (w pierwszym wierszu). ZWROT nie liczy się do sumy przychodów.</div>
+      <div class="hint">Status i klient tylko raz na zamówienie (pierwszy wiersz). ZWROT nie liczy się do przychodów.</div>
     </div>
 
     <!-- ADD ORDER TAB -->
@@ -271,6 +272,9 @@
             <select id="expMonth" class="month" style="max-width:180px"></select>
             <select id="expYear" style="max-width:120px"></select>
           </div>
+        </div>
+        <div class="row center" style="gap:6px">
+          <button id="exportExpBtn" class="ghost mini-btn">Eksport CSV</button>
         </div>
         <div class="right pill">Koszty (m‑c): <b id="sumExpensesTop">0.00</b> zł</div>
       </div>
@@ -388,9 +392,11 @@
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc, getDocs, query, where, onSnapshot, serverTimestamp, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+  // detektor błędów
   window.addEventListener('error', e => alert('Błąd skryptu: ' + (e.message || e.error?.message || 'unknown')));
   window.addEventListener('unhandledrejection', e => alert('Błąd (promise): ' + (e.reason?.message || e.reason || 'unknown')));
 
+  // KONFIG – Twój projekt
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -403,14 +409,18 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // Helpers
   const $ = id => document.getElementById(id);
-  const esc = s => (s||"").replace(/</g,"&lt;");
+  const esc = s => (s||"").replace(/"/g,'""'); // do CSV i HTML
   const fmt2 = n => (Number(n||0)).toFixed(2);
+  const numPL = n => fmt2(n).replace('.', ',');
   const monthsPL = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
   const monthsPLGen = ["stycznia","lutego","marca","kwietnia","maja","czerwca","lipca","sierpnia","września","października","listopada","grudnia"];
   const monthKey = (y,mIndex) => `${y}-${String(mIndex+1).padStart(2,"0")}`;
   const rowCls = s => s==="ZWROT"?"st-ret":s==="WYSŁANE"?"st-sent":s==="GOTOWE DO WYSYŁKI"?"st-ready":s==="W TRAKCIE REALIZACJI"?"st-prog":"st-new";
+  const dShort = d => { const dt = d?.toDate ? d.toDate() : new Date(d); const dd=String(dt.getDate()).padStart(2,"0"); const mm=String(dt.getMonth()+1).padStart(2,"0"); const yy=dt.getFullYear(); return `${dd}.${mm}.${yy}`; };
 
+  // miniatury jako dataURL
   async function fileToDataUrl(file, maxW=900, maxH=900, quality=0.82){
     return new Promise((resolve, reject)=>{
       const img = new Image();
@@ -423,7 +433,8 @@
         const cw = Math.round(w * scale), ch = Math.round(h * scale);
         const canvas = document.createElement('canvas');
         canvas.width = cw; canvas.height = ch;
-        canvas.getContext('2d').drawImage(img, 0, 0, cw, ch);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, cw, ch);
         let dataUrl = canvas.toDataURL('image/jpeg', quality);
         if (dataUrl.length > 950000) dataUrl = canvas.toDataURL('image/jpeg', 0.7);
         resolve(dataUrl);
@@ -442,19 +453,19 @@
     else  { loginCard.style.display=""; appWrap.style.display="none"; userEmail.textContent=""; logoutBtn.style.display="none"; }
   });
 
-  // Data caches i stany
+  // Data caches/states
   const designMap = new Map();
-  let orderRows = [];                   // dodawanie
-  let ordersGroupsAll = [];             // widok
+  let orderRows = [];
+  let ordersGroupsAll = [];
   let revenueSumAll = 0;
   let expensesSumAll = 0;
   let unsubOrders = null, unsubExp = null;
 
-  // Edycja
-  let editRows = [];                    // edycja pozycji
+  // Edit modal state
+  let editRows = [];
   let editingGroupId = null;
 
-  // Picker kontekst
+  // Picker context
   let pickerContext = "add"; // "add" | "edit"
   let pickerRowIndex = null;
 
@@ -509,10 +520,14 @@
 
     $("addExpenseBtn").addEventListener("click", addExpense);
 
-    // Edit modal
     $("editAddRowBtn").addEventListener("click", ()=>editAddRow());
     $("editCloseBtn").addEventListener("click", closeEditModal);
     $("editSaveBtn").addEventListener("click", saveEditOrder);
+
+    // Exporty
+    $("exportItemsBtn").addEventListener("click", exportOrdersItemsCSV);
+    $("exportGroupsBtn").addEventListener("click", exportOrdersGroupsCSV);
+    $("exportExpBtn").addEventListener("click", exportExpensesCSV);
 
     // Tabs
     const tabsBtns = document.querySelectorAll("nav.tabs button");
@@ -541,7 +556,7 @@
       card.className="design-card";
       card.innerHTML=`
         ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`}
-        <div class="design-name">${esc(d.name)}</div>
+        <div class="design-name">${d.name.replace(/</g,"&lt;")}</div>
         <div class="row center" style="margin-top:8px">
           <button class="ghost mini-btn" data-act="edit">Edytuj</button>
           <button class="ghost mini-btn danger" data-act="del">Usuń</button>
@@ -554,7 +569,7 @@
   function openEditDesign(card,d){
     card.innerHTML=`
       <div class="row center">
-        <div class="col"><input value="${esc(d.name)}" data-role="name"/></div>
+        <div class="col"><input value="${d.name.replace(/"/g,'&quot;')}" data-role="name"/></div>
         <div class="col"><input type="file" accept="image/*" data-role="file"/></div>
       </div>
       <div class="row center" style="margin-top:8px">
@@ -577,7 +592,9 @@
     };
   }
   async function onAddDesign(){
-    const name=$("designName").value.trim(), file=$("designFile").files[0]||null, out=$("designMsg");
+    const name=$("designName").value.trim();
+    const file=$("designFile").files[0]||null;
+    const out=$("designMsg");
     if(!name){out.textContent="Podaj nazwę wzoru.";return;}
     const id=name.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,"");
     try{
@@ -594,12 +611,15 @@
   function renderPickerGrid(){
     const grid=$("pickerGrid"); grid.innerHTML="";
     const term=($("pickerSearch").value||"").toLowerCase();
-    const list=Array.from(designMap.values()).filter(d=>d.active!==false).filter(d=>term?d.name.toLowerCase().includes(term):true).sort((a,b)=>a.name.localeCompare(b.name,"pl"));
+    const list=Array.from(designMap.values())
+      .filter(d=>d.active!==false)
+      .filter(d=>term?d.name.toLowerCase().includes(term):true)
+      .sort((a,b)=>a.name.localeCompare(b.name,"pl"));
     for(const d of list){
       const card=document.createElement("div"); card.className="design-card";
       card.innerHTML=`
         ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`}
-        <div class="design-name">${esc(d.name)}</div>`;
+        <div class="design-name">${d.name.replace(/</g,"&lt;")}</div>`;
       card.onclick=()=>{
         const arr=(pickerContext==="edit")?editRows:orderRows;
         const r=arr[pickerRowIndex];
@@ -629,7 +649,7 @@
         <td>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             ${r.previewUrl?`<img class="thumb" src="${r.previewUrl}" alt="">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#6d8096">?</div>`}
-            <div style="min-width:180px"><b>${esc(r.designName||"Nie wybrano")}</b></div>
+            <div style="min-width:180px"><b>${(r.designName||"Nie wybrano").replace(/</g,"&lt;")}</b></div>
             <div class="rows-actions">
               <button class="ghost mini-btn" data-act="pick">Wybierz wzór</button>
               <label class="ghost mini-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
@@ -640,7 +660,7 @@
         </td>
         <td><select data-act="size">${["S","M","L","XL","XXL","3XL"].map(s=>`<option ${r.size===s?"selected":""}>${s}</option>`).join("")}</select></td>
         <td><select data-act="color">${["BIAŁA","CZARNA"].map(c=>`<option ${r.color===c?"selected":""}>${c}</option>`).join("")}</select></td>
-        <td><input data-act="note" type="text" value="${esc(r.note)}" placeholder="Uwagi do tej pozycji"></td>
+        <td><input data-act="note" type="text" value="${(r.note||"").replace(/"/g,'&quot;')}" placeholder="Uwagi do tej pozycji"></td>
         <td class="rows-actions"><button class="ghost mini-btn danger" data-act="remove">Usuń</button></td>`;
       tr.querySelector('[data-act="pick"]').onclick=()=>openPicker(i,"add");
       tr.querySelector('[data-act="remove"]').onclick=()=>removeRow(i);
@@ -655,7 +675,7 @@
   function buildDate(daySel,monthSel,yearSel){
     const d=Number($(daySel).value||1), m=Number($(monthSel).value||0), y=Number($(yearSel).value||new Date().getFullYear());
     return new Date(y,m,d,12,0,0);
-  }
+    }
   function genGroupId(date, customer){
     const y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,"0"), d=String(date.getDate()).padStart(2,"0");
     const rnd=Math.random().toString(36).slice(2,6), cust=(customer||"order").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,8);
@@ -664,7 +684,7 @@
   async function saveOrder(){
     const msg=$("saveMsg");
     if(orderRows.length===0) return msg.textContent="Dodaj przynajmniej jedną pozycję.";
-    if(orderRows.some(r=>!r.designId&&!r.customFile)) return msg.textContent="Każda pozycja musi mieć wybrany wzór lub CUSTOM.";
+    if(orderRows.some(r=>!r.designId&&!r.customFile)) return msg.textContent="Każda pozycja musi mieć wybrany wzór/CUSTOM.";
     const total=Number($("orderTotalPrice").value||0); if(!total) return msg.textContent="Podaj cenę łączną.";
     const date=buildDate("addDay","addMonth","addYear");
     const customer=$("orderCustomer").value.trim();
@@ -722,7 +742,7 @@
       g.items.forEach((it,idx)=>{
         const tr=document.createElement("tr"); tr.className=`${cls} ${tone}`;
         const dt=it.date?.toDate?it.date.toDate():new Date(it.date);
-        const dstr=`${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;
+        const dstr=`${String(dt.getDate()).padStart(2,"0")}.${String(dt.getMonth()+1).padStart(2,"0")}.${dt.getFullYear()}`;
         tr.innerHTML=`
           <td>${idx===0?`<span class="bold">${dstr}</span>`:""}</td>
           <td data-status></td>
@@ -733,15 +753,14 @@
           <td>
             <div class="designCell">
               ${it.previewUrl?`<img class="designThumb" src="${it.previewUrl}" alt="">`:""}
-              <span>${esc(it.designText||"")}</span>
+              <span>${(it.designText||"").replace(/</g,"&lt;")}</span>
             </div>
           </td>
-          <td>${idx===0?esc(g.customer||""):""}</td>
-          <td>${esc(it.note||"")}</td>
+          <td>${idx===0?(g.customer||"").replace(/</g,"&lt;"):""}</td>
+          <td>${(it.note||"").replace(/</g,"&lt;")}</td>
           <td>${idx===0?`${fmt2(g.total)} zł`:"—"}</td>
           <td>${idx===0?`<button class="ghost mini-btn" data-edit="${g.id}">Edytuj</button> <button class="ghost mini-btn danger" data-del="${g.id}">Usuń</button>`:""}</td>`;
         if(idx===0){
-          // jedno menu statusu na zamówienie
           const sel=document.createElement("select");
           const ST=["ZAMÓWIENIE PRZYJĘTE","W TRAKCIE REALIZACJI","GOTOWE DO WYSYŁKI","WYSŁANE","ZWROT"];
           sel.innerHTML=ST.map(s=>`<option ${s===g.status?"selected":""}>${s}</option>`).join("");
@@ -765,26 +784,18 @@
     const batch=writeBatch(db); qSnap.forEach(d=>batch.delete(doc(db,"orderItems",d.id))); await batch.commit();
   }
 
-  // Edycja zamówienia (modal)
+  // Edycja zamówienia
   function editDefaultRow(){ return { id:null, size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; }
   async function openEditModal(groupId){
     editingGroupId=groupId; $("editMsg").textContent="";
-    // wczytaj pozycje tej grupy
     const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
     const docs=[]; qSnap.forEach(d=>docs.push({id:d.id,...d.data()}));
     if(docs.length===0){ alert("Nie znaleziono pozycji."); return; }
     const any=docs[0];
-    // ustaw datę/klienta/cenę
     const dt=any.date?.toDate?any.date.toDate():new Date(any.date);
-    $("editDay").value=dt.getDate(); $("editMonth").value=String(dt.getMonth());
-    $("editYear").value=String(dt.getFullYear()); $("editCustomer").value=any.customer||"";
-    $("editTotal").value=any.orderTotalGross||0;
-    // zbuduj wiersze
-    editRows = docs.map(d=>({
-      id:d.id, size:d.size, color:d.color, note:d.note||"",
-      designId:d.designId||"custom", designName:d.designText||"CUSTOM", previewUrl:d.previewUrl||null,
-      customFile:null, customLocalUrl:null
-    }));
+    $("editDay").value=dt.getDate(); $("editMonth").value=String(dt.getMonth()); $("editYear").value=String(dt.getFullYear());
+    $("editCustomer").value=any.customer||""; $("editTotal").value=any.orderTotalGross||0;
+    editRows = docs.map(d=>({ id:d.id, size:d.size, color:d.color, note:d.note||"", designId:d.designId||"custom", designName:d.designText||"CUSTOM", previewUrl:d.previewUrl||null, customFile:null, customLocalUrl:null }));
     renderEditRows();
     $("orderEdit").style.display="flex";
   }
@@ -799,7 +810,7 @@
         <td>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             ${r.previewUrl?`<img class="thumb" src="${r.previewUrl}" alt="">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#6d8096">?</div>`}
-            <div style="min-width:180px"><b>${esc(r.designName||"Nie wybrano")}</b></div>
+            <div style="min-width:180px"><b>${(r.designName||"Nie wybrano").replace(/</g,"&lt;")}</b></div>
             <div class="rows-actions">
               <button class="ghost mini-btn" data-act="pick">Wybierz wzór</button>
               <label class="ghost mini-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
@@ -810,7 +821,7 @@
         </td>
         <td><select data-act="size">${["S","M","L","XL","XXL","3XL"].map(s=>`<option ${r.size===s?"selected":""}>${s}</option>`).join("")}</select></td>
         <td><select data-act="color">${["BIAŁA","CZARNA"].map(c=>`<option ${r.color===c?"selected":""}>${c}</option>`).join("")}</select></td>
-        <td><input data-act="note" type="text" value="${esc(r.note)}" placeholder="Uwagi do tej pozycji"></td>
+        <td><input data-act="note" type="text" value="${(r.note||"").replace(/"/g,'&quot;')}" placeholder="Uwagi do tej pozycji"></td>
         <td class="rows-actions"><button class="ghost mini-btn danger" data-act="remove">Usuń</button></td>`;
       tr.querySelector('[data-act="pick"]').onclick=()=>openPicker(i,"edit");
       tr.querySelector('[data-act="remove"]').onclick=()=>editRemoveRow(i);
@@ -830,30 +841,22 @@
     try{
       const date=buildDate("editDay","editMonth","editYear");
       const customer=$("editCustomer").value.trim();
-      // przetwórz podglądy
       const processed=await Promise.all(editRows.map(async r=>{
         let previewUrl=r.previewUrl||null;
         if(r.customFile) previewUrl=await fileToDataUrl(r.customFile); else if(r.designId) previewUrl=designMap.get(r.designId)?.previewUrl||r.previewUrl||null;
         return {...r, previewUrl};
       }));
-      // pobierz istniejące ID w grupie (do usunięcia brakujących)
       const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",editingGroupId)));
       const existingIds=new Set(); qSnap.forEach(d=>existingIds.add(d.id));
       const keepIds=new Set(processed.filter(r=>r.id).map(r=>r.id));
-      // batch
       const batch=writeBatch(db);
-      // update/add
       for(const r of processed){
-        const payload={
-          date:Timestamp.fromDate(date), monthKey:monthKey(date.getFullYear(),date.getMonth()),
-          updatedAt:serverTimestamp(),
+        const payload={ date:Timestamp.fromDate(date), monthKey:monthKey(date.getFullYear(),date.getMonth()), updatedAt:serverTimestamp(),
           size:r.size, color:r.color, designId:r.designId||"custom", designText:r.designName||"CUSTOM",
-          previewUrl:r.previewUrl||null, customer, note:r.note||"", orderTotalGross: total
-        };
+          previewUrl:r.previewUrl||null, customer, note:r.note||"", orderTotalGross: total };
         if(r.id){ batch.update(doc(db,"orderItems",r.id), payload); }
         else { const ref=doc(collection(db,"orderItems")); batch.set(ref,{...payload, createdAt:serverTimestamp(), status:"ZAMÓWIENIE PRZYJĘTE", orderGroupId:editingGroupId, priceGross:0}); }
       }
-      // delete removed
       existingIds.forEach(id=>{ if(!keepIds.has(id)) batch.delete(doc(db,"orderItems",id)); });
       await batch.commit();
       msg.textContent="Zapisano zmiany ✅"; setTimeout(()=>{ msg.textContent=""; closeEditModal(); },800);
@@ -861,6 +864,7 @@
   }
 
   // Expenses
+  let expensesList=[];
   function expMonthKey(){ return monthKey(Number($("expYear").value), Number($("expMonth").value)); }
   async function addExpense(){
     const msg=$("expMsg"), name=$("expName").value.trim(), amount=Number($("expAmount").value||0), note=$("expNote").value.trim();
@@ -872,7 +876,6 @@
       $("expName").value=""; $("expAmount").value=""; $("expNote").value=""; msg.textContent="Dodano koszt ✅"; setTimeout(()=>msg.textContent="",1200);
     }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
   }
-  let expensesList=[]; 
   function subscribeExpenses(){
     if(unsubExp){unsubExp();unsubExp=null;}
     const q1=query(collection(db,"expenses"), where("monthKey","==",expMonthKey()));
@@ -888,12 +891,12 @@
     const tb=$("expTbody"); tb.innerHTML="";
     for(const e of expensesList){
       const dt=e.date?.toDate?e.date.toDate():new Date(e.date);
-      const dstr=`${dt.getDate()} ${monthsPLGen[dt.getMonth()]} ${dt.getFullYear()}`;
+      const dstr=`${String(dt.getDate()).padStart(2,"0")}.${String(dt.getMonth()+1).padStart(2,"0")}.${dt.getFullYear()}`;
       const tr=document.createElement("tr");
       tr.innerHTML=`
         <td>${dstr}</td>
-        <td>${esc(e.name||"")}</td>
-        <td>${esc(e.note||"")}</td>
+        <td>${(e.name||"").replace(/</g,"&lt;")}</td>
+        <td>${(e.note||"").replace(/</g,"&lt;")}</td>
         <td>${fmt2(e.amount)} zł</td>
         <td><button class="ghost mini-btn danger" data-del="${e.id}">usuń</button></td>`;
       tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
@@ -907,6 +910,70 @@
     $("sumExpenses").textContent=fmt2(expensesSumAll);
     const net=revenueSumAll-expensesSumAll;
     const el=$("sumNet"); el.textContent=fmt2(net); el.classList.toggle("neg",net<0);
+  }
+
+  // Eksport CSV
+  function downloadCSV(filename, rows) {
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+  function exportOrdersItemsCSV() {
+    const header = ['DATA','STATUS ZAMÓWIENIA','ROZMIAR','KOLOR','WZÓR','DANE ZAMAWIAJĄCEGO','UWAGI','CENA'];
+    const rows = [header.join(';')];
+    const groups = ordersGroupsAll.slice();
+    for (const g of groups) {
+      const items = g.items.slice().sort((a,b)=>(a.size||"").localeCompare(b.size||""));
+      items.forEach((it, idx) => {
+        rows.push([
+          dShort(g.date),
+          g.status || 'ZAMÓWIENIE PRZYJĘTE',
+          (it.size || ''),
+          (it.color || ''),
+          (it.designText || '').replace(/;/g, ','),
+          idx===0 ? (g.customer || '') : '',
+          (it.note || '').replace(/;/g, ','),
+          (idx===0 && g.status!=='ZWROT') ? numPL(g.total) : ''
+        ].map(v => `"${esc(v)}"`).join(';'));
+      });
+    }
+    const y = $('ordersYear').value, m = String(Number($('ordersMonth').value)+1).padStart(2,'0');
+    downloadCSV(`zamowienia_pozycje_${y}-${m}.csv`, rows);
+  }
+  function exportOrdersGroupsCSV() {
+    const header = ['DATA','STATUS','KLIENT','LICZBA POZYCJI','POZYCJE','CENA'];
+    const rows = [header.join(';')];
+    for (const g of ordersGroupsAll) {
+      const items = g.items.slice().sort((a,b)=>(a.size||"").localeCompare(b.size||""));
+      const details = items.map(it => `${it.size||''}/${it.color||''} – ${(it.designText||'').replace(/;/g,',')}`).join(' | ');
+      rows.push([
+        dShort(g.date),
+        g.status || 'ZAMÓWIENIE PRZYJĘTE',
+        g.customer || '',
+        String(items.length),
+        details,
+        (g.status!=='ZWROT') ? numPL(g.total) : ''
+      ].map(v => `"${esc(v)}"`).join(';'));
+    }
+    const y = $('ordersYear').value, m = String(Number($('ordersMonth').value)+1).padStart(2,'0');
+    downloadCSV(`zamowienia_zamowienia_${y}-${m}.csv`, rows);
+  }
+  function exportExpensesCSV() {
+    const header = ['DATA','NAZWA','UWAGI','KWOTA'];
+    const rows = [header.join(';')];
+    for (const e of expensesList) {
+      rows.push([
+        dShort(e.date),
+        (e.name||'').replace(/;/g, ','),
+        (e.note||'').replace(/;/g, ','),
+        numPL(e.amount || 0)
+      ].map(v => `"${esc(v)}"`).join(';'));
+    }
+    const y = $('expYear').value, m = String(Number($('expMonth').value)+1).padStart(2,'0');
+    downloadCSV(`koszty_${y}-${m}.csv`, rows);
   }
 </script>
 </body>
