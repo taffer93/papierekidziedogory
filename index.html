@@ -46,23 +46,23 @@
     th{background:#1d2a3a}
     tr:hover td{filter:brightness(1.03)}
 
-    /* kolumna STATUS – szeroka, żeby mieściły się długie nazwy */
+    /* kolumna STATUS – węższa, ale mieści długie nazwy */
     th.statusCol, td.statusCol {
-      min-width: 260px;
-      width: 260px;
+      min-width: 220px;
+      width: 220px;
       white-space: nowrap;
     }
     /* select tylko w kolumnie status – szerszy i bez zawijania */
     td.statusCol select {
       width: auto !important;
-      min-width: 260px;
+      min-width: 220px;
       max-width: 100%;
       white-space: nowrap;
-      font-size: 13px;
+      font-size: 12.5px;
     }
     @media (max-width: 900px) {
-      th.statusCol, td.statusCol { min-width: 240px; width: 240px; }
-      td.statusCol select { min-width: 240px; }
+      th.statusCol, td.statusCol { min-width: 200px; width: 200px; }
+      td.statusCol select { min-width: 200px; }
     }
 
     /* status = kolor całego wiersza */
@@ -108,7 +108,8 @@
     input[type="file"]::file-selector-button{margin-right:10px;border:1px solid #274d6a;background:#19344b;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}
 
     .designCell{display:flex;align-items:center;gap:8px}
-    .designThumb{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
+    /* 20% większe miniatury w zamówieniach */
+    .designThumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
     .colorTag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4d;border-radius:999px;padding:2px 8px;background:#0f1823}
     .dot{width:12px;height:12px;border-radius:50%;border:1px solid #2a3a4d;background:#fff}
     .dot.black{background:#000}
@@ -430,14 +431,13 @@
 
   // Helpers
   const $ = id => document.getElementById(id);
-  const escCSV = s => (s||"").replace(/"/g,'""'); // do CSV
+  const escCSV = s => (s||"").replace(/"/g,'""');
   const fmt2 = n => (Number(n||0)).toFixed(2);
   const numPL = n => fmt2(n).replace('.', ',');
   const monthsPL = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
   const monthsPLGen = ["stycznia","lutego","marca","kwietnia","maja","czerwca","lipca","sierpnia","września","października","listopada","grudnia"];
   const monthKey = (y,mIndex) => `${y}-${String(mIndex+1).padStart(2,"0")}`;
   const rowCls = s => s==="ZWROT"?"st-ret":s==="WYSŁANE"?"st-sent":s==="GOTOWE DO WYSYŁKI"?"st-ready":s==="W TRAKCIE REALIZACJI"?"st-prog":"st-new";
-  const dShort = d => { const dt = d?.toDate ? d.toDate() : new Date(d); const dd=String(dt.getDate()).padStart(2,"0"); const mm=String(dt.getMonth()+1).padStart(2,"0"); const yy=dt.getFullYear(); return `${dd}.${mm}.${yy}`; };
 
   // miniatury jako dataURL
   async function fileToDataUrl(file, maxW=900, maxH=900, quality=0.82){
@@ -940,6 +940,7 @@
     a.href = url; a.download = filename; document.body.appendChild(a); a.click();
     document.body.removeChild(a); URL.revokeObjectURL(url);
   }
+  function dShort(d){ const dt=d?.toDate?d.toDate():new Date(d); const dd=String(dt.getDate()).padStart(2,"0"); const mm=String(dt.getMonth()+1).padStart(2,"0"); const yy=dt.getFullYear(); return `${dd}.${mm}.${yy}`; }
   function exportOrdersItemsCSV() {
     const header = ['DATA','STATUS ZAMÓWIENIA','ROZMIAR','KOLOR','WZÓR','DANE ZAMAWIAJĄCEGO','UWAGI','CENA'];
     const rows = [header.join(';')];
