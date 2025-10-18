@@ -48,21 +48,20 @@
 
     /* kolumna STATUS – węższa, ale mieści długie nazwy */
     th.statusCol, td.statusCol {
-      min-width: 220px;
-      width: 220px;
+      min-width: 200px;
+      width: 200px;
       white-space: nowrap;
     }
-    /* select tylko w kolumnie status – szerszy i bez zawijania */
     td.statusCol select {
       width: auto !important;
-      min-width: 220px;
+      min-width: 200px;
       max-width: 100%;
       white-space: nowrap;
-      font-size: 12.5px;
+      font-size: 12px;
     }
     @media (max-width: 900px) {
-      th.statusCol, td.statusCol { min-width: 200px; width: 200px; }
-      td.statusCol select { min-width: 200px; }
+      th.statusCol, td.statusCol { min-width: 180px; width: 180px; }
+      td.statusCol select { min-width: 180px; }
     }
 
     /* status = kolor całego wiersza */
@@ -93,7 +92,7 @@
     .add-header .right{display:flex;gap:10px;margin-left:auto}
     .rows-wrap{overflow:auto}
     .rows-table thead th{position:sticky;top:0;background:#1d2a3a;z-index:1}
-    .rows-table td .thumb{width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
+    .rows-table td .thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118} /* +20% */
     .rows-actions{display:flex;gap:6px}
 
     .date-compact{display:flex;gap:8px;align-items:center}
@@ -108,7 +107,6 @@
     input[type="file"]::file-selector-button{margin-right:10px;border:1px solid #274d6a;background:#19344b;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}
 
     .designCell{display:flex;align-items:center;gap:8px}
-    /* 20% większe miniatury w zamówieniach */
     .designThumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
     .colorTag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4d;border-radius:999px;padding:2px 8px;background:#0f1823}
     .dot{width:12px;height:12px;border-radius:50%;border:1px solid #2a3a4d;background:#fff}
@@ -183,6 +181,7 @@
           <button id="exportGroupsBtn" class="ghost mini-btn">Eksport CSV (zamówienia)</button>
         </div>
         <div class="right pill">
+          Zamówienia: <b id="ordersCount">0</b> •
           Przychody: <b id="sumRevenue">0.00</b> zł •
           Koszty: <b id="sumExpenses">0.00</b> zł •
           Wynik: <b id="sumNet">0.00</b> zł
@@ -416,7 +415,7 @@
   window.addEventListener('error', e => alert('Błąd skryptu: ' + (e.message || e.error?.message || 'unknown')));
   window.addEventListener('unhandledrejection', e => alert('Błąd (promise): ' + (e.reason?.message || e.reason || 'unknown')));
 
-  // KONFIG – Twój projekt
+  // KONFIG – Twój projekt (bez zmian)
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -435,7 +434,6 @@
   const fmt2 = n => (Number(n||0)).toFixed(2);
   const numPL = n => fmt2(n).replace('.', ',');
   const monthsPL = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
-  const monthsPLGen = ["stycznia","lutego","marca","kwietnia","maja","czerwca","lipca","sierpnia","września","października","listopada","grudnia"];
   const monthKey = (y,mIndex) => `${y}-${String(mIndex+1).padStart(2,"0")}`;
   const rowCls = s => s==="ZWROT"?"st-ret":s==="WYSŁANE"?"st-sent":s==="GOTOWE DO WYSYŁKI"?"st-ready":s==="W TRAKCIE REALIZACJI"?"st-prog":"st-new";
 
@@ -923,12 +921,15 @@
     }
   }
 
-  // Top summary
+  // Top summary (w tym licznik zamówień)
   function updateTopSummary(){
-    $("sumRevenue").textContent=fmt2(revenueSumAll);
-    $("sumExpenses").textContent=fmt2(expensesSumAll);
-    const net=revenueSumAll-expensesSumAll;
-    const el=$("sumNet"); el.textContent=fmt2(net); el.classList.toggle("neg",net<0);
+    $("ordersCount").textContent = String(ordersGroupsAll.length);
+    $("sumRevenue").textContent  = fmt2(revenueSumAll);
+    $("sumExpenses").textContent = fmt2(expensesSumAll);
+    const net = revenueSumAll - expensesSumAll;
+    const el  = $("sumNet");
+    el.textContent = fmt2(net);
+    el.classList.toggle("neg", net < 0);
   }
 
   // Eksport CSV
