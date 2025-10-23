@@ -1,327 +1,1005 @@
-<!doctype html><html lang="pl"> <head> <meta charset="utf-8" /> <meta name="viewport" content="width=device-width,initial-scale=1" /> <title>Koszulki – panel</title> <!-- Chart.js do wykresów --> <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <style> :root { --bg:#141c26; --card:#1a2635; --muted:#9fb2c7; --text:#f1f6ff; --accent:#4cc9f0;
-  /* wyraźne kolory statusów (całe wiersze) */
-  --st-new:    rgba( 90, 245, 140,.70);
-  --st-prog:   rgba(255, 210,  90,.78);
-  --st-ready:  rgba(120, 235, 255,.72);
-  --st-sent:   rgba(130, 170, 255,.72);
-  --st-return: rgba(255, 110, 110,.82);
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Koszulki – panel</title>
+  <style>
+    :root {
+      --bg:#141c26;
+      --card:#1a2635;
+      --muted:#9fb2c7;
+      --text:#f1f6ff;
+      --accent:#4cc9f0;
 
-  --line:#2d4056;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
-header{padding:16px 20px;border-bottom:1px solid #243344;display:flex;justify-content:space-between;align-items:center;gap:10px}
-h1{font-size:18px;margin:0} .muted{color:var(--muted)}
-.wrap{max-width:1300px;margin:0 auto;padding:16px}
-.card{background:var(--card);border:1px solid #203145;border-radius:12px;padding:14px;margin-bottom:14px}
-.row{display:flex;gap:10px;flex-wrap:wrap}
-.row.center{align-items:center}
-.col{flex:1 1 220px;min-width:220px}
-input,select,button,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a4d;background:#0f1823;color:var(--text)}
-button{cursor:pointer;background:#19344b;border-color:#274d6a}
-button.primary{background:linear-gradient(180deg,#2a87b9,#1b5f86);border-color:#1b5f86;font-weight:600}
-button.ghost{background:#0f1823;border-color:#2a3a4d}
-.mini-btn{padding:6px 10px;border-radius:8px}
-nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0;flex-wrap:wrap}
-nav.tabs button{flex:0 0 auto;padding:8px 12px;border-radius:10px}
-nav.tabs button.active{outline:2px solid var(--accent)}
+      /* wyraźne kolory statusów (całe wiersze) */
+      --st-new:    rgba( 90, 245, 140,.70);
+      --st-prog:   rgba(255, 210,  90,.78);
+      --st-ready:  rgba(120, 235, 255,.72);
+      --st-sent:   rgba(130, 170, 255,.72);
+      --st-return: rgba(255, 110, 110,.82);
 
-/* tabela */
-table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
-th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left;vertical-align:middle;border-right:1px solid var(--line)}
-th:last-child, td:last-child{border-right:none}
-th{background:#1d2a3a}
-tr:hover td{filter:brightness(1.03)}
+      --line:#2d4056;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    header{padding:16px 20px;border-bottom:1px solid #243344;display:flex;justify-content:space-between;align-items:center;gap:10px}
+    h1{font-size:18px;margin:0} .muted{color:var(--muted)}
+    .wrap{max-width:1200px;margin:0 auto;padding:16px}
+    .card{background:var(--card);border:1px solid #203145;border-radius:12px;padding:14px;margin-bottom:14px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row.center{align-items:center}
+    .col{flex:1 1 220px;min-width:220px}
+    input,select,button,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a4d;background:#0f1823;color:var(--text)}
+    button{cursor:pointer;background:#19344b;border-color:#274d6a}
+    button.primary{background:linear-gradient(180deg,#2a87b9,#1b5f86);border-color:#1b5f86;font-weight:600}
+    button.ghost{background:#0f1823;border-color:#2a3a4d}
+    .mini-btn{padding:6px 10px;border-radius:8px}
+    nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0;flex-wrap:wrap}
+    nav.tabs button{flex:0 0 auto;padding:8px 12px;border-radius:10px}
+    nav.tabs button.active{outline:2px solid var(--accent)}
 
-/* kolumna STATUS – węższa, ale mieści długie nazwy */
-th.statusCol, td.statusCol { min-width:200px;width:200px;white-space:nowrap; }
-td.statusCol select { width:auto !important;min-width:200px;max-width:100%;white-space:nowrap;font-size:12px; }
-@media (max-width:900px){
-  th.statusCol, td.statusCol { min-width:180px;width:180px; }
-  td.statusCol select { min-width:180px; }
-}
+    /* tabela */
+    table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+    th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left;vertical-align:middle;border-right:1px solid var(--line)}
+    th:last-child, td:last-child{border-right:none}
+    th{background:#1d2a3a}
+    tr:hover td{filter:brightness(1.03)}
 
-/* status = kolor całego wiersza */
-tr.st-new   td{background-color:var(--st-new)}
-tr.st-prog  td{background-color:var(--st-prog)}
-tr.st-ready td{background-color:var(--st-ready)}
-tr.st-sent  td{background-color:var(--st-sent)}
-tr.st-ret   td{background-color:var(--st-return)}
+    /* kolumna STATUS – węższa, ale mieści długie nazwy */
+    th.statusCol, td.statusCol { min-width:200px; width:200px; white-space:nowrap; }
+    td.statusCol select{ width:auto !important; min-width:200px; max-width:100%; white-space:nowrap; font-size:12px; }
+    @media (max-width:900px){ th.statusCol,td.statusCol{min-width:180px;width:180px} td.statusCol select{min-width:180px} }
 
-/* naprzemienna intensywność dla kolejnych zamówień (grup) */
-tr.toneA td{background-image:linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,.35))}
-tr.toneB td{background-image:linear-gradient(rgba(0,0,0,.30),rgba(0,0,0,.30))}
+    /* status = kolor całego wiersza */
+    tr.st-new   td{background-color:var(--st-new)}
+    tr.st-prog  td{background-color:var(--st-prog)}
+    tr.st-ready td{background-color:var(--st-ready)}
+    tr.st-sent  td{background-color:var(--st-sent)}
+    tr.st-ret   td{background-color:var(--st-return)}
 
-.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-.right{margin-left:auto}
-.hint{font-size:12px;color:var(--muted)}
-.pill{padding:6px 10px;border-radius:99px;background:#0f1823;border:1px solid #2a3a4d}
-.mini{font-size:12px}
+    /* naprzemienna intensywność dla kolejnych zamówień (grup) */
+    tr.toneA td{background-image:linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,.35))}
+    tr.toneB td{background-image:linear-gradient(rgba(0,0,0,.30),rgba(0,0,0,.30))}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-.design-card{border:1px solid #2a3a4d;border-radius:12px;padding:10px;cursor:pointer;background:#0f1823;text-align:center}
-.design-card:hover{border-color:#3c5875}
-.design-card.selected{outline:2px solid #56b7ff;background:#122334}
-.design-img{width:100%;height:110px;object-fit:cover;border-radius:10px;border:1px solid #2a3a4d;background:#0b1118}
-.design-name{margin-top:8px;font-weight:600}
+    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+    .right{margin-left:auto}
+    .hint{font-size:12px;color:var(--muted)}
+    .pill{padding:6px 10px;border-radius:99px;background:#0f1823;border:1px solid #2a3a4d}
+    .mini{font-size:12px}
 
-.add-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.add-header .right{display:flex;gap:10px;margin-left:auto}
-.rows-wrap{overflow:auto}
-.rows-table thead th{position:sticky;top:0;background:#1d2a3a;z-index:1}
-.rows-table td .thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118} /* +20% */
-.rows-actions{display:flex;gap:6px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+    .design-card{border:1px solid #2a3a4d;border-radius:12px;padding:10px;cursor:pointer;background:#0f1823;text-align:center}
+    .design-card:hover{border-color:#3c5875}
+    .design-card.selected{outline:2px solid #56b7ff;background:#122334}
+    .design-img{width:100%;height:110px;object-fit:cover;border-radius:10px;border:1px solid #2a3a4d;background:#0b1118}
+    .design-name{margin-top:8px;font-weight:600}
 
-.date-compact{display:flex;gap:8px;align-items:center}
-.date-compact .small{max-width:90px;padding:8px}
-.date-compact .month{max-width:180px;padding:8px}
+    .add-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .add-header .right{display:flex;gap:10px;margin-left:auto}
+    .rows-wrap{overflow:auto}
+    .rows-table thead th{position:sticky;top:0;background:#1d2a3a;z-index:1}
+    .rows-table td .thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118} /* +20% */
+    .rows-actions{display:flex;gap:6px}
 
-input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
-input[type=number]{ -moz-appearance:textfield;}
-input[type="file"]{padding:8px;background:#0f1823;border:1px solid #2a3a4d;color:var(--muted)}
-input[type="file"]::file-selector-button{margin-right:10px;border:1px solid #274d6a;background:#19344b;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}
+    .date-compact{display:flex;gap:8px;align-items:center}
+    .date-compact .small{max-width:90px;padding:8px}
+    .date-compact .month{max-width:180px;padding:8px}
 
-.designCell{display:flex;align-items:center;gap:8px}
-.designThumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
-.colorTag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4d;border-radius:999px;padding:2px 8px;background:#0f1823}
-.dot{width:12px;height:12px;border-radius:50%;border:1px solid #2a3a4d;background:#fff}
-.dot.black{background:#000}
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
+    input[type=number]{ -moz-appearance:textfield;}
 
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
-.modal .panel{background:var(--card);border:1px solid #203145;border-radius:12px;width:min(1000px,94vw);max-height:88vh;padding:14px;display:flex;flex-direction:column}
-.modal .panel .head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-.modal .panel .head .right{margin-left:auto}
-.scroll{overflow:auto;flex:1 1 auto;min-height:0}
-.danger{color:#ff6b6b}
-.neg{color:#ff9e9e}
-.bold{font-weight:700}
+    input[type="file"]{padding:8px;background:#0f1823;border:1px solid #2a3a4d;color:var(--muted)}
+    input[type="file"]::file-selector-button{margin-right:10px;border:1px solid #274d6a;background:#19344b;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}
 
-/* Statystyki */
-.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
-.chart-card{background:#0f1823;border:1px solid #2a3a4d;border-radius:12px;padding:12px}
-.stat-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
-.hide{display:none!important}
-</style></head> <body> <header> <h1>Koszulki – panel</h1> <div> <span id="userEmail" class="muted"></span> <button id="logoutBtn" class="ghost" style="display:none">Wyloguj</button> </div> </header><div class="wrap"> <!-- LOGIN --> <div id="loginCard" class="card" style="max-width:460px;"> <h3>Zaloguj się</h3> <div class="row center"> <div class="col"><input id="email" type="email" placeholder="Email" /></div> <div class="col"><input id="password" type="password" placeholder="Hasło" /></div> </div> <div class="row center"> <div class="col"><button id="loginBtn" class="primary">Zaloguj</button></div> <div class="col"><div id="loginMsg" class="hint"></div></div> </div> </div> <!-- APP --> <div id="app" style="display:none"> <nav class="tabs"> <button data-tab="orders" class="active">Zamówienia</button> <button data-tab="add">Dodaj zamówienie</button> <button data-tab="designs">Wzory</button> <button data-tab="expenses">Koszty</button> <button data-tab="stats">Statystyki</button> </nav>
-<!-- ORDERS TAB -->
-<div id="tab-orders" class="card">
-  <div class="toolbar">
-    <div>
-      <label class="mini">Miesiąc i rok</label>
-      <div class="row center" style="gap:6px">
-        <select id="ordersMonth" class="month" style="max-width:180px"></select>
-        <select id="ordersYear" style="max-width:120px"></select>
+    .designCell{display:flex;align-items:center;gap:8px}
+    .designThumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
+    .colorTag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4d;border-radius:999px;padding:2px 8px;background:#0f1823}
+    .dot{width:12px;height:12px;border-radius:50%;border:1px solid #2a3a4d;background:#fff}
+    .dot.black{background:#000}
+
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
+    .modal .panel{background:var(--card);border:1px solid #203145;border-radius:12px;width:min(1000px,94vw);max-height:88vh;padding:14px;display:flex;flex-direction:column}
+    .modal .panel .head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+    .modal .panel .head .right{margin-left:auto}
+    .scroll{overflow:auto;flex:1 1 auto;min-height:0}
+    .danger{color:#ff6b6b}
+    .neg{color:#ff9e9e}
+    .bold{font-weight:700}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Koszulki – panel</h1>
+  <div>
+    <span id="userEmail" class="muted"></span>
+    <button id="logoutBtn" class="ghost" style="display:none">Wyloguj</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- LOGIN -->
+  <div id="loginCard" class="card" style="max-width:460px;">
+    <h3>Zaloguj się</h3>
+    <div class="row center">
+      <div class="col"><input id="email" type="email" placeholder="Email" /></div>
+      <div class="col"><input id="password" type="password" placeholder="Hasło" /></div>
+    </div>
+    <div class="row center">
+      <div class="col"><button id="loginBtn" class="primary">Zaloguj</button></div>
+      <div class="col"><div id="loginMsg" class="hint"></div></div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" style="display:none">
+    <nav class="tabs">
+      <button data-tab="orders" class="active">Zamówienia</button>
+      <button data-tab="add">Dodaj zamówienie</button>
+      <button data-tab="designs">Wzory</button>
+      <button data-tab="expenses">Koszty</button>
+      <button data-tab="stats">Statystyki</button>
+    </nav>
+
+    <!-- ORDERS TAB -->
+    <div id="tab-orders" class="card">
+      <div class="toolbar">
+        <div>
+          <label class="mini">Miesiąc i rok</label>
+          <div class="row center" style="gap:6px">
+            <select id="ordersMonth" class="month" style="max-width:180px"></select>
+            <select id="ordersYear" style="max-width:120px"></select>
+          </div>
+        </div>
+        <div>
+          <label class="mini">Status (widok)</label>
+          <select id="filterStatus">
+            <option value="ALL">Wszystkie</option>
+            <option value="ZAMÓWIENIE PRZYJĘTE">ZAMÓWIENIE PRZYJĘTE</option>
+            <option value="W TRAKCIE REALIZACJI">W TRAKCIE REALIZACJI</option>
+            <option value="GOTOWE DO WYSYŁKI">GOTOWE DO WYSYŁKI</option>
+            <option value="WYSŁANE">WYSŁANE</option>
+            <option value="ZWROT">ZWROT</option>
+          </select>
+        </div>
+        <div class="row center" style="gap:6px">
+          <button id="exportItemsBtn" class="ghost mini-btn">Eksport CSV (pozycje)</button>
+          <button id="exportGroupsBtn" class="ghost mini-btn">Eksport CSV (zamówienia)</button>
+        </div>
+        <div class="right pill">
+          Zamówienia: <b id="ordersCount">0</b> •
+          Przychody: <b id="sumRevenue">0.00</b> zł •
+          Koszty: <b id="sumExpenses">0.00</b> zł •
+          Wynik: <b id="sumNet">0.00</b> zł
+        </div>
+      </div>
+
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th class="statusCol">Status</th>
+              <th>Rozmiar</th>
+              <th>Kolor</th>
+              <th>Wzór</th>
+              <th>Zamawiający</th>
+              <th>Uwagi</th>
+              <th>Cena (łącznie)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="ordersTbody"></tbody>
+        </table>
+      </div>
+      <div class="hint">Status i klient tylko raz na zamówienie (pierwszy wiersz). ZWROT nie liczy się do przychodów.</div>
+    </div>
+
+    <!-- ADD ORDER TAB -->
+    <div id="tab-add" class="card" style="display:none">
+      <div class="add-header">
+        <h3 style="margin:0">Dodaj zamówienie</h3>
+        <div class="right">
+          <button id="addRowBtn" class="ghost">+ Dodaj pozycję</button>
+          <button id="clearOrderBtn" class="ghost">Wyczyść</button>
+          <button id="saveOrderBtn" class="primary">Zapisz wszystkie pozycje</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin:0 0 10px 0">
+        <h4 style="margin:0 0 8px 0">Dane zamówienia</h4>
+        <div class="row center">
+          <div class="date-compact">
+            <div class="col" style="min-width:auto;flex:0 0 auto">
+              <label class="mini">Dzień</label>
+              <input id="addDay" class="small" type="number" min="1" max="31" />
+            </div>
+            <div class="col" style="min-width:auto;flex:0 0 auto">
+              <label class="mini">Miesiąc</label>
+              <select id="addMonth" class="month"></select>
+            </div>
+            <div class="col" style="min-width:auto;flex:0 0 auto">
+              <label class="mini">Rok</label>
+              <select id="addYear" class="small"></select>
+            </div>
+          </div>
+
+          <div class="col">
+            <label class="mini">Zamawiający (login/imię)</label>
+            <input id="orderCustomer" type="text" />
+          </div>
+          <div class="col">
+            <label class="mini">Cena łączna zamówienia (PLN)</label>
+            <input id="orderTotalPrice" type="number" step="0.01" placeholder="np. 210" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin:0">
+        <h4 style="margin:0 0 8px 0">Pozycje</h4>
+        <div class="rows-wrap">
+          <table class="rows-table" style="width:100%">
+            <thead>
+              <tr>
+                <th style="width:35%">Wzór</th>
+                <th style="width:10%">Rozmiar</th>
+                <th style="width:12%">Kolor</th>
+                <th>Uwagi</th>
+                <th style="width:120px"></th>
+              </tr>
+            </thead>
+            <tbody id="rowsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="saveMsg" class="hint" style="margin-top:8px"></div>
+    </div>
+
+    <!-- DESIGNS TAB -->
+    <div id="tab-designs" class="card" style="display:none">
+      <h3>Wzory (z podglądem)</h3>
+      <div class="row center">
+        <div class="col"><input id="designName" placeholder="Nazwa wzoru, np. kitty red bull blue" /></div>
+        <div class="col"><input id="designFile" type="file" accept="image/*" /></div>
+        <div class="col" style="max-width:220px"><button id="addDesignBtn" class="primary">Dodaj wzór</button></div>
+      </div>
+      <div id="designMsg" class="hint" style="margin:6px 0 10px 0"></div>
+      <div id="designsList" class="grid" style="margin-top:10px"></div>
+    </div>
+
+    <!-- EXPENSES TAB -->
+    <div id="tab-expenses" class="card" style="display:none">
+      <div class="toolbar">
+        <div>
+          <label class="mini">Miesiąc i rok</label>
+          <div class="row center" style="gap:6px">
+            <select id="expMonth" class="month" style="max-width:180px"></select>
+            <select id="expYear" style="max-width:120px"></select>
+          </div>
+        </div>
+        <div class="row center" style="gap:6px">
+          <button id="exportExpBtn" class="ghost mini-btn">Eksport CSV</button>
+        </div>
+        <div class="right pill">Koszty (m‑c): <b id="sumExpensesTop">0.00</b> zł</div>
+      </div>
+
+      <div class="card" style="margin:0 0 10px 0">
+        <h4 style="margin:0 0 8px 0">Dodaj koszt</h4>
+        <div class="row center">
+          <div class="col"><input id="expName" placeholder="Nazwa kosztu, np. zakup koszulek S/M" /></div>
+          <div class="col" style="max-width:220px"><input id="expAmount" type="number" step="0.01" placeholder="Kwota, np. 150.00" /></div>
+          <div class="col" style="max-width:120px"><input id="expDay" type="number" min="1" max="31" placeholder="Dzień" /></div>
+          <div class="col"><input id="expNote" placeholder="Uwagi (opcjonalnie)" /></div>
+          <div class="col" style="max-width:220px"><button id="addExpenseBtn" class="primary">Dodaj</button></div>
+        </div>
+        <div id="expMsg" class="hint" style="margin-top:6px"></div>
+      </div>
+
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Nazwa</th>
+              <th>Uwagi</th>
+              <th>Kwota</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="expTbody"></tbody>
+        </table>
       </div>
     </div>
-    <div>
-      <label class="mini">Status (widok)</label>
-      <select id="filterStatus">
-        <option value="ALL">Wszystkie</option>
-        <option value="ZAMÓWIENIE PRZYJĘTE">ZAMÓWIENIE PRZYJĘTE</option>
-        <option value="W TRAKCIE REALIZACJI">W TRAKCIE REALIZACJI</option>
-        <option value="GOTOWE DO WYSYŁKI">GOTOWE DO WYSYŁKI</option>
-        <option value="WYSŁANE">WYSŁANE</option>
-        <option value="ZWROT">ZWROT</option>
-      </select>
-    </div>
-    <div class="row center" style="gap:6px">
-      <button id="exportItemsBtn" class="ghost mini-btn">Eksport CSV (pozycje)</button>
-      <button id="exportGroupsBtn" class="ghost mini-btn">Eksport CSV (zamówienia)</button>
-    </div>
-    <div class="right pill">
-      Zamówienia: <b id="ordersCount">0</b> •
-      Przychody: <b id="sumRevenue">0.00</b> zł •
-      Koszty: <b id="sumExpenses">0.00</b> zł •
-      Wynik: <b id="sumNet">0.00</b> zł
-    </div>
-  </div>
 
-  <div style="overflow:auto">
-    <table>
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th class="statusCol">Status</th>
-          <th>Rozmiar</th>
-          <th>Kolor</th>
-          <th>Wzór</th>
-          <th>Zamawiający</th>
-          <th>Uwagi</th>
-          <th>Cena (łącznie)</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="ordersTbody"></tbody>
-    </table>
+    <!-- STATS TAB -->
+    <div id="tab-stats" class="card" style="display:none">
+      <div class="toolbar">
+        <div>
+          <label class="mini">Miesiąc i rok</label>
+          <div class="row center" style="gap:6px">
+            <select id="statsMonth" class="month" style="max-width:180px"></select>
+            <select id="statsYear" style="max-width:120px"></select>
+          </div>
+        </div>
+        <div class="right pill">Ranking wzorów (liczba pozycji; bez ZWROT)</div>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>#</th><th>Wzór</th><th>Ilość zamówień</th></tr></thead>
+          <tbody id="statsTbody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
-  <div class="hint">Status i klient tylko raz na zamówienie (pierwszy wiersz). ZWROT nie liczy się do przychodów.</div>
 </div>
 
-<!-- ADD ORDER TAB -->
-<div id="tab-add" class="card" style="display:none">
-  <div class="add-header">
-    <h3 style="margin:0">Dodaj zamówienie</h3>
-    <div class="right">
-      <button id="addRowBtn" class="ghost">+ Dodaj pozycję</button>
-      <button id="clearOrderBtn" class="ghost">Wyczyść</button>
-      <button id="saveOrderBtn" class="primary">Zapisz wszystkie pozycje</button>
+<!-- MODAL – wybór wzoru (scroll w środku) -->
+<div id="designPicker" class="modal">
+  <div class="panel">
+    <div class="head">
+      <strong>Wybierz wzór</strong>
+      <div class="right"><button id="pickerClose" class="ghost mini-btn">Zamknij</button></div>
     </div>
-  </div>
-
-  <div class="card" style="margin:0 0 10px 0">
-    <h4 style="margin:0 0 8px 0">Dane zamówienia</h4>
     <div class="row center">
-      <div class="date-compact">
-        <div class="col" style="min-width:auto;flex:0 0 auto">
-          <label class="mini">Dzień</label>
-          <input id="addDay" class="small" type="number" min="1" max="31" />
-        </div>
-        <div class="col" style="min-width:auto;flex:0 0 auto">
-          <label class="mini">Miesiąc</label>
-          <select id="addMonth" class="month"></select>
-        </div>
-        <div class="col" style="min-width:auto;flex:0 0 auto">
-          <label class="mini">Rok</label>
-          <select id="addYear" class="small"></select>
-        </div>
-      </div>
-
+      <div class="col"><input id="pickerSearch" placeholder="Szukaj wzoru po nazwie..." /></div>
       <div class="col">
-        <label class="mini">Zamawiający (login/imię)</label>
-        <input id="orderCustomer" type="text" />
-      </div>
-      <div class="col">
-        <label class="mini">Cena łączna zamówienia (PLN)</label>
-        <input id="orderTotalPrice" type="number" step="0.01" placeholder="np. 210" />
+        <label class="mini">Albo wgraj CUSTOM dla tej pozycji</label>
+        <input id="pickerCustomFile" type="file" accept="image/*" />
       </div>
     </div>
+    <div id="pickerGridWrap" class="scroll" style="margin-top:10px">
+      <div id="pickerGrid" class="grid"></div>
+    </div>
+    <div class="hint">Kliknij kafelek, aby przypisać wzór do tej pozycji. Wgranie pliku ustawi tę pozycję jako CUSTOM.</div>
   </div>
+</div>
 
-  <div class="card" style="margin:0">
-    <h4 style="margin:0 0 8px 0">Pozycje</h4>
-    <div class="rows-wrap">
+<!-- MODAL – edycja zamówienia -->
+<div id="orderEdit" class="modal">
+  <div class="panel">
+    <div class="head">
+      <strong>Edytuj zamówienie</strong>
+      <div class="right">
+        <button id="editAddRowBtn" class="ghost mini-btn">+ Pozycja</button>
+        <button id="editCloseBtn" class="ghost mini-btn">Zamknij</button>
+      </div>
+    </div>
+    <div class="card" style="margin:0 0 10px 0">
+      <div class="row center">
+        <div class="date-compact">
+          <div class="col" style="min-width:auto;flex:0 0 auto">
+            <label class="mini">Dzień</label>
+            <input id="editDay" class="small" type="number" min="1" max="31" />
+          </div>
+          <div class="col" style="min-width:auto;flex:0 0 auto">
+            <label class="mini">Miesiąc</label>
+            <select id="editMonth" class="month"></select>
+          </div>
+          <div class="col" style="min-width:auto;flex:0 0 auto">
+            <label class="mini">Rok</label>
+            <select id="editYear" class="small"></select>
+          </div>
+        </div>
+        <div class="col">
+          <label class="mini">Zamawiający</label>
+          <input id="editCustomer" type="text" />
+        </div>
+        <div class="col">
+          <label class="mini">Cena łączna zamówienia (PLN)</label>
+          <input id="editTotal" type="number" step="0.01" />
+        </div>
+      </div>
+    </div>
+    <div id="editRowsWrap" class="scroll">
       <table class="rows-table" style="width:100%">
-        <thead>
-          <tr>
-            <th style="width:35%">Wzór</th>
-            <th style="width:10%">Rozmiar</th>
-            <th style="width:12%">Kolor</th>
-            <th>Uwagi</th>
-            <th style="width:120px"></th>
-          </tr>
-        </thead>
-        <tbody id="rowsTbody"></tbody>
+        <thead><tr><th style="width:35%">Wzór</th><th style="width:10%">Rozmiar</th><th style="width:12%">Kolor</th><th>Uwagi</th><th style="width:120px"></th></tr></thead>
+        <tbody id="editRowsTbody"></tbody>
       </table>
     </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><div id="editMsg" class="hint"></div></div>
+      <div class="col" style="max-width:220px"><button id="editSaveBtn" class="primary">Zapisz zmiany</button></div>
+    </div>
   </div>
-
-  <div id="saveMsg" class="hint" style="margin-top:8px"></div>
 </div>
 
-<!-- DESIGNS TAB -->
-<div id="tab-designs" class="card" style="display:none">
-  <h3>Wzory (z podglądem)</h3>
-  <div class="row center">
-    <div class="col"><input id="designName" placeholder="Nazwa wzoru, np. kitty red bull blue" /></div>
-    <div class="col"><input id="designFile" type="file" accept="image/*" /></div>
-    <div class="col" style="max-width:220px"><button id="addDesignBtn" class="primary">Dodaj wzór</button></div>
-  </div>
-  <div id="designMsg" class="hint" style="margin:6px 0 10px 0"></div>
-  <div id="designsList" class="grid" style="margin-top:10px"></div>
-</div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+    setPersistence, browserLocalPersistence
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc,
+    getDocs, query, where, onSnapshot, serverTimestamp, Timestamp, writeBatch
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<!-- EXPENSES TAB -->
-<div id="tab-expenses" class="card" style="display:none">
-  <div class="toolbar">
-    <div>
-      <label class="mini">Miesiąc i rok</label>
-      <div class="row center" style="gap:6px">
-        <select id="expMonth" class="month" style="max-width:180px"></select>
-        <select id="expYear" style="max-width:120px"></select>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
+    authDomain: "papierek-idzie-do-gory.firebaseapp.com",
+    projectId: "papierek-idzie-do-gory",
+    storageBucket: "papierek-idzie-do-gory.firebasestorage.app",
+    messagingSenderId: "1063966015801",
+    appId: "1:1063966015801:web:72f412aa200a705276a8e8"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const $ = id => document.getElementById(id);
+  const fmt2 = n => (Number(n||0)).toFixed(2);
+  const numPL = n => fmt2(n).replace('.', ',');
+  const monthsPL = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
+  const monthKey = (y,mIndex) => `${y}-${String(mIndex+1).padStart(2,"0")}`;
+  const rowCls = s => s==="ZWROT"?"st-ret":s==="WYSŁANE"?"st-sent":s==="GOTOWE DO WYSYŁKI"?"st-ready":s==="W TRAKCIE REALIZACJI"?"st-prog":"st-new";
+  const dShort = d => { const dt=d?.toDate?d.toDate():new Date(d); const dd=String(dt.getDate()).padStart(2,"0"); const mm=String(dt.getMonth()+1).padStart(2,"0"); const yy=dt.getFullYear(); return `${dd}.${mm}.${yy}`; };
+
+  // logowanie
+  const loginCard=$("loginCard"), appWrap=$("app"), userEmail=$("userEmail"), loginBtn=$("loginBtn"), logoutBtn=$("logoutBtn"), loginMsg=$("loginMsg");
+  loginBtn.onclick = async () => {
+    loginMsg.textContent = "Logowanie…";
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithEmailAndPassword(auth, $("email").value, $("password").value);
+      loginMsg.textContent = "";
+    } catch (e) {
+      console.error(e);
+      loginMsg.textContent = "Błąd: " + (e.code || e.message);
+    }
+  };
+  logoutBtn.onclick = () => signOut(auth);
+  onAuthStateChanged(auth, u => {
+    if (u){ loginCard.style.display="none"; appWrap.style.display=""; userEmail.textContent=u.email||""; logoutBtn.style.display=""; initApp(); }
+    else  { loginCard.style.display=""; appWrap.style.display="none"; userEmail.textContent=""; logoutBtn.style.display="none"; }
+  });
+
+  // caches
+  const designMap = new Map();
+  let orderRows = [];
+  let ordersGroupsAll = [];
+  let expensesList = [];
+  let revenueSumAll = 0;
+  let expensesSumAll = 0;
+  let unsubOrders=null, unsubExp=null, unsubStats=null;
+
+  // edit state
+  let editRows = [];
+  let editingGroupId = null;
+
+  // picker state
+  let pickerContext="add", pickerRowIndex=null;
+
+  async function initApp(){
+    const now = new Date();
+    const years = Array.from({length:9},(_,k)=>now.getFullYear()-4+k);
+    const monthsHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
+    const yearsHTML  = years.map(y=>`<option ${y===now.getFullYear()?"selected":""}>${y}</option>`).join("");
+
+    $("ordersMonth").innerHTML = monthsHTML; $("ordersYear").innerHTML = yearsHTML; $("ordersMonth").value = String(now.getMonth());
+    $("addMonth").innerHTML = monthsHTML; $("addYear").innerHTML = yearsHTML; $("addMonth").value=String(now.getMonth()); $("addYear").value=String(now.getFullYear()); $("addDay").value=String(now.getDate());
+    $("expMonth").innerHTML = monthsHTML; $("expYear").innerHTML = yearsHTML; $("expMonth").value=String(now.getMonth()); $("expYear").value=String(now.getFullYear()); $("expDay").value=String(now.getDate());
+    $("statsMonth").innerHTML = monthsHTML; $("statsYear").innerHTML = yearsHTML; $("statsMonth").value=String(now.getMonth()); $("statsYear").value=String(now.getFullYear());
+    $("editMonth").innerHTML = monthsHTML; $("editYear").innerHTML = yearsHTML;
+
+    await reloadDesigns();
+    subscribeOrders();
+    subscribeExpenses();
+    subscribeStats();
+
+    const syncFromOrders = ()=>{ $("expMonth").value=$("ordersMonth").value; $("expYear").value=$("ordersYear").value; $("statsMonth").value=$("ordersMonth").value; $("statsYear").value=$("ordersYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
+    $("ordersMonth").addEventListener("change", syncFromOrders);
+    $("ordersYear").addEventListener("change", syncFromOrders);
+    $("filterStatus").addEventListener("change", renderOrdersFiltered);
+
+    const syncFromExpenses = ()=>{ $("ordersMonth").value=$("expMonth").value; $("ordersYear").value=$("expYear").value; $("statsMonth").value=$("expMonth").value; $("statsYear").value=$("expYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
+    $("expMonth").addEventListener("change", syncFromExpenses);
+    $("expYear").addEventListener("change",  syncFromExpenses);
+
+    const syncFromStats = ()=>{ $("ordersMonth").value=$("statsMonth").value; $("ordersYear").value=$("statsYear").value; $("expMonth").value=$("statsMonth").value; $("expYear").value=$("statsYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
+    $("statsMonth").addEventListener("change", syncFromStats);
+    $("statsYear").addEventListener("change",  syncFromStats);
+
+    $("addDesignBtn").addEventListener("click", onAddDesign);
+    $("addRowBtn").addEventListener("click", ()=>addRow());
+    $("clearOrderBtn").addEventListener("click", clearOrderForm);
+    $("saveOrderBtn").addEventListener("click", saveOrder);
+    $("pickerClose").addEventListener("click", ()=>{ document.getElementById("designPicker").style.display="none"; pickerRowIndex=null; });
+    $("pickerSearch").addEventListener("input", renderPickerGrid);
+    $("pickerCustomFile").addEventListener("change", onPickerCustom);
+    $("addExpenseBtn").addEventListener("click", addExpense);
+    $("editAddRowBtn").addEventListener("click", ()=>editAddRow());
+    $("editCloseBtn").addEventListener("click", ()=>{ document.getElementById("orderEdit").style.display="none"; editingGroupId=null; editRows=[]; });
+    $("editSaveBtn").addEventListener("click", saveEditOrder);
+
+    $("exportItemsBtn").addEventListener("click", exportOrdersItemsCSV);
+    $("exportGroupsBtn").addEventListener("click", exportOrdersGroupsCSV);
+    $("exportExpBtn").addEventListener("click", exportExpensesCSV);
+
+    const tabsBtns = document.querySelectorAll("nav.tabs button");
+    const tabs = { orders:$("tab-orders"), add:$("tab-add"), designs:$("tab-designs"), expenses:$("tab-expenses"), stats:$("tab-stats") };
+    tabsBtns.forEach(btn => btn.addEventListener("click", () => {
+      tabsBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      Object.values(tabs).forEach(el => el.style.display="none");
+      tabs[btn.dataset.tab].style.display = "";
+    }));
+
+    addRow();
+  }
+
+  async function reloadDesigns(){
+    designMap.clear();
+    const snap = await getDocs(query(collection(db,"designs")));
+    snap.forEach(d=>designMap.set(d.id,{id:d.id,...d.data()}));
+    renderDesignsList(); renderPickerGrid();
+  }
+  function renderDesignsList(){
+    const box=$("designsList"); box.innerHTML="";
+    for(const d of Array.from(designMap.values()).sort((a,b)=>a.name.localeCompare(b.name,"pl"))){
+      const card=document.createElement("div");
+      card.className="design-card";
+      card.innerHTML=`
+        ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`}
+        <div class="design-name">${(d.name||"").replace(/</g,"&lt;")}</div>
+        <div class="row center" style="margin-top:8px">
+          <button class="ghost mini-btn" data-act="edit">Edytuj</button>
+          <button class="ghost mini-btn danger" data-act="del">Usuń</button>
+        </div>`;
+      box.appendChild(card);
+      card.querySelector('[data-act="edit"]').onclick=()=>openEditDesign(card,d);
+      card.querySelector('[data-act="del"]').onclick=async()=>{ if(!confirm("Usunąć wzór?"))return; await deleteDoc(doc(db,"designs",d.id)); await reloadDesigns(); };
+    }
+  }
+  function openEditDesign(card,d){
+    card.innerHTML=`
+      <div class="row center">
+        <div class="col"><input value="${(d.name||"").replace(/"/g,'&quot;')}" data-role="name"/></div>
+        <div class="col"><input type="file" accept="image/*" data-role="file"/></div>
       </div>
-    </div>
-    <div class="row center" style="gap:6px">
-      <button id="exportExpBtn" class="ghost mini-btn">Eksport CSV</button>
-    </div>
-    <div class="right pill">Koszty (m‑c): <b id="sumExpensesTop">0.00</b> zł</div>
-  </div>
+      <div class="row center" style="margin-top:8px">
+        <button class="primary mini-btn" data-act="save">Zapisz</button>
+        <button class="ghost mini-btn" data-act="cancel">Anuluj</button>
+      </div>
+      <div class="hint mini" data-role="msg"></div>`;
+    card.querySelector('[data-act="cancel"]').onclick=renderDesignsList;
+    card.querySelector('[data-act="save"]').onclick=async()=>{
+      const name=card.querySelector('[data-role="name"]').value.trim();
+      const file=card.querySelector('[data-role="file"]').files[0]||null;
+      const msg=card.querySelector('[data-role="msg"]');
+      if(!name){msg.textContent="Podaj nazwę.";return;}
+      try{
+        let previewUrl=d.previewUrl||null;
+        if(file) previewUrl=await fileToDataUrl(file);
+        await setDoc(doc(db,"designs",d.id),{name,previewUrl,updatedAt:serverTimestamp()},{merge:true});
+        await reloadDesigns();
+      }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
+    };
+  }
+  async function onAddDesign(){
+    const name=$("designName").value.trim();
+    const file=$("designFile").files[0]||null;
+    const out=$("designMsg");
+    if(!name){out.textContent="Podaj nazwę wzoru.";return;}
+    const id=name.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,"");
+    try{
+      let previewUrl=null; if(file) previewUrl=await fileToDataUrl(file);
+      await setDoc(doc(db,"designs",id),{name,active:true,previewUrl,createdAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});
+      $("designName").value=""; $("designFile").value=""; out.textContent="Dodano wzór ✅";
+      await reloadDesigns(); setTimeout(()=>out.textContent="",1200);
+    }catch(e){ out.textContent="Błąd: "+(e.message||e.code); }
+  }
 
-  <div class="card" style="margin:0 0 10px 0">
-    <h4 style="margin:0 0 8px 0">Dodaj koszt</h4>
-    <div class="row center">
-      <div class="col"><input id="expName" placeholder="Nazwa kosztu, np. zakup koszulek S/M" /></div>
-      <div class="col" style="max-width:220px"><input id="expAmount" type="number" step="0.01" placeholder="Kwota, np. 150.00" /></div>
-      <div class="col" style="max-width:120px"><input id="expDay" type="number" min="1" max="31" placeholder="Dzień" /></div>
-      <div class="col"><input id="expNote" placeholder="Uwagi (opcjonalnie)" /></div>
-      <div class="col" style="max-width:220px"><button id="addExpenseBtn" class="primary">Dodaj</button></div>
-    </div>
-    <div id="expMsg" class="hint" style="margin-top:6px"></div>
-  </div>
+  function openPicker(i,ctx="add"){ pickerContext=ctx; pickerRowIndex=i; $("pickerCustomFile").value=""; $("pickerSearch").value=""; renderPickerGrid(); document.getElementById("designPicker").style.display="flex"; }
+  function renderPickerGrid(){
+    const grid=$("pickerGrid"); grid.innerHTML="";
+    const term=($("pickerSearch").value||"").toLowerCase();
+    const list=Array.from(designMap.values()).filter(d=>d.active!==false).filter(d=>term?d.name.toLowerCase().includes(term):true).sort((a,b)=>a.name.localeCompare(b.name,"pl"));
+    for(const d of list){
+      const card=document.createElement("div"); card.className="design-card";
+      card.innerHTML=`
+        ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`}
+        <div class="design-name">${(d.name||"").replace(/</g,"&lt;")}</div>`;
+      card.onclick=()=>{
+        const arr=(pickerContext==="edit")?editRows:orderRows;
+        const r=arr[pickerRowIndex];
+        r.designId=d.id; r.designName=d.name; r.previewUrl=d.previewUrl||null; r.customFile=null; r.customLocalUrl=null;
+        (pickerContext==="edit")?renderEditRows():renderOrderRows();
+        document.getElementById("designPicker").style.display="none"; pickerRowIndex=null;
+      };
+      grid.appendChild(card);
+    }
+  }
+  async function onPickerCustom(e){
+    const file=e.target.files[0]; if(!file||pickerRowIndex==null)return;
+    const arr=(pickerContext==="edit")?editRows:orderRows; const r=arr[pickerRowIndex];
+    r.designId="custom"; r.designName="CUSTOM"; r.customFile=file; r.customLocalUrl=URL.createObjectURL(file); r.previewUrl=r.customLocalUrl;
+    (pickerContext==="edit")?renderEditRows():renderOrderRows();
+    document.getElementById("designPicker").style.display="none"; pickerRowIndex=null;
+  }
 
-  <div style="overflow:auto">
-    <table>
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Nazwa</th>
-          <th>Uwagi</th>
-          <th>Kwota</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="expTbody"></tbody>
-    </table>
-  </div>
-</div>
+  /* Dodawanie zamówienia */
+  function defaultRow(){ return { size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; }
+  function addRow(){ orderRows.push(defaultRow()); renderOrderRows(); }
+  function removeRow(i){ orderRows.splice(i,1); renderOrderRows(); if(orderRows.length===0) addRow(); }
+  function renderOrderRows(){
+    const tb=$("rowsTbody"); tb.innerHTML="";
+    orderRows.forEach((r,i)=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            ${r.previewUrl?`<img class="thumb" src="${r.previewUrl}" alt="">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#6d8096">?</div>`}
+            <div style="min-width:180px"><b>${(r.designName||"Nie wybrano").replace(/</g,"&lt;")}</b></div>
+            <div class="rows-actions">
+              <button class="ghost mini-btn" data-act="pick">Wybierz wzór</button>
+              <label class="ghost mini-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+                <input data-act="custom" type="file" accept="image/*" style="display:none"> Upload CUSTOM
+              </label>
+            </div>
+          </div>
+        </td>
+        <td><select data-act="size">${["S","M","L","XL","XXL","3XL"].map(s=>`<option ${r.size===s?"selected":""}>${s}</option>`).join("")}</select></td>
+        <td><select data-act="color">${["BIAŁA","CZARNA"].map(c=>`<option ${r.color===c?"selected":""}>${c}</option>`).join("")}</select></td>
+        <td><input data-act="note" type="text" value="${(r.note||"").replace(/"/g,'&quot;')}" placeholder="Uwagi do tej pozycji"></td>
+        <td class="rows-actions"><button class="ghost mini-btn danger" data-act="remove">Usuń</button></td>`;
+      tr.querySelector('[data-act="pick"]').onclick=()=>openPicker(i,"add");
+      tr.querySelector('[data-act="remove"]').onclick=()=>removeRow(i);
+      tr.querySelector('[data-act="size"]').onchange=e=>r.size=e.target.value;
+      tr.querySelector('[data-act="color"]').onchange=e=>r.color=e.target.value;
+      tr.querySelector('[data-act="note"]').oninput=e=>r.note=e.target.value;
+      tr.querySelector('[data-act="custom"]').onchange=e=>{ const f=e.target.files[0]; if(!f)return; r.designId="custom"; r.designName="CUSTOM"; r.customFile=f; r.customLocalUrl=URL.createObjectURL(f); r.previewUrl=r.customLocalUrl; renderOrderRows(); };
+      tb.appendChild(tr);
+    });
+  }
+  function clearOrderForm(){ orderRows=[]; addRow(); $("orderCustomer").value=""; $("orderTotalPrice").value=""; $("saveMsg").textContent=""; }
+  function buildDate(daySel,monthSel,yearSel){
+    const d=Number($(daySel).value||1), m=Number($(monthSel).value||0), y=Number($(yearSel).value||new Date().getFullYear());
+    return new Date(y,m,d,12,0,0);
+  }
+  function genGroupId(date, customer){
+    const y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,"0"), d=String(date.getDate()).padStart(2,"0");
+    const rnd=Math.random().toString(36).slice(2,6), cust=(customer||"order").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,8);
+    return `${y}-${m}-${d}-${cust||"order"}-${rnd}`;
+  }
+  async function saveOrder(){
+    const msg=$("saveMsg");
+    if(orderRows.length===0) return msg.textContent="Dodaj przynajmniej jedną pozycję.";
+    if(orderRows.some(r=>!r.designId&&!r.customFile)) return msg.textContent="Każda pozycja musi mieć wybrany wzór/CUSTOM.";
+    const total=Number($("orderTotalPrice").value||0); if(!total) return msg.textContent="Podaj cenę łączną.";
+    const date=buildDate("addDay","addMonth","addYear");
+    const customer=$("orderCustomer").value.trim();
+    const groupId=genGroupId(date, customer);
+    msg.textContent="Zapisywanie…";
+    try{
+      const processed=await Promise.all(orderRows.map(async r=>{
+        let previewUrl=r.previewUrl||null;
+        if(r.customFile) previewUrl=await fileToDataUrl(r.customFile); else if(r.designId) previewUrl=designMap.get(r.designId)?.previewUrl||null;
+        return {...r, previewUrl};
+      }));
+      for(const r of processed){
+        await addDoc(collection(db,"orderItems"),{
+          date:Timestamp.fromDate(date), monthKey:monthKey(date.getFullYear(),date.getMonth()),
+          createdAt:serverTimestamp(), updatedAt:serverTimestamp(),
+          status:"ZAMÓWIENIE PRZYJĘTE",
+          size:r.size, color:r.color, designId:r.designId||"custom", designText:r.designName||"CUSTOM",
+          previewUrl:r.previewUrl||null, customer, note:r.note||"",
+          orderTotalGross: total, priceGross:0, orderGroupId: groupId
+        });
+      }
+      msg.textContent=`Zapisano ${processed.length} pozycji ✅`; clearOrderForm();
+    }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
+    setTimeout(()=>msg.textContent="",2000);
+  }
 
-<!-- STATS TAB -->
-<div id="tab-stats" class="card" style="display:none">
-  <h3 style="margin:0 0 8px 0">Statystyki</h3>
-  <div class="stat-controls">
-    <div>
-      <label class="mini">Zakres</label>
-      <select id="statRange" style="max-width:200px">
-        <option value="month">Miesiąc</option>
-        <option value="week">Tydzień</option>
-        <option value="year">Rok</option>
-        <option value="all">Całość</option>
-      </select>
-    </div>
-    <div id="statMonthWrap">
-      <label class="mini">Miesiąc</label>
-      <select id="statMonth" class="month" style="max-width:180px"></select>
-    </div>
-    <div id="statYearWrap">
-      <label class="mini">Rok</label>
-      <select id="statYear" style="max-width:120px"></select>
-    </div>
-    <div id="statDayWrap" class="hide">
-      <label class="mini">Dzień (dowolny z tygodnia)</label>
-      <input id="statDay" type="date" />
-    </div>
-    <div class="right pill">Zamówienia w zakresie: <b id="statOrdersCount">0</b></div>
-  </div>
+  /* LISTA ZAMÓWIEŃ */
+  function ordersMonthKey(){ return monthKey(Number($("ordersYear").value), Number($("ordersMonth").value)); }
+  function subscribeOrders(){
+    if(unsubOrders){unsubOrders();unsubOrders=null;}
+    const q1=query(collection(db,"orderItems"), where("monthKey","==",ordersMonthKey()));
+    unsubOrders=onSnapshot(q1,(snap)=>{
+      const docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()}));
+      const groups=new Map();
+      for(const d of docs){
+        const gid=d.orderGroupId||d.id;
+        if(!groups.has(gid)) groups.set(gid,{id:gid,items:[],date:d.date,customer:d.customer||"",status:d.status||"ZAMÓWIENIE PRZYJĘTE",total:Number(d.orderTotalGross||0),createdMax:d.createdAt?.toDate?d.createdAt.toDate().getTime():0});
+        const g=groups.get(gid); g.items.push(d);
+        if(d.orderTotalGross!=null) g.total=Number(d.orderTotalGross);
+        if(d.status) g.status=d.status; if(d.customer) g.customer=d.customer; if(d.date) g.date=d.date;
+        const ct=d.createdAt?.toDate?d.createdAt.toDate().getTime():0; if(ct>g.createdMax) g.createdMax=ct;
+      }
+      ordersGroupsAll=Array.from(groups.values()).sort((a,b)=>b.createdMax-a.createdMax);
+      revenueSumAll=ordersGroupsAll.reduce((acc,g)=>acc+(g.status==="ZWROT"?0:Number(g.total||0)),0);
+      renderOrdersFiltered(); updateTopSummary();
+    },err=>alert("Błąd odczytu zamówień: "+(err.message||err.code)));
+  }
+  function renderOrdersFiltered(){
+    const statusFilter=$("filterStatus").value;
+    const tbody=$("ordersTbody"); tbody.innerHTML="";
+    const groups=statusFilter==="ALL"?ordersGroupsAll:ordersGroupsAll.filter(g=>(g.status||"ZAMÓWIENIE PRZYJĘTE")===statusFilter);
+    groups.forEach((g,gi)=>{
+      g.items.sort((a,b)=>(a.size||"").localeCompare(b.size||""));
+      const cls=rowCls(g.status), tone=gi%2===0?"toneA":"toneB";
+      g.items.forEach((it,idx)=>{
+        const tr=document.createElement("tr"); tr.className=`${cls} ${tone}`;
+        const dt=it.date?.toDate?it.date.toDate():new Date(it.date);
+        const dstr=`${String(dt.getDate()).padStart(2,"0")}.${String(dt.getMonth()+1).padStart(2,"0")}.${dt.getFullYear()}`;
+        tr.innerHTML=`
+          <td>${idx===0?`<span class="bold">${dstr}</span>`:""}</td>
+          <td class="statusCol" data-status></td>
+          <td class="bold">${it.size||""}</td>
+          <td>
+            <span class="colorTag"><span class="dot ${it.color==="CZARNA"?"black":""}"></span>${it.color||""}</span>
+          </td>
+          <td>
+            <div class="designCell">
+              ${it.previewUrl?`<img class="designThumb" src="${it.previewUrl}" alt="">`:""}
+              <span>${(it.designText||"").replace(/</g,"&lt;")}</span>
+            </div>
+          </td>
+          <td>${idx===0?(g.customer||"").replace(/</g,"&lt;"):""}</td>
+          <td>${(it.note||"").replace(/</g,"&lt;")}</td>
+          <td>${idx===0?`${fmt2(g.total)} zł`:"—"}</td>
+          <td>${idx===0?`<button class="ghost mini-btn" data-edit="${g.id}">Edytuj</button> <button class="ghost mini-btn danger" data-del="${g.id}">Usuń</button>`:""}</td>`;
+        if(idx===0){
+          const sel=document.createElement("select");
+          const ST=["ZAMÓWIENIE PRZYJĘTE","W TRAKCIE REALIZACJI","GOTOWE DO WYSYŁKI","WYSŁANE","ZWROT"];
+          sel.innerHTML=ST.map(s=>`<option ${s===g.status?"selected":""}>${s}</option>`).join("");
+          sel.onchange=async e=>{ await updateGroupStatus(g.id,e.target.value); };
+          tr.querySelector('[data-status]').appendChild(sel);
+          tr.querySelector(`[data-del="${g.id}"]`).onclick=()=>deleteGroup(g.id);
+          tr.querySelector(`[data-edit="${g.id}"]`).onclick=()=>openEditModal(g.id);
+        }
+        tbody.appendChild(tr);
+      });
+    });
+  }
+  async function updateGroupStatus(groupId,newStatus){
+    const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
+    const batch=writeBatch(db); qSnap.forEach(d=>batch.update(doc(db,"orderItems",d.id),{status:newStatus,updatedAt:serverTimestamp()}));
+    await batch.commit();
+  }
+  async function deleteGroup(groupId){
+    if(!confirm("Usunąć CAŁE zamówienie (wszystkie pozycje)?")) return;
+    const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
+    const batch=writeBatch(db); qSnap.forEach(d=>batch.delete(doc(db,"orderItems",d.id))); await batch.commit();
+  }
 
-  <div class="charts">
-    <div class="chart-card">
-      <h4 style="margin:0 0 6px 0">Ranking wzorów (Top 20)</h4>
-      <canvas id="chartDesigns" height="220"></canvas>
-    </div>
-    <div class="chart-card">
-      <h4 style="margin:0 0 6px 0">Przychody w czasie</h4>
-      <canvas id="chartRevenue" height="220"></canvas>
-    </div>
-    <div class="chart-card">
-      <h4 style="margin:0 0 6px 0">Rozmiary</h4>
-      <canvas id="chartSizes" height="220"></canvas>
-    </div>
-    <div class="chart-card">
-      <h4 style="margin:0 0 6px 0">Kolory</h4>
-      <canvas id="chartColors" height="220"></canvas>
-    </div>
-    <div class="chart-card">
-      <h4 style="margin:0 0 6px 0">Statusy</h4>
-      <canvas id="chartStatuses" height="220"></canvas>
-    </div>
-  </div>
-</div>
-</div> </div><!-- MODALE: Wybór wzoru i Edycja zamówienia (te same co wcześniej) --><div id="designPicker" class="modal"> <div class="panel"> <div class="head"> <strong>Wybierz wzór</strong> <div class="right"><button id="pickerClose" class="ghost mini-btn">Zamknij</button></div> </div> <div class="row center"> <div class="col"><input id="pickerSearch" placeholder="Szukaj wzoru po nazwie..." /></div> <div class="col"> <label class="mini">Albo wgraj CUSTOM dla tej pozycji</label> <input id="pickerCustomFile" type="file" accept="image/*" /> </div> </div> <div id="pickerGridWrap" class="scroll" style="margin-top:10px"> <div id="pickerGrid" class="grid"></div> </div> <div class="hint">Kliknij kafelek, aby przypisać wzór do tej pozycji. Wgranie pliku ustawi tę pozycję jako CUSTOM.</div> </div> </div><div id="orderEdit" class="modal"> <div class="panel"> <div class="head"> <strong>Edytuj zamówienie</strong> <div class="right"> <button id="editAddRowBtn" class="ghost mini-btn">+ Pozycja</button> <button id="editCloseBtn" class="ghost mini-btn">Zamknij</button> </div> </div> <div class="card" style="margin:0 0 10px 0"> <div class="row center"> <div class="date-compact"> <div class="col" style="min-width:auto;flex:0 0 auto"> <label class="mini">Dzień</label> <input id="editDay" class="small" type="number" min="1" max="31" /> </div> <div class="col" style="min-width:auto;flex:0 0 auto"> <label class="mini">Miesiąc</label> <select id="editMonth" class="month"></select> </div> <div class="col" style="min-width:auto;flex:0 0 auto"> <label class="mini">Rok</label> <select id="editYear" class="small"></select> </div> </div> <div class="col"> <label class="mini">Zamawiający</label> <input id="editCustomer" type="text" /> </div> <div class="col"> <label class="mini">Cena łączna zamówienia (PLN)</label> <input id="editTotal" type="number" step="0.01" /> </div> </div> </div> <div id="editRowsWrap" class="scroll"> <table class="rows-table" style="width:100%"> <thead> <tr> <th style="width:35%">Wzór</th> <th style="width:10%">Rozmiar</th> <th style="width:12%">Kolor</th> <th>Uwagi</th> <th style="width:120px"></th> </tr> </thead> <tbody id="editRowsTbody"></tbody> </table> </div> <div class="row" style="margin-top:8px"> <div class="col"><div id="editMsg" class="hint"></div></div> <div class="col" style="max-width:220px"><button id="editSaveBtn" class="primary">Zapisz zmiany</button></div> </div> </div> </div><script type="module"> import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"; import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"; import { getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc, getDocs, query, where, onSnapshot, serverTimestamp, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; // detektor błędów window.addEventListener('error', e => alert('Błąd skryptu: ' + (e.message || e.error?.message || 'unknown'))); window.addEventListener('unhandledrejection', e => alert('Błąd (promise): ' + (e.reason?.message || e.reason || 'unknown'))); // KONFIG – Twój projekt const firebaseConfig = { apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg", authDomain: "papierek-idzie-do-gory.firebaseapp.com", projectId: "papierek-idzie-do-gory", storageBucket: "papierek-idzie-do-gory.firebasestorage.app", messagingSenderId: "1063966015801", appId: "1:1063966015801:web:72f412aa200a705276a8e8" }; const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app); // Helpers const $ = id => document.getElementById(id); const escCSV = s => (s||"").replace(/"/g,'""'); const fmt2 = n => (Number(n||0)).toFixed(2); const numPL = n => fmt2(n).replace('.', ','); const monthsPL = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"]; const monthsPLGen = ["stycznia","lutego","marca","kwietnia","maja","czerwca","lipca","sierpnia","września","października","listopada","grudnia"]; const monthKey = (y,m) => `${y}-${String(m+1).padStart(2,"0")}`; const rowCls = s => s==="ZWROT"?"st-ret":s==="WYSŁANE"?"st-sent":s==="GOTOWE DO WYSYŁKI"?"st-ready":s==="W TRAKCIE REALIZACJI"?"st-prog":"st-new"; const dShort = d => { const dt = d?.toDate ? d.toDate() : new Date(d); const dd=String(dt.getDate()).padStart(2,"0"); const mm=String(dt.getMonth()+1).padStart(2,"0"); const yy=dt.getFullYear(); return `${dd}.${mm}.${yy}`; }; const startOfWeek = (d) => { const dt = new Date(d); const day = (dt.getDay()+6)%7; dt.setHours(0,0,0,0); dt.setDate(dt.getDate()-day); return dt; }; const endOfWeek = (d) => { const s = startOfWeek(d); const e = new Date(s); e.setDate(e.getDate()+6); e.setHours(23,59,59,999); return e; }; const startOfYear = (y) => new Date(y,0,1,0,0,0,0); const endOfYear = (y) => new Date(y,11,31,23,59,59,999); // Global states const designMap = new Map(); let orderRows = []; let ordersGroupsAll = []; let revenueSumAll = 0; let expensesSumAll = 0; let unsubOrders = null, unsubExp = null; // Edit modal state let editRows = []; let editingGroupId = null; // Picker context let pickerContext = "add"; // "add" | "edit" let pickerRowIndex = null; // Stats charts const charts = { designs:null, revenue:null, sizes:null, colors:null, statuses:null }; // Auth const loginCard=$("loginCard"), appWrap=$("app"), userEmail=$("userEmail"), loginBtn=$("loginBtn"), logoutBtn=$("logoutBtn"), loginMsg=$("loginMsg"); loginBtn.onclick = async () => { loginMsg.textContent="Logowanie…"; try{ await signInWithEmailAndPassword(auth,$("email").value,$("password").value); loginMsg.textContent=""; }catch(e){ loginMsg.textContent="Błąd: "+(e.message||e.code); } }; logoutBtn.onclick = () => signOut(auth); onAuthStateChanged(auth, u => { if (u){ loginCard.style.display="none"; appWrap.style.display=""; userEmail.textContent=u.email||""; logoutBtn.style.display=""; initApp(); } else { loginCard.style.display=""; appWrap.style.display="none"; userEmail.textContent=""; logoutBtn.style.display="none"; } }); async function initApp(){ const now = new Date(); const years = Array.from({length:9},(_,k)=>now.getFullYear()-4+k); // Orders selects $("ordersMonth").innerHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join(""); $("ordersYear").innerHTML = years.map(y=>`<option ${y===now.getFullYear()?"selected":""}>${y}</option>`).join(""); $("ordersMonth").value = String(now.getMonth()); // Add form selects $("addMonth").innerHTML = $("ordersMonth").innerHTML; $("addYear").innerHTML = $("ordersYear").innerHTML; $("addYear").value = String(now.getFullYear()); $("addMonth").value = String(now.getMonth()); $("addDay").value = String(now.getDate()); // Expenses selects $("expMonth").innerHTML = $("ordersMonth").innerHTML; $("expYear").innerHTML = $("ordersYear").innerHTML; $("expMonth").value = String(now.getMonth()); $("expYear").value = String(now.getFullYear()); $("expDay").value = String(now.getDate()); // Stats selects $("statMonth").innerHTML = $("ordersMonth").innerHTML; $("statYear").innerHTML = $("ordersYear").innerHTML; $("statMonth").value = String(now.getMonth()); $("statYear").value = String(now.getFullYear()); $("statDay").value = now.toISOString().slice(0,10); await reloadDesigns(); subscribeOrders(); subscribeExpenses(); await refreshStats(); // Sync months between tabs (orders <-> expenses) const sync = () => { $("expMonth").value=$("ordersMonth").value; $("expYear").value=$("ordersYear").value; $("statMonth").value=$("ordersMonth").value; $("statYear").value=$("ordersYear").value; subscribeOrders(); subscribeExpenses(); refreshStats(); }; $("ordersMonth").addEventListener("change", sync); $("ordersYear").addEventListener("change", sync); $("filterStatus").addEventListener("change", renderOrdersFiltered); $("expMonth").addEventListener("change", ()=>{ $("ordersMonth").value=$("expMonth").value; $("ordersYear").value=$("expYear").value; subscribeOrders(); subscribeExpenses(); refreshStats(); }); $("expYear").addEventListener("change", ()=>{ $("ordersMonth").value=$("expMonth").value; $("ordersYear").value=$("expYear").value; subscribeOrders(); subscribeExpenses(); refreshStats(); }); // Stats handlers $("statRange").addEventListener("change", onStatRangeChange); $("statMonth").addEventListener("change", refreshStats); $("statYear").addEventListener("change", refreshStats); $("statDay").addEventListener("change", refreshStats); // Actions $("addDesignBtn").addEventListener("click", onAddDesign); $("addRowBtn").addEventListener("click", ()=>addRow()); $("clearOrderBtn").addEventListener("click", clearOrderForm); $("saveOrderBtn").addEventListener("click", saveOrder); $("pickerClose").addEventListener("click", closePicker); $("pickerSearch").addEventListener("input", renderPickerGrid); $("pickerCustomFile").addEventListener("change", onPickerCustom); $("addExpenseBtn").addEventListener("click", addExpense); $("editAddRowBtn").addEventListener("click", ()=>editAddRow()); $("editCloseBtn").addEventListener("click", closeEditModal); $("editSaveBtn").addEventListener("click", saveEditOrder); $("exportItemsBtn").addEventListener("click", exportOrdersItemsCSV); $("exportGroupsBtn").addEventListener("click", exportOrdersGroupsCSV); $("exportExpBtn").addEventListener("click", exportExpensesCSV); // Tabs const tabsBtns = document.querySelectorAll("nav.tabs button"); const tabs = { orders:$("tab-orders"), add:$("tab-add"), designs:$("tab-designs"), expenses:$("tab-expenses"), stats:$("tab-stats") }; tabsBtns.forEach(btn => btn.addEventListener("click", () => { tabsBtns.forEach(b => b.classList.remove("active")); btn.classList.add("active"); Object.values(tabs).forEach(el => el.style.display="none"); tabs[btn.dataset.tab].style.display = ""; if (btn.dataset.tab === "stats") refreshStats(); })); addRow(); } // Designs async function reloadDesigns(){ designMap.clear(); const snap = await getDocs(query(collection(db,"designs"))); snap.forEach(d=>designMap.set(d.id,{id:d.id,...d.data()})); renderDesignsList(); renderPickerGrid(); } function renderDesignsList(){ const box=$("designsList"); box.innerHTML=""; for(const d of Array.from(designMap.values()).sort((a,b)=>a.name.localeCompare(b.name,"pl"))){ const card=document.createElement("div"); card.className="design-card"; card.innerHTML=` ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`} <div class="design-name">${d.name.replace(/</g,"&lt;")}</div> <div class="row center" style="margin-top:8px"> <button class="ghost mini-btn" data-act="edit">Edytuj</button> <button class="ghost mini-btn danger" data-act="del">Usuń</button> </div>`; box.appendChild(card); card.querySelector('[data-act="edit"]').onclick=()=>openEditDesign(card,d); card.querySelector('[data-act="del"]').onclick=async()=>{ if(!confirm("Usunąć wzór?"))return; await deleteDoc(doc(db,"designs",d.id)); await reloadDesigns(); }; } } function openEditDesign(card,d){ card.innerHTML=` <div class="row center"> <div class="col"><input value="${d.name.replace(/"/g,'&quot;')}" data-role="name"/></div> <div class="col"><input type="file" accept="image/*" data-role="file"/></div> </div> <div class="row center" style="margin-top:8px"> <button class="primary mini-btn" data-act="save">Zapisz</button> <button class="ghost mini-btn" data-act="cancel">Anuluj</button> </div> <div class="hint mini" data-role="msg"></div>`; card.querySelector('[data-act="cancel"]').onclick=renderDesignsList; card.querySelector('[data-act="save"]').onclick=async()=>{ const name=card.querySelector('[data-role="name"]').value.trim(); const file=card.querySelector('[data-role="file"]').files[0]||null; const msg=card.querySelector('[data-role="msg"]'); if(!name){msg.textContent="Podaj nazwę.";return;} try{ let previewUrl=d.previewUrl||null; if(file) previewUrl=await fileToDataUrl(file); await setDoc(doc(db,"designs",d.id),{name,previewUrl,updatedAt:serverTimestamp()},{merge:true}); await reloadDesigns(); }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); } }; } async function onAddDesign(){ const name=$("designName").value.trim(); const file=$("designFile").files[0]||null; const out=$("designMsg"); if(!name){out.textContent="Podaj nazwę wzoru.";return;} const id=name.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,""); try{ let previewUrl=null; if(file) previewUrl=await fileToDataUrl(file); await setDoc(doc(db,"designs",id),{name,active:true,previewUrl,createdAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true}); $("designName").value=""; $("designFile").value=""; out.textContent="Dodano wzór ✅"; await reloadDesigns(); setTimeout(()=>out.textContent="",1200); }catch(e){ out.textContent="Błąd: "+(e.message||e.code); } } // Picker function openPicker(i,ctx="add"){ pickerContext=ctx; pickerRowIndex=i; $("pickerCustomFile").value=""; $("pickerSearch").value=""; renderPickerGrid(); $("designPicker").style.display="flex"; } function closePicker(){ $("designPicker").style.display="none"; pickerRowIndex=null; } function renderPickerGrid(){ const grid=$("pickerGrid"); grid.innerHTML=""; const term=($("pickerSearch").value||"").toLowerCase(); const list=Array.from(designMap.values()).filter(d=>d.active!==false).filter(d=>term?d.name.toLowerCase().includes(term):true).sort((a,b)=>a.name.localeCompare(b.name,"pl")); for(const d of list){ const card=document.createElement("div"); card.className="design-card"; card.innerHTML=` ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`} <div class="design-name">${d.name.replace(/</g,"&lt;")}</div>`; card.onclick=()=>{ const arr=(pickerContext==="edit")?editRows:orderRows; const r=arr[pickerRowIndex]; r.designId=d.id; r.designName=d.name; r.previewUrl=d.previewUrl||null; r.customFile=null; r.customLocalUrl=null; (pickerContext==="edit")?renderEditRows():renderOrderRows(); closePicker(); }; grid.appendChild(card); } } async function onPickerCustom(e){ const file=e.target.files[0]; if(!file||pickerRowIndex==null)return; const arr=(pickerContext==="edit")?editRows:orderRows; const r=arr[pickerRowIndex]; r.designId="custom"; r.designName="CUSTOM"; r.customFile=file; r.customLocalUrl=URL.createObjectURL(file); r.previewUrl=r.customLocalUrl; (pickerContext==="edit")?renderEditRows():renderOrderRows(); closePicker(); } // Dodawanie zamówienia function defaultRow(){ return { size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; } function addRow(){ orderRows.push(defaultRow()); renderOrderRows(); } function removeRow(i){ orderRows.splice(i,1); renderOrderRows(); if(orderRows.length===0) addRow(); } function renderOrderRows(){ const tb=$("rowsTbody"); tb.innerHTML=""; orderRows.forEach((r,i)=>{ const tr=document.createElement("tr"); tr.innerHTML=` <td> <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"> ${r.previewUrl?`<img class="thumb" src="${r.previewUrl}" alt="">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#6d8096">?</div>`} <div style="min-width:180px"><b>${(r.designName||"Nie wybrano").replace(/</g,"&lt;")}</b></div> <div class="rows-actions"> <button class="ghost mini-btn" data-act="pick">Wybierz wzór</button> <label class="ghost mini-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"> <input data-act="custom" type="file" accept="image/*" style="display:none"> Upload CUSTOM </label> </div> </div> </td> <td><select data-act="size">${["S","M","L","XL","XXL","3XL"].map(s=>`<option ${r.size===s?"selected":""}>${s}</option>`).join("")}</select></td> <td><select data-act="color">${["BIAŁA","CZARNA"].map(c=>`<option ${r.color===c?"selected":""}>${c}</option>`).join("")}</select></td> <td><input data-act="note" type="text" value="${(r.note||"").replace(/"/g,'&quot;')}" placeholder="Uwagi do tej pozycji"></td> <td class="rows-actions"><button class="ghost mini-btn danger" data-act="remove">Usuń</button></td>`; tr.querySelector('[data-act="pick"]').onclick=()=>openPicker(i,"add"); tr.querySelector('[data-act="remove"]').onclick=()=>removeRow(i); tr.querySelector('[data-act="size"]').onchange=e=>r.size=e.target.value; tr.querySelector('[data-act="color"]').onchange=e=>r.color=e.target.value; tr.querySelector('[data-act="note"]').oninput=e=>r.note=e.target.value; tr.querySelector('[data-act="custom"]').onchange=e=>{ const f=e.target.files[0]; if(!f)return; r.designId="custom"; r.designName="CUSTOM"; r.customFile=f; r.customLocalUrl=URL.createObjectURL(f); r.previewUrl=r.customLocalUrl; renderOrderRows(); }; tb.appendChild(tr); }); } function clearOrderForm(){ orderRows=[]; addRow(); $("orderCustomer").value=""; $("orderTotalPrice").value=""; $("saveMsg").textContent=""; } function buildDate(dId,mId,yId){ const d=Number($(dId).value||1), m=Number($(mId).value||0), y=Number($(yId).value||new Date().getFullYear()); return new Date(y,m,d,12,0,0); } function genGroupId(date, customer){ const y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,"0"), d=String(date.getDate()).padStart(2,"0"); const rnd=Math.random().toString(36).slice(2,6), cust=(customer||"order").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,8); return `${y}-${m}-${d}-${cust||"order"}-${rnd}`; } async function saveOrder(){ const msg=$("saveMsg"); if(orderRows.length===0) return msg.textContent="Dodaj przynajmniej jedną pozycję."; if(orderRows.some(r=>!r.designId&&!r.customFile)) return msg.textContent="Każda pozycja musi mieć wybrany wzór/CUSTOM."; const total=Number($("orderTotalPrice").value||0); if(!total) return msg.textContent="Podaj cenę łączną."; const date=buildDate("addDay","addMonth","addYear"); const customer=$("orderCustomer").value.trim(); const groupId=genGroupId(date, customer); msg.textContent="Zapisywanie…"; try{ const processed=await Promise.all(orderRows.map(async r=>{ let previewUrl=r.previewUrl||null; if(r.customFile) previewUrl=await fileToDataUrl(r.customFile); else if(r.designId) previewUrl=designMap.get(r.designId)?.previewUrl||null; return {...r, previewUrl}; })); for(const r of processed){ await addDoc(collection(db,"orderItems"),{ date:Timestamp.fromDate(date), monthKey:monthKey(date.getFullYear(),date.getMonth()), createdAt:serverTimestamp(), updatedAt:serverTimestamp(), status:"ZAMÓWIENIE PRZYJĘTE", size:r.size, color:r.color, designId:r.designId||"custom", designText:r.designName||"CUSTOM", previewUrl:r.previewUrl||null, customer, note:r.note||"", orderTotalGross: total, priceGross:0, orderGroupId: groupId }); } msg.textContent=`Zapisano ${processed.length} pozycji ✅`; clearOrderForm(); }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); } setTimeout(()=>msg.textContent="",2000); } // LISTA ZAMÓWIEŃ (grupowanie) function ordersMonthKey(){ return monthKey(Number($("ordersYear").value), Number($("ordersMonth").value)); } function subscribeOrders(){ if(unsubOrders){unsubOrders();unsubOrders=null;} const q1=query(collection(db,"orderItems"), where("monthKey","==",ordersMonthKey())); unsubOrders=onSnapshot(q1,(snap)=>{ const docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()})); const groups=new Map(); for(const d of docs){ const gid=d.orderGroupId||d.id; if(!groups.has(gid)) groups.set(gid,{id:gid,items:[],date:d.date,customer:d.customer||"",status:d.status||"ZAMÓWIENIE PRZYJĘTE",total:Number(d.orderTotalGross||0),createdMax:d.createdAt?.toDate?d.createdAt.toDate().getTime():0}); const g=groups.get(gid); g.items.push(d); if(d.orderTotalGross!=null) g.total=Number(d.orderTotalGross); if(d.status) g.status=d.status; if(d.customer) g.customer=d.customer; if(d.date) g.date=d.date; const ct=d.createdAt?.toDate?d.createdAt.toDate().getTime():0; if(ct>g.createdMax) g.createdMax=ct; } ordersGroupsAll=Array.from(groups.values()).sort((a,b)=>b.createdMax-a.createdMax); revenueSumAll=ordersGroupsAll.reduce((acc,g)=>acc+(g.status==="ZWROT"?0:Number(g.total||0)),0); renderOrdersFiltered(); updateTopSummary(); },err=>alert("Błąd odczytu zamówień: "+(err.message||err.code))); } function renderOrdersFiltered(){ const statusFilter=$("filterStatus").value; const tbody=$("ordersTbody"); tbody.innerHTML=""; const groups=statusFilter==="ALL"?ordersGroupsAll:ordersGroupsAll.filter(g=>(g.status||"ZAMÓWIENIE PRZYJĘTE")===statusFilter); groups.forEach((g,gi)=>{ g.items.sort((a,b)=>(a.size||"").localeCompare(b.size||"")); const cls=rowCls(g.status), tone=gi%2===0?"toneA":"toneB"; g.items.forEach((it,idx)=>{ const tr=document.createElement("tr"); tr.className=`${cls} ${tone}`; const dt=it.date?.toDate?it.date.toDate():new Date(it.date); const dstr=`${String(dt.getDate()).padStart(2,"0")}.${String(dt.getMonth()+1).padStart(2,"0")}.${dt.getFullYear()}`; tr.innerHTML=` <td>${idx===0?`<span class="bold">${dstr}</span>`:""}</td> <td class="statusCol" data-status></td> <td class="bold">${it.size||""}</td> <td> <span class="colorTag"><span class="dot ${it.color==="CZARNA"?"black":""}"></span>${it.color||""}</span> </td> <td> <div class="designCell"> ${it.previewUrl?`<img class="designThumb" src="${it.previewUrl}" alt="">`:""} <span>${(it.designText||"").replace(/</g,"&lt;")}</span> </div> </td> <td>${idx===0?(g.customer||"").replace(/</g,"&lt;"):""}</td> <td>${(it.note||"").replace(/</g,"&lt;")}</td> <td>${idx===0?`${fmt2(g.total)} zł`:"—"}</td> <td>${idx===0?`<button class="ghost mini-btn" data-edit="${g.id}">Edytuj</button> <button class="ghost mini-btn danger" data-del="${g.id}">Usuń</button>`:""}</td>`; if(idx===0){ const sel=document.createElement("select"); const ST=["ZAMÓWIENIE PRZYJĘTE","W TRAKCIE REALIZACJI","GOTOWE DO WYSYŁKI","WYSŁANE","ZWROT"]; sel.innerHTML=ST.map(s=>`<option ${s===g.status?"selected":""}>${s}</option>`).join(""); sel.onchange=async e=>{ await updateGroupStatus(g.id,e.target.value); }; tr.querySelector('[data-status]').appendChild(sel); tr.querySelector(`[data-del="${g.id}"]`).onclick=()=>deleteGroup(g.id); tr.querySelector(`[data-edit="${g.id}"]`).onclick=()=>openEditModal(g.id); } tbody.appendChild(tr); }); }); } async function updateGroupStatus(groupId,newStatus){ const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId))); const batch=writeBatch(db); qSnap.forEach(d=>batch.update(doc(db,"orderItems",d.id),{status:newStatus,updatedAt:serverTimestamp()})); await batch.commit(); } async function deleteGroup(groupId){ if(!confirm("Usunąć CAŁE zamówienie (wszystkie pozycje)?")) return; const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId))); const batch=writeBatch(db); qSnap.forEach(d=>batch.delete(doc(db,"orderItems",d.id))); await batch.commit(); } // Edycja zamówienia function editDefaultRow(){ return { id:null, size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; } async function openEditModal(groupId){ editingGroupId=groupId; $("editMsg").textContent=""; const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId))); const docs=[]; qSnap.forEach(d=>docs.push({id:d.id,...d.data()})); if(docs.length===0){ alert("Nie znaleziono pozycji."); return; } const any=docs[0]; const dt=any.date?.toDate?any.date.toDate():new Date(any.date); $("editDay").value=dt.getDate(); $("editMonth").value=String(dt.getMonth()); $("editYear").value=String(dt.getFullYear()); $("editCustomer").value=any.customer||""; $("editTotal").value=any.orderTotalGross||0; editRows = docs.map(d=>({ id:d.id, size:d.size, color:d.color, note:d.note||"", designId:d.designId||"custom", designName:d.designText||"CUSTOM", previewUrl:d.previewUrl||null, customFile:null, customLocalUrl:null })); renderEditRows(); $("orderEdit").style.display="flex"; } function closeEditModal(){ $("orderEdit").style.display="none"; editingGroupId=null; editRows=[]; } function editAddRow(){ editRows.push(editDefaultRow()); renderEditRows(); } function editRemoveRow(i){ editRows.splice(i,1); renderEditRows(); if(editRows.length===0) editAddRow(); } function renderEditRows(){ const tb=$("editRowsTbody"); tb.innerHTML=""; editRows.forEach((r,i)=>{ const tr=document.createElement("tr"); tr.innerHTML=` <td> <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"> ${r.previewUrl?`<img class="thumb" src="${r.previewUrl}" alt="">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#6d8096">?</div>`} <div style="min-width:180px"><b>${(r.designName||"Nie wybrano").replace(/</g,"&lt;")}</b></div> <div class="rows-actions"> <button class="ghost mini-btn" data-act="pick">Wybierz wzór</button> <label class="ghost mini-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"> <input data-act="custom" type="file" accept="image/*" style="display:none"> Upload CUSTOM </label> </div> </div> </td> <td><select data-act="size">${["S","M","L","XL","XXL","3XL"].map(s=>`<option ${r.size===s?"selected":""}>${s}</option>`).join("")}</select></td> <td><select data-act="color">${["BIAŁA","CZARNA"].map(c=>`<option ${r.color===c?"selected":""}>${c}</option>`).join("")}</select></td> <td><input data-act="note" type="text" value="${(r.note||"").replace(/"/g,'&quot;')}" placeholder="Uwagi do tej pozycji"></td> <td class="rows-actions"><button class="ghost mini-btn danger" data-act="remove">Usuń</button></td>`; tr.querySelector('[data-act="pick"]').onclick=()=>openPicker(i,"edit"); tr.querySelector('[data-act="remove"]').onclick=()=>editRemoveRow(i); tr.querySelector('[data-act="size"]').onchange=e=>r.size=e.target.value; tr.querySelector('[data-act="color"]').onchange=e=>r.color=e.target.value; tr.querySelector('[data-act="note"]').oninput=e=>r.note=e.target.value; tr.querySelector('[data-act="custom"]').onchange=e=>{ const f=e.target.files[0]; if(!f)return; r.designId="custom"; r.designName="CUSTOM"; r.customFile=f; r.customLocalUrl=URL.createObjectURL(f); r.previewUrl=r.customLocalUrl; renderEditRows(); }; tb.appendChild(tr); }); } async function saveEditOrder(){ const msg=$("editMsg"); if(editRows.length===0){ msg.textContent="Dodaj przynajmniej jedną pozycję."; return; } if(editRows.some(r=>!r.designId&&!r.customFile)){ msg.textContent="Każda pozycja musi mieć wzór/CUSTOM."; return; } const total=Number($("editTotal").value||0); if(!total){ msg.textContent="Podaj cenę łączną."; return; } msg.textContent="Zapisywanie zmian…"; try{ const date=buildDate("editDay","editMonth","editYear"); const customer=$("editCustomer").value.trim(); const processed=await Promise.all(editRows.map(async r=>{ let previewUrl=r.previewUrl||null; if(r.customFile) previewUrl=await fileToDataUrl(r.customFile); else if(r.designId) previewUrl=designMap.get(r.designId)?.previewUrl||r.previewUrl||null; return {...r, previewUrl}; })); const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",editingGroupId))); const existingIds=new Set(); qSnap.forEach(d=>existingIds.add(d.id)); const keepIds=new Set(processed.filter(r=>r.id).map(r=>r.id)); const batch=writeBatch(db); for(const r of processed){ const payload={ date:Timestamp.fromDate(date), monthKey:monthKey(date.getFullYear(),date.getMonth()), updatedAt:serverTimestamp(), size:r.size, color:r.color, designId:r.designId||"custom", designText:r.designName||"CUSTOM", previewUrl:r.previewUrl||null, customer, note:r.note||"", orderTotalGross: total }; if(r.id){ batch.update(doc(db,"orderItems",r.id), payload); } else { const ref=doc(collection(db,"orderItems")); batch.set(ref,{...payload, createdAt:serverTimestamp(), status:"ZAMÓWIENIE PRZYJĘTE", orderGroupId:editingGroupId, priceGross:0}); } } existingIds.forEach(id=>{ if(!keepIds.has(id)) batch.delete(doc(db,"orderItems",id)); }); await batch.commit(); msg.textContent="Zapisano zmiany ✅"; setTimeout(()=>{ msg.textContent=""; closeEditModal(); },800); }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); } } // Expenses (z edycją inline, sort: najnowsze u góry) let expensesList=[]; let editingExpenseId=null; function expMonthKey(){ return monthKey(Number($("expYear").value), Number($("expMonth").value)); } async function addExpense(){ const msg=$("expMsg"), name=$("expName").value.trim(), amount=Number($("expAmount").value||0), note=$("expNote").value.trim(); const day=Number($("expDay").value||1), y=Number($("expYear").value), m=Number($("expMonth").value); if(!name){msg.textContent="Podaj nazwę kosztu.";return;} if(!amount){msg.textContent="Podaj kwotę.";return;} const date=new Date(y,m,Math.min(Math.max(day,1),31),12,0,0); try{ await addDoc(collection(db,"expenses"),{name,amount,note,date:Timestamp.fromDate(date),monthKey:expMonthKey(),createdAt:serverTimestamp()}); $("expName").value=""; $("expAmount").value=""; $("expNote").value=""; msg.textContent="Dodano koszt ✅"; setTimeout(()=>msg.textContent="",1200); }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); } } function subscribeExpenses(){ if(unsubExp){unsubExp();unsubExp=null;} const q1=query(collection(db,"expenses"), where("monthKey","==",expMonthKey())); unsubExp=onSnapshot(q1,(snap)=>{ expensesList=[]; snap.forEach(d=>expensesList.push({id:d.id,...d.data()})); // najnowsze u góry expensesList.sort((a,b)=> { const ta = a.date?.toDate ? a.date.toDate().getTime() : 0; const tb = b.date?.toDate ? b.date.toDate().getTime() : 0; return tb - ta; }); expensesSumAll=expensesList.reduce((acc,x)=>acc+Number(x.amount||0),0); renderExpenses(); updateTopSummary(); },err=>alert("Błąd odczytu kosztów: "+(err.message||err.code))); } function renderExpenses(){ $("sumExpensesTop").textContent=fmt2(expensesSumAll); const tb=$("expTbody"); tb.innerHTML=""; for(const e of expensesList){ const dt=e.date?.toDate?e.date.toDate():new Date(e.date); const dstr=`${String(dt.getDate()).padStart(2,"0")}.${String(dt.getMonth()+1).padStart(2,"0")}.${dt.getFullYear()}`; if (editingExpenseId === e.id) { const tr=document.createElement("tr"); tr.innerHTML=` <td><input type="number" min="1" max="31" value="${dt.getDate()}" data-role="day" style="max-width:90px" /></td> <td><input value="${(e.name||"").replace(/"/g,'&quot;')}" data-role="name"/></td> <td><input value="${(e.note||"").replace(/"/g,'&quot;')}" data-role="note"/></td> <td><input type="number" step="0.01" value="${Number(e.amount||0)}" data-role="amount" style="max-width:140px"/></td> <td> <button class="mini-btn primary" data-act="save">Zapisz</button> <button class="mini-btn ghost" data-act="cancel">Anuluj</button> </td>`; tr.querySelector('[data-act="cancel"]').onclick=()=>{ editingExpenseId=null; renderExpenses(); }; tr.querySelector('[data-act="save"]').onclick=async()=>{ const day = Number(tr.querySelector('[data-role="day"]').value||dt.getDate()); const date = new Date(Number($("expYear").value), Number($("expMonth").value), Math.min(Math.max(day,1),31), 12,0,0); const payload = { name: tr.querySelector('[data-role="name"]').value.trim(), note: tr.querySelector('[data-role="note"]').value.trim(), amount: Number(tr.querySelector('[data-role="amount"]').value||0), date: Timestamp.fromDate(date), monthKey: expMonthKey() }; await updateDoc(doc(db,"expenses", e.id), payload); editingExpenseId=null; }; tb.appendChild(tr); } else { const tr=document.createElement("tr"); tr.innerHTML=` <td>${dstr}</td> <td>${(e.name||"").replace(/</g,"&lt;")}</td> <td>${(e.note||"").replace(/</g,"&lt;")}</td> <td>${fmt2(e.amount||0)} zł</td> <td> <button class="ghost mini-btn" data-edit="${e.id}">Edytuj</button> <button class="ghost mini-btn danger" data-del="${e.id}">Usuń</button> </td>`; tr.querySelector(`[data-del="${e.id}"]`).onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); }; tr.querySelector(`[data-edit="${e.id}"]`).onclick=()=>{ editingExpenseId=e.id; renderExpenses(); }; tb.appendChild(tr); } } } // Top summary function updateTopSummary(){ $("ordersCount").textContent = String(ordersGroupsAll.length); $("sumRevenue").textContent = fmt2(revenueSumAll); $("sumExpenses").textContent = fmt2(expensesSumAll); const net = revenueSumAll - expensesSumAll; const el = $("sumNet"); el.textContent = fmt2(net); el.classList.toggle("neg", net < 0); } // Eksport CSV function downloadCSV(filename, rows) { const BOM = '\uFEFF'; const blob = new Blob([BOM + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); } function exportOrdersItemsCSV() { const header = ['DATA','STATUS ZAMÓWIENIA','ROZMIAR','KOLOR','WZÓR','DANE ZAMAWIAJĄCEGO','UWAGI','CENA']; const rows = [header.join(';')]; const groups = ordersGroupsAll.slice(); for (const g of groups) { const items = g.items.slice().sort((a,b)=>(a.size||"").localeCompare(b.size||"")); items.forEach((it, idx) => { rows.push([ dShort(g.date), g.status || 'ZAMÓWIENIE PRZYJĘTE', (it.size || ''), (it.color || ''), (it.designText || '').replace(/;/g, ','), idx===0 ? (g.customer || '') : '', (it.note || '').replace(/;/g, ','), (idx===0 && g.status!=='ZWROT') ? numPL(g.total) : '' ].map(v => `"${escCSV(v)}"`).join(';')); }); } const y = $('ordersYear').value, m = String(Number($('ordersMonth').value)+1).padStart(2,'0'); downloadCSV(`zamowienia_pozycje_${y}-${m}.csv`, rows); } function exportOrdersGroupsCSV() { const header = ['DATA','STATUS','KLIENT','LICZBA POZYCJI','POZYCJE','CENA']; const rows = [header.join(';')]; for (const g of ordersGroupsAll) { const items = g.items.slice().sort((a,b)=>(a.size||"").localeCompare(b.size||"")); const details = items.map(it => `${it.size||''}/${it.color||''} – ${(it.designText||'').replace(/;/g,',')}`).join(' | '); rows.push([ dShort(g.date), g.status || 'ZAMÓWIENIE PRZYJĘTE', g.customer || '', String(items.length), details, (g.status!=='ZWROT') ? numPL(g.total) : '' ].map(v => `"${escCSV(v)}"`).join(';')); } const y = $('ordersYear').value, m = String(Number($('ordersMonth').value)+1).padStart(2,'0'); downloadCSV(`zamowienia_zamowienia_${y}-${m}.csv`, rows); } function exportExpensesCSV() { const header = ['DATA','NAZWA','UWAGI','KWOTA']; const rows = [header.join(';')]; for (const e of expensesList) { rows.push([ dShort(e.date), (e.name||'').replace(/;/g, ','), (e.note||'').replace(/;/g, ','), numPL(e.amount || 0) ].map(v => `"${escCSV(v)}"`).join(';')); } const y = $('expYear').value, m = String(Number($('expMonth').value)+1).padStart(2,'0'); downloadCSV(`koszty_${y}-${m}.csv`, rows); } // STATYSTYKI function onStatRangeChange(){ const r = $("statRange").value; $("statMonthWrap").classList.toggle("hide", !(r==="month")); $("statYearWrap").classList.toggle("hide", !(r==="month"||r==="year")); $("statDayWrap").classList.toggle("hide", !(r==="week")); refreshStats(); } async function refreshStats(){ // Pobierz dokumenty wg zakresu const range = $("statRange").value; let docs = []; if (range === "month") { const mk = monthKey(Number($("statYear").value), Number($("statMonth").value)); const snap = await getDocs(query(collection(db,"orderItems"), where("monthKey","==", mk))); snap.forEach(d=>docs.push({id:d.id, ...d.data()})); } else if (range === "year") { const y = Number($("statYear").value); const s = startOfYear(y), e = endOfYear(y); const snap = await getDocs(query(collection(db,"orderItems"), where("date",">=", Timestamp.fromDate(s)), where("date","<=", Timestamp.fromDate(e)) )); snap.forEach(d=>docs.push({id:d.id, ...d.data()})); } else if (range === "week") { const day = new Date($("statDay").value || new Date()); const s = startOfWeek(day), e = endOfWeek(day); const snap = await getDocs(query(collection(db,"orderItems"), where("date",">=", Timestamp.fromDate(s)), where("date","<=", Timestamp.fromDate(e)) )); snap.forEach(d=>docs.push({id:d.id, ...d.data()})); } else { const snap = await getDocs(collection(db,"orderItems")); snap.forEach(d=>docs.push({id:d.id, ...d.data()})); } // Grupuj po zamówieniu (orderGroupId) – żeby przychód liczyć raz const groups = new Map(); for (const d of docs) { const gid = d.orderGroupId || d.id; if (!groups.has(gid)) groups.set(gid, { id:gid, items:[], date:d.date, status:d.status||"ZAMÓWIENIE PRZYJĘTE", total:Number(d.orderTotalGross||0) }); const g = groups.get(gid); g.items.push(d); if (d.orderTotalGross!=null) g.total = Number(d.orderTotalGross); if (d.date) g.date = d.date; if (d.status) g.status = d.status; } const groupsArr = Array.from(groups.values()); $("statOrdersCount").textContent = String(groupsArr.length); // Ranking wzorów – zlicz po pozycjach (bez zwrotów) const rank = new Map(); for (const d of docs) { const g = groups.get(d.orderGroupId || d.id); if ((g?.status||"") === "ZWROT") continue; const key = (d.designText || "CUSTOM").toLowerCase(); rank.set(key, (rank.get(key)||0)+1); } const ranked = Array.from(rank.entries()).sort((a,b)=>b[1]-a[1]).slice(0,20); const rankLabels = ranked.map(([k])=>k); const rankData = ranked.map(([,v])=>v); // Rozmiary, kolory, statusy – po pozycjach (status z grupy) const bySize = new Map(), byColor = new Map(), byStatus = new Map(); for (const d of docs) { const g = groups.get(d.orderGroupId || d.id); const st = g?.status || "ZAMÓWIENIE PRZYJĘTE"; byStatus.set(st, (byStatus.get(st)||0)+1); if (st!=="ZWROT") { bySize.set(d.size || "", (bySize.get(d.size||"")||0)+1); byColor.set(d.color || "", (byColor.get(d.color||"")||0)+1); } } const sizeLabels = Array.from(bySize.keys()); const sizeData = sizeLabels.map(k=>bySize.get(k)||0); const colorLabels= Array.from(byColor.keys()); const colorData = colorLabels.map(k=>byColor.get(k)||0); const statusLabels= ["ZAMÓWIENIE PRZYJĘTE","W TRAKCIE REALIZACJI","GOTOWE DO WYSYŁKI","WYSŁANE","ZWROT"]; const statusData = statusLabels.map(k=>byStatus.get(k)||0); // Przychody w czasie – bucket: dzień (dla tydz/miesiąc) lub miesiąc (rok/całość), bez ZWROT const revenueBuckets = new Map(); const bucketKey = (date)=>{ const dt = date?.toDate ? date.toDate() : new Date(date); if (range==="week" || range==="month") { return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`; } else { return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`; } }; for (const g of groupsArr) { if (g.status==="ZWROT") continue; const k = bucketKey(g.date); revenueBuckets.set(k, (revenueBuckets.get(k)||0) + Number(g.total||0)); } const revLabels = Array.from(revenueBuckets.keys()).sort(); const revData = revLabels.map(k=>Number(revenueBuckets.get(k)||0)); // Rysuj wykresy drawBar('chartDesigns', 'designs', rankLabels, rankData, 'Liczba zamówień', '#56b7ff'); drawLine('chartRevenue', 'revenue', revLabels, revData, 'Przychody', '#9cff8a'); drawBar('chartSizes', 'sizes', sizeLabels, sizeData, 'Sztuk', '#ffd166'); drawDoughnut('chartColors', 'colors', colorLabels, colorData, ['#ffffff','#1f2937','#94a3b8','#38bdf8','#f472b6','#fbbf24']); drawBar('chartStatuses', 'statuses', statusLabels, statusData, 'Sztuk', ['#6fffa3','#ffd75a','#76efff','#8aa8ff','#ff7a7a']); } function destroyChart(key){ if (charts[key]) { charts[key].destroy(); charts[key]=null; } } function baseChartOptions(){ return { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:'#cfe2ff' }}, tooltip:{ enabled:true } }, scales:{ x:{ ticks:{ color:'#cfe2ff' }, grid:{ color:'#28384c' }}, y:{ ticks:{ color:'#cfe2ff' }, grid:{ color:'#28384c' } } } }; } function drawBar(id, key, labels, data, label, color){ destroyChart(key); const ctx = document.getElementById(id).getContext('2d'); const bg = Array.isArray(color)? color : color; charts[key] = new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label, data, backgroundColor: Array.isArray(color)? color : color }]}, options: baseChartOptions() }); } function drawLine(id, key, labels, data, label, color){ destroyChart(key); const ctx = document.getElementById(id).getContext('2d'); charts[key] = new Chart(ctx, { type:'line', data:{ labels, datasets:[{ label, data, borderColor:color, backgroundColor:color+'44', fill:true, tension:.25 }]}, options: baseChartOptions() }); } function drawDoughnut(id, key, labels, data, colors){ destroyChart(key); const ctx = document.getElementById(id).getContext('2d'); charts[key] = new Chart(ctx, { type:'doughnut', data:{ labels, datasets:[{ data, backgroundColor:colors }]}, options:{ responsive:true, plugins:{ legend:{ labels:{ color:'#cfe2ff' } } } } }); } // … reszta funkcji (edytor wzorów/picker) została wyżej </script></body> </html>
+  /* Edycja zamówienia */
+  function editDefaultRow(){ return { id:null, size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; }
+  async function openEditModal(groupId){
+    editingGroupId=groupId; $("editMsg").textContent="";
+    const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
+    const docs=[]; qSnap.forEach(d=>docs.push({id:d.id,...d.data()}));
+    if(docs.length===0){ alert("Nie znaleziono pozycji."); return; }
+    const any=docs[0];
+    const dt=any.date?.toDate?any.date.toDate():new Date(any.date);
+    $("editDay").value=dt.getDate(); $("editMonth").value=String(dt.getMonth()); $("editYear").value=String(dt.getFullYear());
+    $("editCustomer").value=any.customer||""; $("editTotal").value=any.orderTotalGross||0;
+    editRows = docs.map(d=>({ id:d.id, size:d.size, color:d.color, note:d.note||"", designId:d.designId||"custom", designName:d.designText||"CUSTOM", previewUrl:d.previewUrl||null, customFile:null, customLocalUrl:null }));
+    renderEditRows();
+    document.getElementById("orderEdit").style.display="flex";
+  }
+  function renderEditRows(){
+    const tb=$("editRowsTbody"); tb.innerHTML="";
+    editRows.forEach((r,i)=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            ${r.previewUrl?`<img class="thumb" src="${r.previewUrl}" alt="">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#6d8096">?</div>`}
+            <div style="min-width:180px"><b>${(r.designName||"Nie wybrano").replace(/</g,"&lt;")}</b></div>
+            <div class="rows-actions">
+              <button class="ghost mini-btn" data-act="pick">Wybierz wzór</button>
+              <label class="ghost mini-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+                <input data-act="custom" type="file" accept="image/*" style="display:none"> Upload CUSTOM
+              </label>
+            </div>
+          </div>
+        </td>
+        <td><select data-act="size">${["S","M","L","XL","XXL","3XL"].map(s=>`<option ${r.size===s?"selected":""}>${s}</option>`).join("")}</select></td>
+        <td><select data-act="color">${["BIAŁA","CZARNA"].map(c=>`<option ${r.color===c?"selected":""}>${c}</option>`).join("")}</select></td>
+        <td><input data-act="note" type="text" value="${(r.note||"").replace(/"/g,'&quot;')}" placeholder="Uwagi do tej pozycji"></td>
+        <td class="rows-actions"><button class="ghost mini-btn danger" data-act="remove">Usuń</button></td>`;
+      tr.querySelector('[data-act="pick"]').onclick=()=>openPicker(i,"edit");
+      tr.querySelector('[data-act="remove"]').onclick=()=>{ editRows.splice(i,1); renderEditRows(); if(editRows.length===0) editRows.push(editDefaultRow()); };
+      tr.querySelector('[data-act="size"]').onchange=e=>r.size=e.target.value;
+      tr.querySelector('[data-act="color"]').onchange=e=>r.color=e.target.value;
+      tr.querySelector('[data-act="note"]').oninput=e=>r.note=e.target.value;
+      tr.querySelector('[data-act="custom"]').onchange=e=>{ const f=e.target.files[0]; if(!f)return; r.designId="custom"; r.designName="CUSTOM"; r.customFile=f; r.customLocalUrl=URL.createObjectURL(f); r.previewUrl=r.customLocalUrl; renderEditRows(); };
+      tb.appendChild(tr);
+    });
+  }
+  async function saveEditOrder(){
+    const msg=$("editMsg");
+    if(editRows.length===0){ msg.textContent="Dodaj przynajmniej jedną pozycję."; return; }
+    if(editRows.some(r=>!r.designId&&!r.customFile)){ msg.textContent="Każda pozycja musi mieć wzór/CUSTOM."; return; }
+    const total=Number($("editTotal").value||0); if(!total){ msg.textContent="Podaj cenę łączną."; return; }
+    msg.textContent="Zapisywanie zmian…";
+    try{
+      const date=buildDate("editDay","editMonth","editYear");
+      const customer=$("editCustomer").value.trim();
+      const processed=await Promise.all(editRows.map(async r=>{
+        let previewUrl=r.previewUrl||null;
+        if(r.customFile) previewUrl=await fileToDataUrl(r.customFile); else if(r.designId) previewUrl=designMap.get(r.designId)?.previewUrl||r.previewUrl||null;
+        return {...r, previewUrl};
+      }));
+      const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",editingGroupId)));
+      const existingIds=new Set(); qSnap.forEach(d=>existingIds.add(d.id));
+      const keepIds=new Set(processed.filter(r=>r.id).map(r=>r.id));
+      const batch=writeBatch(db);
+      for(const r of processed){
+        const payload={ date:Timestamp.fromDate(date), monthKey:monthKey(date.getFullYear(),date.getMonth()), updatedAt:serverTimestamp(),
+          size:r.size, color:r.color, designId:r.designId||"custom", designText:r.designName||"CUSTOM",
+          previewUrl:r.previewUrl||null, customer, note:r.note||"", orderTotalGross: total };
+        if(r.id){ batch.update(doc(db,"orderItems",r.id), payload); }
+        else { const ref=doc(collection(db,"orderItems")); batch.set(ref,{...payload, createdAt:serverTimestamp(), status:"ZAMÓWIENIE PRZYJĘTE", orderGroupId:editingGroupId, priceGross:0}); }
+      }
+      existingIds.forEach(id=>{ if(!keepIds.has(id)) batch.delete(doc(db,"orderItems",id)); });
+      await batch.commit();
+      msg.textContent="Zapisano zmiany ✅"; setTimeout(()=>{ msg.textContent=""; document.getElementById("orderEdit").style.display="none"; editingGroupId=null; editRows=[]; },800);
+    }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
+  }
+
+  /* KOSZTY */
+  function expMonthKey(){ return monthKey(Number($("expYear").value), Number($("expMonth").value)); }
+  async function addExpense(){
+    const msg=$("expMsg"), name=$("expName").value.trim(), amount=Number($("expAmount").value||0), note=$("expNote").value.trim();
+    const day=Number($("expDay").value||1), y=Number($("expYear").value), m=Number($("expMonth").value);
+    if(!name){msg.textContent="Podaj nazwę kosztu.";return;} if(!amount){msg.textContent="Podaj kwotę.";return;}
+    const date=new Date(y,m,Math.min(Math.max(day,1),31),12,0,0);
+    try{
+      await addDoc(collection(db,"expenses"),{name,amount,note,date:Timestamp.fromDate(date),monthKey:expMonthKey(),createdAt:serverTimestamp()});
+      $("expName").value=""; $("expAmount").value=""; $("expNote").value=""; msg.textContent="Dodano koszt ✅"; setTimeout(()=>msg.textContent="",1200);
+    }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
+  }
+  function subscribeExpenses(){
+    if(unsubExp){unsubExp();unsubExp=null;}
+    const q1=query(collection(db,"expenses"), where("monthKey","==",expMonthKey()));
+    unsubExp=onSnapshot(q1,(snap)=>{
+      expensesList=[]; snap.forEach(d=>expensesList.push({id:d.id,...d.data()}));
+      expensesList.sort((a,b)=> (a.date?.toDate?a.date.toDate().getTime():0)-(b.date?.toDate?b.date.toDate().getTime():0));
+      expensesSumAll=expensesList.reduce((acc,x)=>acc+Number(x.amount||0),0);
+      renderExpenses(); updateTopSummary();
+    },err=>alert("Błąd odczytu kosztów: "+(err.message||err.code)));
+  }
+  function renderExpenses(){
+    $("sumExpensesTop").textContent=fmt2(expensesSumAll);
+    const tb=$("expTbody"); tb.innerHTML="";
+    for(const e of expensesList){
+      const dt=e.date?.toDate?e.date.toDate():new Date(e.date);
+      const dstr=`${String(dt.getDate()).padStart(2,"0")}.${String(dt.getMonth()+1).padStart(2,"0")}.${dt.getFullYear()}`;
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>${dstr}</td>
+        <td>${(e.name||"").replace(/</g,"&lt;")}</td>
+        <td>${(e.note||"").replace(/</g,"&lt;")}</td>
+        <td>${fmt2(e.amount)} zł</td>
+        <td><button class="ghost mini-btn danger" data-del="${e.id}">usuń</button></td>`;
+      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
+      tb.appendChild(tr);
+    }
+  }
+
+  /* STATYSTYKI – ranking wzorów (bez ZWROT) */
+  function statsMonthKey(){ return monthKey(Number($("statsYear").value), Number($("statsMonth").value)); }
+  function subscribeStats(){
+    if(unsubStats){unsubStats();unsubStats=null;}
+    const q1=query(collection(db,"orderItems"), where("monthKey","==",statsMonthKey()));
+    unsubStats=onSnapshot(q1,(snap)=>{
+      const counts = new Map();
+      snap.forEach(docu=>{
+        const it=docu.data();
+        if (it.status === "ZWROT") return;
+        const id = it.designId || "custom";
+        const prev = counts.get(id) || { count:0, name:"", preview:null };
+        prev.count += 1;
+        prev.name = it.designText || prev.name || (designMap.get(id)?.name || (id==="custom"?"CUSTOM":id));
+        prev.preview = it.previewUrl || prev.preview || (designMap.get(id)?.previewUrl || null);
+        counts.set(id, prev);
+      });
+      for (const d of designMap.values()){
+        if (!counts.has(d.id)) counts.set(d.id, { count:0, name:d.name||d.id, preview:d.previewUrl||null });
+      }
+      const list = Array.from(counts.entries()).map(([id,info])=>({
+        id, name: info.name || (id==="custom"?"CUSTOM":id),
+        preview: info.preview || null,
+        count: info.count
+      })).sort((a,b)=> b.count - a.count || (a.name||"").localeCompare(b.name||"","pl"));
+      renderStats(list);
+    },err=>alert("Błąd statystyk: "+(err.message||err.code)));
+  }
+  function renderStats(list){
+    const tb=$("statsTbody"); tb.innerHTML="";
+    list.forEach((row,i)=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>${i+1}</td>
+        <td>
+          <div class="designCell">
+            ${row.preview?`<img class="designThumb" src="${row.preview}" alt="">`:""}
+            <span>${(row.name||"").replace(/</g,"&lt;")}</span>
+          </div>
+        </td>
+        <td>${row.count}</td>`;
+      tb.appendChild(tr);
+    });
+  }
+
+  /* Podsumowania i eksporty */
+  function updateTopSummary(){
+    $("ordersCount").textContent = String(ordersGroupsAll.length);
+    $("sumRevenue").textContent  = fmt2(revenueSumAll);
+    $("sumExpenses").textContent = fmt2(expensesSumAll);
+    const net = revenueSumAll - expensesSumAll;
+    const el  = $("sumNet");
+    el.textContent = fmt2(net);
+    el.classList.toggle("neg", net < 0);
+  }
+
+  function downloadCSV(filename, rows) {
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+  function exportOrdersItemsCSV() {
+    const header = ['DATA','STATUS ZAMÓWIENIA','ROZMIAR','KOLOR','WZÓR','DANE ZAMAWIAJĄCEGO','UWAGI','CENA'];
+    const rows = [header.join(';')];
+    const groups = ordersGroupsAll.slice();
+    for (const g of groups) {
+      const items = g.items.slice().sort((a,b)=>(a.size||"").localeCompare(b.size||""));
+      items.forEach((it, idx) => {
+        rows.push([
+          dShort(g.date),
+          g.status || 'ZAMÓWIENIE PRZYJĘTE',
+          (it.size || ''),
+          (it.color || ''),
+          (it.designText || '').replace(/;/g, ','),
+          idx===0 ? (g.customer || '') : '',
+          (it.note || '').replace(/;/g, ','),
+          (idx===0 && g.status!=='ZWROT') ? numPL(g.total) : ''
+        ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'));
+      });
+    }
+    const y = $('ordersYear').value, m = String(Number($('ordersMonth').value)+1).padStart(2,'0');
+    downloadCSV(`zamowienia_pozycje_${y}-${m}.csv`, rows);
+  }
+  function exportOrdersGroupsCSV() {
+    const header = ['DATA','STATUS','KLIENT','LICZBA POZYCJI','POZYCJE','CENA'];
+    const rows = [header.join(';')];
+    for (const g of ordersGroupsAll) {
+      const items = g.items.slice().sort((a,b)=>(a.size||"").localeCompare(b.size||""));
+      const details = items.map(it => `${it.size||''}/${it.color||''} – ${(it.designText||'').replace(/;/g,',')}`).join(' | ');
+      rows.push([
+        dShort(g.date),
+        g.status || 'ZAMÓWIENIE PRZYJĘTE',
+        g.customer || '',
+        String(items.length),
+        details,
+        (g.status!=='ZWROT') ? numPL(g.total) : ''
+      ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'));
+    }
+    const y = $('ordersYear').value, m = String(Number($('ordersMonth').value)+1).padStart(2,'0');
+    downloadCSV(`zamowienia_zamowienia_${y}-${m}.csv`, rows);
+  }
+  function exportExpensesCSV() {
+    const header = ['DATA','NAZWA','UWAGI','KWOTA'];
+    const rows = [header.join(';')];
+    for (const e of expensesList) {
+      rows.push([
+        dShort(e.date),
+        (e.name||'').replace(/;/g, ','),
+        (e.note||'').replace(/;/g, ','),
+        numPL(e.amount || 0)
+      ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'));
+    }
+    const y = $('expYear').value, m = String(Number($('expMonth').value)+1).padStart(2,'0');
+    downloadCSV(`koszty_${y}-${m}.csv`, rows);
+  }
+</script>
+</body>
+</html>
