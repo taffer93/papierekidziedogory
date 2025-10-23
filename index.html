@@ -47,22 +47,9 @@
     tr:hover td{filter:brightness(1.03)}
 
     /* kolumna STATUS – węższa, ale mieści długie nazwy */
-    th.statusCol, td.statusCol {
-      min-width: 200px;
-      width: 200px;
-      white-space: nowrap;
-    }
-    td.statusCol select {
-      width: auto !important;
-      min-width: 200px;
-      max-width: 100%;
-      white-space: nowrap;
-      font-size: 12px;
-    }
-    @media (max-width: 900px) {
-      th.statusCol, td.statusCol { min-width: 180px; width: 180px; }
-      td.statusCol select { min-width: 180px; }
-    }
+    th.statusCol, td.statusCol { min-width:200px; width:200px; white-space:nowrap; }
+    td.statusCol select{ width:auto !important; min-width:200px; max-width:100%; white-space:nowrap; font-size:12px; }
+    @media (max-width:900px){ th.statusCol,td.statusCol{min-width:180px;width:180px} td.statusCol select{min-width:180px} }
 
     /* status = kolor całego wiersza */
     tr.st-new   td{background-color:var(--st-new)}
@@ -153,6 +140,7 @@
       <button data-tab="add">Dodaj zamówienie</button>
       <button data-tab="designs">Wzory</button>
       <button data-tab="expenses">Koszty</button>
+      <button data-tab="stats">Statystyki</button>
     </nav>
 
     <!-- ORDERS TAB -->
@@ -325,6 +313,33 @@
         </table>
       </div>
     </div>
+
+    <!-- STATS TAB -->
+    <div id="tab-stats" class="card" style="display:none">
+      <div class="toolbar">
+        <div>
+          <label class="mini">Miesiąc i rok</label>
+          <div class="row center" style="gap:6px">
+            <select id="statsMonth" class="month" style="max-width:180px"></select>
+            <select id="statsYear" style="max-width:120px"></select>
+          </div>
+        </div>
+        <div class="right pill">Ranking wzorów (liczba pozycji w miesiącu; bez ZWROT)</div>
+      </div>
+
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Wzór</th>
+              <th>Ilość zamówień</th>
+            </tr>
+          </thead>
+          <tbody id="statsTbody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -411,11 +426,9 @@
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc, getDocs, query, where, onSnapshot, serverTimestamp, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // detektor błędów
   window.addEventListener('error', e => alert('Błąd skryptu: ' + (e.message || e.error?.message || 'unknown')));
   window.addEventListener('unhandledrejection', e => alert('Błąd (promise): ' + (e.reason?.message || e.reason || 'unknown')));
 
-  // KONFIG – Twój projekt (bez zmian)
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -428,127 +441,96 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Helpers
   const $ = id => document.getElementById(id);
-  const escCSV = s => (s||"").replace(/"/g,'""');
   const fmt2 = n => (Number(n||0)).toFixed(2);
   const numPL = n => fmt2(n).replace('.', ',');
   const monthsPL = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
   const monthKey = (y,mIndex) => `${y}-${String(mIndex+1).padStart(2,"0")}`;
   const rowCls = s => s==="ZWROT"?"st-ret":s==="WYSŁANE"?"st-sent":s==="GOTOWE DO WYSYŁKI"?"st-ready":s==="W TRAKCIE REALIZACJI"?"st-prog":"st-new";
+  const dShort = d => { const dt=d?.toDate?d.toDate():new Date(d); const dd=String(dt.getDate()).padStart(2,"0"); const mm=String(dt.getMonth()+1).padStart(2,"0"); const yy=dt.getFullYear(); return `${dd}.${mm}.${yy}`; };
 
-  // miniatury jako dataURL
-  async function fileToDataUrl(file, maxW=900, maxH=900, quality=0.82){
-    return new Promise((resolve, reject)=>{
-      const img = new Image();
-      const reader = new FileReader();
-      reader.onload = e => { img.src = e.target.result; };
-      reader.onerror = reject;
-      img.onload = () => {
-        let w = img.width, h = img.height;
-        const scale = Math.min(maxW / w, maxH / h, 1);
-        const cw = Math.round(w * scale), ch = Math.round(h * scale);
-        const canvas = document.createElement('canvas');
-        canvas.width = cw; canvas.height = ch;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, cw, ch);
-        let dataUrl = canvas.toDataURL('image/jpeg', quality);
-        if (dataUrl.length > 950000) dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        resolve(dataUrl);
-      };
-      img.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // Auth
-  const loginCard=$("loginCard"), appWrap=$("app"), userEmail=$("userEmail"), loginBtn=$("loginBtn"), logoutBtn=$("logoutBtn"), loginMsg=$("loginMsg");
-  loginBtn.onclick = async () => { loginMsg.textContent="Logowanie…"; try{ await signInWithEmailAndPassword(auth,$("email").value,$("password").value); loginMsg.textContent=""; }catch(e){ loginMsg.textContent="Błąd: "+(e.message||e.code); } };
-  logoutBtn.onclick = () => signOut(auth);
-  onAuthStateChanged(auth, u => {
-    if (u){ loginCard.style.display="none"; appWrap.style.display=""; userEmail.textContent=u.email||""; logoutBtn.style.display=""; initApp(); }
-    else  { loginCard.style.display=""; appWrap.style.display="none"; userEmail.textContent=""; logoutBtn.style.display="none"; }
-  });
-
-  // Data caches/states
+  // caches/states
   const designMap = new Map();
   let orderRows = [];
   let ordersGroupsAll = [];
+  let expensesList = [];
   let revenueSumAll = 0;
   let expensesSumAll = 0;
-  let unsubOrders = null, unsubExp = null;
+  let unsubOrders=null, unsubExp=null, unsubStats=null;
 
-  // Edit modal state
+  // Edit state
   let editRows = [];
   let editingGroupId = null;
 
   // Picker context
-  let pickerContext = "add"; // "add" | "edit"
-  let pickerRowIndex = null;
+  let pickerContext="add", pickerRowIndex=null;
+
+  // Auth
+  onAuthStateChanged(auth, u => {
+    if (u){ $("loginCard").style.display="none"; $("app").style.display=""; $("userEmail").textContent=u.email||""; $("logoutBtn").style.display=""; initApp(); }
+    else  { $("loginCard").style.display=""; $("app").style.display="none"; $("userEmail").textContent=""; $("logoutBtn").style.display="none"; }
+  });
+  $("loginBtn").onclick = async ()=>{ try{ await signInWithEmailAndPassword(auth,$("email").value,$("password").value); }catch(e){ $("loginMsg").textContent="Błąd: "+(e.message||e.code);} };
+  $("logoutBtn").onclick = ()=> signOut(auth);
 
   async function initApp(){
     const now = new Date();
     const years = Array.from({length:9},(_,k)=>now.getFullYear()-4+k);
+    // Fill selects (orders/add/expenses/stats/edit)
+    const monthsHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
+    const yearsHTML  = years.map(y=>`<option ${y===now.getFullYear()?"selected":""}>${y}</option>`).join("");
 
-    // Orders selects
-    $("ordersMonth").innerHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
-    $("ordersYear").innerHTML  = years.map(y=>`<option ${y===now.getFullYear()?"selected":""}>${y}</option>`).join("");
-    $("ordersMonth").value = String(now.getMonth());
-
-    // Add form selects
-    $("addMonth").innerHTML = $("ordersMonth").innerHTML;
-    $("addYear").innerHTML  = $("ordersYear").innerHTML;
-    $("addYear").value = String(now.getFullYear());
-    $("addMonth").value = String(now.getMonth());
-    $("addDay").value = String(now.getDate());
-
-    // Expenses selects
-    $("expMonth").innerHTML = $("ordersMonth").innerHTML;
-    $("expYear").innerHTML  = $("ordersYear").innerHTML;
-    $("expMonth").value = String(now.getMonth());
-    $("expYear").value  = String(now.getFullYear());
-    $("expDay").value   = String(now.getDate());
-
-    // Edit modal selects
-    $("editMonth").innerHTML = $("ordersMonth").innerHTML;
-    $("editYear").innerHTML  = $("ordersYear").innerHTML;
+    // Orders
+    $("ordersMonth").innerHTML = monthsHTML; $("ordersYear").innerHTML = yearsHTML; $("ordersMonth").value = String(now.getMonth());
+    // Add
+    $("addMonth").innerHTML = monthsHTML; $("addYear").innerHTML = yearsHTML; $("addMonth").value=String(now.getMonth()); $("addYear").value=String(now.getFullYear()); $("addDay").value=String(now.getDate());
+    // Expenses
+    $("expMonth").innerHTML = monthsHTML; $("expYear").innerHTML = yearsHTML; $("expMonth").value=String(now.getMonth()); $("expYear").value=String(now.getFullYear()); $("expDay").value=String(now.getDate());
+    // Stats
+    $("statsMonth").innerHTML = monthsHTML; $("statsYear").innerHTML = yearsHTML; $("statsMonth").value=String(now.getMonth()); $("statsYear").value=String(now.getFullYear());
+    // Edit modal
+    $("editMonth").innerHTML = monthsHTML; $("editYear").innerHTML = yearsHTML;
 
     await reloadDesigns();
     subscribeOrders();
     subscribeExpenses();
+    subscribeStats();
 
-    // Sync miesięcy
-    const sync = () => { $("expMonth").value=$("ordersMonth").value; $("expYear").value=$("ordersYear").value; subscribeOrders(); subscribeExpenses(); };
-    $("ordersMonth").addEventListener("change", sync);
-    $("ordersYear").addEventListener("change", sync);
+    // sync months across tabs
+    const syncFromOrders = ()=>{ $("expMonth").value=$("ordersMonth").value; $("expYear").value=$("ordersYear").value; $("statsMonth").value=$("ordersMonth").value; $("statsYear").value=$("ordersYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
+    $("ordersMonth").addEventListener("change", syncFromOrders);
+    $("ordersYear").addEventListener("change", syncFromOrders);
     $("filterStatus").addEventListener("change", renderOrdersFiltered);
 
-    $("expMonth").addEventListener("change", ()=>{ $("ordersMonth").value=$("expMonth").value; $("ordersYear").value=$("expYear").value; subscribeOrders(); subscribeExpenses(); });
-    $("expYear").addEventListener("change",  ()=>{ $("ordersMonth").value=$("expMonth").value; $("ordersYear").value=$("expYear").value; subscribeOrders(); subscribeExpenses(); });
+    const syncFromExpenses = ()=>{ $("ordersMonth").value=$("expMonth").value; $("ordersYear").value=$("expYear").value; $("statsMonth").value=$("expMonth").value; $("statsYear").value=$("expYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
+    $("expMonth").addEventListener("change", syncFromExpenses);
+    $("expYear").addEventListener("change", syncFromExpenses);
 
-    // Actions
+    const syncFromStats = ()=>{ $("ordersMonth").value=$("statsMonth").value; $("ordersYear").value=$("statsYear").value; $("expMonth").value=$("statsMonth").value; $("expYear").value=$("statsYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
+    $("statsMonth").addEventListener("change", syncFromStats);
+    $("statsYear").addEventListener("change", syncFromStats);
+
+    // actions
     $("addDesignBtn").addEventListener("click", onAddDesign);
     $("addRowBtn").addEventListener("click", ()=>addRow());
     $("clearOrderBtn").addEventListener("click", clearOrderForm);
     $("saveOrderBtn").addEventListener("click", saveOrder);
-    $("pickerClose").addEventListener("click", closePicker);
+    $("pickerClose").addEventListener("click", ()=>{ $("designPicker").style.display="none"; pickerRowIndex=null; });
     $("pickerSearch").addEventListener("input", renderPickerGrid);
     $("pickerCustomFile").addEventListener("change", onPickerCustom);
-
     $("addExpenseBtn").addEventListener("click", addExpense);
-
     $("editAddRowBtn").addEventListener("click", ()=>editAddRow());
-    $("editCloseBtn").addEventListener("click", closeEditModal);
+    $("editCloseBtn").addEventListener("click", ()=>{ $("orderEdit").style.display="none"; editingGroupId=null; editRows=[]; });
     $("editSaveBtn").addEventListener("click", saveEditOrder);
 
-    // Exporty
+    // exports
     $("exportItemsBtn").addEventListener("click", exportOrdersItemsCSV);
     $("exportGroupsBtn").addEventListener("click", exportOrdersGroupsCSV);
     $("exportExpBtn").addEventListener("click", exportExpensesCSV);
 
-    // Tabs
+    // tabs
     const tabsBtns = document.querySelectorAll("nav.tabs button");
-    const tabs = { orders:$("tab-orders"), add:$("tab-add"), designs:$("tab-designs"), expenses:$("tab-expenses") };
+    const tabs = { orders:$("tab-orders"), add:$("tab-add"), designs:$("tab-designs"), expenses:$("tab-expenses"), stats:$("tab-stats") };
     tabsBtns.forEach(btn => btn.addEventListener("click", () => {
       tabsBtns.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
@@ -556,10 +538,11 @@
       tabs[btn.dataset.tab].style.display = "";
     }));
 
+    // initial row
     addRow();
   }
 
-  // Designs
+  // Designs CRUD and picker
   async function reloadDesigns(){
     designMap.clear();
     const snap = await getDocs(query(collection(db,"designs")));
@@ -573,7 +556,7 @@
       card.className="design-card";
       card.innerHTML=`
         ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`}
-        <div class="design-name">${d.name.replace(/</g,"&lt;")}</div>
+        <div class="design-name">${(d.name||"").replace(/</g,"&lt;")}</div>
         <div class="row center" style="margin-top:8px">
           <button class="ghost mini-btn" data-act="edit">Edytuj</button>
           <button class="ghost mini-btn danger" data-act="del">Usuń</button>
@@ -586,7 +569,7 @@
   function openEditDesign(card,d){
     card.innerHTML=`
       <div class="row center">
-        <div class="col"><input value="${d.name.replace(/"/g,'&quot;')}" data-role="name"/></div>
+        <div class="col"><input value="${(d.name||"").replace(/"/g,'&quot;')}" data-role="name"/></div>
         <div class="col"><input type="file" accept="image/*" data-role="file"/></div>
       </div>
       <div class="row center" style="margin-top:8px">
@@ -621,10 +604,7 @@
       await reloadDesigns(); setTimeout(()=>out.textContent="",1200);
     }catch(e){ out.textContent="Błąd: "+(e.message||e.code); }
   }
-
-  // Picker (scrollable)
   function openPicker(i,ctx="add"){ pickerContext=ctx; pickerRowIndex=i; $("pickerCustomFile").value=""; $("pickerSearch").value=""; renderPickerGrid(); $("designPicker").style.display="flex"; }
-  function closePicker(){ $("designPicker").style.display="none"; pickerRowIndex=null; }
   function renderPickerGrid(){
     const grid=$("pickerGrid"); grid.innerHTML="";
     const term=($("pickerSearch").value||"").toLowerCase();
@@ -633,28 +613,31 @@
       .filter(d=>term?d.name.toLowerCase().includes(term):true)
       .sort((a,b)=>a.name.localeCompare(b.name,"pl"));
     for(const d of list){
-      const card=document.createElement("div"); card.className="design-card";
+      const card=document.createElement("div");
+      card.className="design-card";
       card.innerHTML=`
         ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`}
-        <div class="design-name">${d.name.replace(/</g,"&lt;")}</div>`;
+        <div class="design-name">${(d.name||"").replace(/</g,"&lt;")}</div>`;
       card.onclick=()=>{
         const arr=(pickerContext==="edit")?editRows:orderRows;
         const r=arr[pickerRowIndex];
         r.designId=d.id; r.designName=d.name; r.previewUrl=d.previewUrl||null; r.customFile=null; r.customLocalUrl=null;
         (pickerContext==="edit")?renderEditRows():renderOrderRows();
-        closePicker();
+        $("designPicker").style.display="none"; pickerRowIndex=null;
       };
       grid.appendChild(card);
     }
   }
   async function onPickerCustom(e){
     const file=e.target.files[0]; if(!file||pickerRowIndex==null)return;
-    const arr=(pickerContext==="edit")?editRows:orderRows; const r=arr[pickerRowIndex];
+    const arr=(pickerContext==="edit")?editRows:orderRows;
+    const r=arr[pickerRowIndex];
     r.designId="custom"; r.designName="CUSTOM"; r.customFile=file; r.customLocalUrl=URL.createObjectURL(file); r.previewUrl=r.customLocalUrl;
-    (pickerContext==="edit")?renderEditRows():renderOrderRows(); closePicker();
+    (pickerContext==="edit")?renderEditRows():renderOrderRows();
+    $("designPicker").style.display="none"; pickerRowIndex=null;
   }
 
-  // Dodawanie zamówienia
+  // Add order (rows)
   function defaultRow(){ return { size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; }
   function addRow(){ orderRows.push(defaultRow()); renderOrderRows(); }
   function removeRow(i){ orderRows.splice(i,1); renderOrderRows(); if(orderRows.length===0) addRow(); }
@@ -728,7 +711,7 @@
     setTimeout(()=>msg.textContent="",2000);
   }
 
-  // LISTA ZAMÓWIEŃ (grupowanie)
+  // ORDERS list (grouped)
   function ordersMonthKey(){ return monthKey(Number($("ordersYear").value), Number($("ordersMonth").value)); }
   function subscribeOrders(){
     if(unsubOrders){unsubOrders();unsubOrders=null;}
@@ -801,7 +784,7 @@
     const batch=writeBatch(db); qSnap.forEach(d=>batch.delete(doc(db,"orderItems",d.id))); await batch.commit();
   }
 
-  // Edycja zamówienia
+  // Edit order
   function editDefaultRow(){ return { id:null, size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; }
   async function openEditModal(groupId){
     editingGroupId=groupId; $("editMsg").textContent="";
@@ -816,9 +799,6 @@
     renderEditRows();
     $("orderEdit").style.display="flex";
   }
-  function closeEditModal(){ $("orderEdit").style.display="none"; editingGroupId=null; editRows=[]; }
-  function editAddRow(){ editRows.push(editDefaultRow()); renderEditRows(); }
-  function editRemoveRow(i){ editRows.splice(i,1); renderEditRows(); if(editRows.length===0) editAddRow(); }
   function renderEditRows(){
     const tb=$("editRowsTbody"); tb.innerHTML="";
     editRows.forEach((r,i)=>{
@@ -841,7 +821,7 @@
         <td><input data-act="note" type="text" value="${(r.note||"").replace(/"/g,'&quot;')}" placeholder="Uwagi do tej pozycji"></td>
         <td class="rows-actions"><button class="ghost mini-btn danger" data-act="remove">Usuń</button></td>`;
       tr.querySelector('[data-act="pick"]').onclick=()=>openPicker(i,"edit");
-      tr.querySelector('[data-act="remove"]').onclick=()=>editRemoveRow(i);
+      tr.querySelector('[data-act="remove"]').onclick=()=>{ editRows.splice(i,1); renderEditRows(); if(editRows.length===0) editRows.push(editDefaultRow()); };
       tr.querySelector('[data-act="size"]').onchange=e=>r.size=e.target.value;
       tr.querySelector('[data-act="color"]').onchange=e=>r.color=e.target.value;
       tr.querySelector('[data-act="note"]').oninput=e=>r.note=e.target.value;
@@ -876,12 +856,11 @@
       }
       existingIds.forEach(id=>{ if(!keepIds.has(id)) batch.delete(doc(db,"orderItems",id)); });
       await batch.commit();
-      msg.textContent="Zapisano zmiany ✅"; setTimeout(()=>{ msg.textContent=""; closeEditModal(); },800);
+      msg.textContent="Zapisano zmiany ✅"; setTimeout(()=>{ msg.textContent=""; $("orderEdit").style.display="none"; editingGroupId=null; editRows=[]; },800);
     }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
   }
 
   // Expenses
-  let expensesList=[];
   function expMonthKey(){ return monthKey(Number($("expYear").value), Number($("expMonth").value)); }
   async function addExpense(){
     const msg=$("expMsg"), name=$("expName").value.trim(), amount=Number($("expAmount").value||0), note=$("expNote").value.trim();
@@ -921,7 +900,57 @@
     }
   }
 
-  // Top summary (w tym licznik zamówień)
+  // Stats (ranking wzorów)
+  function statsMonthKey(){ return monthKey(Number($("statsYear").value), Number($("statsMonth").value)); }
+  function subscribeStats(){
+    if(unsubStats){unsubStats();unsubStats=null;}
+    const q1=query(collection(db,"orderItems"), where("monthKey","==",statsMonthKey()));
+    unsubStats=onSnapshot(q1,(snap)=>{
+      // policz pozycje per wzór (bez ZWROT)
+      const counts = new Map(); // key = designId (lub "custom"), val = {count, lastPreview, lastName}
+      snap.forEach(d=>{
+        const it = d.data();
+        if (it.status === "ZWROT") return; // pomijamy zwroty
+        const key = it.designId || "custom";
+        const prev = counts.get(key) || { count:0, lastPreview:null, lastName:null };
+        prev.count += 1;
+        prev.lastPreview = it.previewUrl || prev.lastPreview || (designMap.get(key)?.previewUrl||null);
+        prev.lastName = it.designText || prev.lastName || (designMap.get(key)?.name||"");
+        counts.set(key, prev);
+      });
+      // dodaj wszystkie wzory z katalogu (z count=0, żeby ranking obejmował dostępne wzory)
+      for (const d of designMap.values()){
+        if (!counts.has(d.id)) counts.set(d.id, { count:0, lastPreview:d.previewUrl||null, lastName:d.name||"" });
+      }
+      // ułóż listę
+      const list = Array.from(counts.entries()).map(([id,info])=>({
+        id, name: info.lastName || (id==="custom"?"CUSTOM":id),
+        preview: info.lastPreview || null,
+        count: info.count
+      })).sort((a,b)=> b.count - a.count || (a.name||"").localeCompare(b.name||"", "pl"));
+
+      renderStats(list);
+    },err=>alert("Błąd statystyk: "+(err.message||err.code)));
+  }
+  function renderStats(list){
+    const tb = $("statsTbody"); tb.innerHTML="";
+    list.forEach((row,i)=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>
+          <div class="designCell">
+            ${row.preview?`<img class="designThumb" src="${row.preview}" alt="">`:""}
+            <span>${(row.name||"").replace(/</g,"&lt;")}</span>
+          </div>
+        </td>
+        <td>${row.count}</td>
+      `;
+      tb.appendChild(tr);
+    });
+  }
+
+  // Top summary
   function updateTopSummary(){
     $("ordersCount").textContent = String(ordersGroupsAll.length);
     $("sumRevenue").textContent  = fmt2(revenueSumAll);
@@ -932,16 +961,14 @@
     el.classList.toggle("neg", net < 0);
   }
 
-  // Eksport CSV
+  // Exports
   function downloadCSV(filename, rows) {
     const BOM = '\uFEFF';
     const blob = new Blob([BOM + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click();
     document.body.removeChild(a); URL.revokeObjectURL(url);
   }
-  function dShort(d){ const dt=d?.toDate?d.toDate():new Date(d); const dd=String(dt.getDate()).padStart(2,"0"); const mm=String(dt.getMonth()+1).padStart(2,"0"); const yy=dt.getFullYear(); return `${dd}.${mm}.${yy}`; }
   function exportOrdersItemsCSV() {
     const header = ['DATA','STATUS ZAMÓWIENIA','ROZMIAR','KOLOR','WZÓR','DANE ZAMAWIAJĄCEGO','UWAGI','CENA'];
     const rows = [header.join(';')];
@@ -958,7 +985,7 @@
           idx===0 ? (g.customer || '') : '',
           (it.note || '').replace(/;/g, ','),
           (idx===0 && g.status!=='ZWROT') ? numPL(g.total) : ''
-        ].map(v => `"${escCSV(v)}"`).join(';'));
+        ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'));
       });
     }
     const y = $('ordersYear').value, m = String(Number($('ordersMonth').value)+1).padStart(2,'0');
@@ -977,7 +1004,7 @@
         String(items.length),
         details,
         (g.status!=='ZWROT') ? numPL(g.total) : ''
-      ].map(v => `"${escCSV(v)}"`).join(';'));
+      ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'));
     }
     const y = $('ordersYear').value, m = String(Number($('ordersMonth').value)+1).padStart(2,'0');
     downloadCSV(`zamowienia_zamowienia_${y}-${m}.csv`, rows);
@@ -991,10 +1018,29 @@
         (e.name||'').replace(/;/g, ','),
         (e.note||'').replace(/;/g, ','),
         numPL(e.amount || 0)
-      ].map(v => `"${escCSV(v)}"`).join(';'));
+      ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'));
     }
     const y = $('expYear').value, m = String(Number($('expMonth').value)+1).padStart(2,'0');
     downloadCSV(`koszty_${y}-${m}.csv`, rows);
+  }
+
+  // Expenses rendering (reuse)
+  function renderExpenses(){
+    $("sumExpensesTop").textContent=fmt2(expensesSumAll);
+    const tb=$("expTbody"); tb.innerHTML="";
+    for(const e of expensesList){
+      const dt=e.date?.toDate?e.date.toDate():new Date(e.date);
+      const dstr=`${String(dt.getDate()).padStart(2,"0")}.${String(dt.getMonth()+1).padStart(2,"0")}.${dt.getFullYear()}`;
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>${dstr}</td>
+        <td>${(e.name||"").replace(/</g,"&lt;")}</td>
+        <td>${(e.note||"").replace(/</g,"&lt;")}</td>
+        <td>${fmt2(e.amount)} zł</td>
+        <td><button class="ghost mini-btn danger" data-del="${e.id}">usuń</button></td>`;
+      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
+      tb.appendChild(tr);
+    }
   }
 </script>
 </body>
