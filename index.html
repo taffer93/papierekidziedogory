@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Koszulki — Panel (pełna wersja)</title>
+  <title>Koszulki — Panel (pełny, poprawiony)</title>
   <style>
     :root{
       --bg:#0f1720; --card:#111820; --muted:#9fb2c7; --text:#eaf4ff; --accent:#4cc9f0; --line:#223042;
@@ -22,13 +22,13 @@
     input,select,button,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #213244;background:#0b1420;color:var(--text)}
     button.primary{background:linear-gradient(180deg,#177ea6,#0e5f80);border-color:#0e5f80;color:#fff}
     table{width:100%;border-collapse:collapse;font-size:13px}
-    th,td{padding:8px;border-bottom:1px solid #172a36;text-align:left;vertical-align:middle}
+    th,td{padding:8px;border-bottom:1px solid #172a36;text-align:left}
     th{background:#0e1b27;position:sticky;top:0}
     .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
     .right{margin-left:auto}
     .pill{padding:6px 10px;border-radius:999px;background:#0b1220;border:1px solid #193040}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-    .design-card{padding:8px;border-radius:8px;border:1px solid #203145;background:#081118;text-align:center;cursor:default}
+    .design-card{padding:8px;border-radius:8px;border:1px solid #203145;background:#081118;text-align:center}
     .thumb{width:48px;height:48px;border-radius:6px;object-fit:cover;background:#07121a}
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:2000}
     .modal .panel{background:var(--card);border-radius:10px;padding:12px;width:min(980px,96vw);max-height:88vh;overflow:auto;border:1px solid #162a36}
@@ -39,8 +39,6 @@
     @media (max-width:900px){ .chart-grid{grid-template-columns:1fr} .chart-canvas{min-height:220px} }
     .danger{color:#ff8a8a}
     .small{font-size:12px;color:var(--muted)}
-    .inline-actions{display:flex;gap:6px;align-items:center}
-    .action-btn{padding:6px 8px;border-radius:8px;background:transparent;border:1px solid #203145;color:var(--text);cursor:pointer}
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -62,7 +60,6 @@
     <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
       <button id="loginBtn" class="primary">Zaloguj</button>
       <div id="loginMsg" class="small"></div>
-      <button id="logoutBtn" class="action-btn" style="margin-left:8px;display:none">Wyloguj</button>
     </div>
   </div>
 
@@ -117,7 +114,7 @@
     <div id="tab-add" class="card" style="display:none">
       <h3>Dodaj zamówienie</h3>
       <div class="row">
-        <div class="col"><input id="addDesignText" placeholder="Nazwa wzoru (lub wybierz we wzorach)"></div>
+        <div class="col"><input id="addDesignText" placeholder="Nazwa wzoru"></div>
         <div class="col"><select id="addSize"><option>S</option><option>M</option><option>L</option><option>XL</option></select></div>
         <div class="col"><input id="addCustomer" placeholder="Klient"></div>
         <div class="col"><input id="addTotal" type="number" placeholder="Łączna cena"></div>
@@ -150,10 +147,7 @@
       </div>
       <div id="expMsg" class="small" style="margin-top:8px"></div>
       <div style="overflow:auto;margin-top:8px">
-        <table>
-          <thead><tr><th>Data</th><th>Nazwa</th><th>Kwota</th><th></th></tr></thead>
-          <tbody id="expTbody"></tbody>
-        </table>
+        <table><thead><tr><th>Data</th><th>Nazwa</th><th>Kwota</th><th></th></tr></thead><tbody id="expTbody"></tbody></table>
       </div>
     </div>
 
@@ -241,7 +235,7 @@
     getDocs, query, where, onSnapshot, serverTimestamp, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // firebase config (jak prosiłeś - zostawione)
+  // --- Firebase config (twój projekt) ---
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -264,16 +258,20 @@
   let designMap = new Map();
   let ordersGroupsAll = [];
   let expensesList = [];
-  const charts = {};
+  let charts = {};
 
-  // init UI + listeners
-  (function init(){
+  // single declaration for picker context (no duplicates)
+  let pickerContext = { openForRow: null };
+
+  // UI init
+  (function initUI(){
     const now = new Date();
-    const years = Array.from({length:9},(_,k)=>now.getFullYear()-4+k);
-    const monthsHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
-    const yearsHTML = years.map(y=>`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`).join('');
-    $('ordersMonth').innerHTML = monthsHTML; $('advMonth').innerHTML = monthsHTML; $('expDate').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    $('ordersYear').innerHTML = yearsHTML; $('advYear').innerHTML = yearsHTML;
+    const yearsArr = Array.from({length:9},(_,k)=>now.getFullYear()-4+k);
+    $('ordersMonth').innerHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+    $('advMonth').innerHTML = $('ordersMonth').innerHTML;
+    $('advYear').innerHTML = yearsArr.map(y=>`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`).join('');
+    $('ordersYear').innerHTML = $('advYear').innerHTML;
+    $('expDate').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
     // tabs
     document.querySelectorAll('nav.tabs button').forEach(btn=>{
@@ -284,106 +282,125 @@
         const id = 'tab-' + btn.dataset.tab;
         if($(id)) $(id).style.display = '';
         if(btn.dataset.tab === 'advstats') renderAdvancedStats();
-        if(btn.dataset.tab === 'stats') renderSimpleStats();
       });
     });
 
-    // auth buttons
-    $('loginBtn').onclick = async ()=>{
-      const email = $('email').value.trim(), pass = $('password').value.trim();
-      if(!email||!pass){ $('loginMsg').textContent='Podaj e-mail i hasło'; return; }
+    // listeners
+    $('loginBtn').onclick = async () => {
+      const email = $('email').value.trim();
+      const pass = $('password').value.trim();
+      if(!email || !pass){ $('loginMsg').textContent = 'Podaj e-mail i hasło'; return; }
       $('loginMsg').textContent = 'Trwa logowanie...';
       try{
         await setPersistence(auth, browserLocalPersistence);
-        const uc = await signInWithEmailAndPassword(auth,email,pass);
-        if(uc?.user){
+        const userCred = await signInWithEmailAndPassword(auth, email, pass);
+        if(userCred?.user){
           $('loginMsg').textContent = 'Zalogowano';
-          $('loginCard').style.display='none'; $('app').style.display='';
-          $('userInfo').textContent = uc.user.email || '';
-          $('logoutBtn').style.display = '';
+          $('loginCard').style.display = 'none';
+          $('app').style.display = '';
+          $('userInfo').textContent = userCred.user.email || '';
+        } else {
+          $('loginMsg').textContent = 'Nie udało się zalogować';
         }
-      }catch(e){
-        console.error(e); $('loginMsg').textContent = (e.code||e.message)||'Błąd logowania';
+      } catch(err){
+        console.error('Błąd logowania', err);
+        let msg = 'Błąd logowania.';
+        if(err.code === 'auth/wrong-password') msg = 'Niepoprawne hasło.';
+        else if(err.code === 'auth/user-not-found') msg = 'Nie znaleziono konta.';
+        else if(err.code === 'auth/invalid-email') msg = 'Niepoprawny e-mail.';
+        else if(err.code === 'auth/network-request-failed') msg = 'Brak sieci.';
+        $('loginMsg').textContent = msg;
       }
     };
-    $('logoutBtn').onclick = async ()=>{ try{ await signOut(auth); $('logoutBtn').style.display='none'; }catch(e){ console.error(e); } };
 
-    // actions
     $('addDesignBtn').addEventListener('click', onAddDesign);
     $('addOrderBtn').addEventListener('click', onAddOrder);
     $('addExpenseBtn').addEventListener('click', onAddExpense);
 
-    $('filterStatus').addEventListener('change', renderOrdersTable);
-    $('ordersMonth').addEventListener('change', renderOrdersTable);
-    $('ordersYear').addEventListener('change', renderOrdersTable);
-
-    // advanced controls
-    $('advPeriod').addEventListener('change', renderAdvancedStats); $('advMonth').addEventListener('change', renderAdvancedStats); $('advYear').addEventListener('change', renderAdvancedStats); $('advIncludeReturns').addEventListener('change', renderAdvancedStats);
-    $('sizePeriod').addEventListener('change', renderAdvancedStats); $('sizeIncludeReturns').addEventListener('change', renderAdvancedStats);
+    $('advPeriod').addEventListener('change', renderAdvancedStats);
+    $('advMonth').addEventListener('change', renderAdvancedStats);
+    $('advYear').addEventListener('change', renderAdvancedStats);
+    $('advIncludeReturns').addEventListener('change', renderAdvancedStats);
+    $('sizePeriod').addEventListener('change', renderAdvancedStats);
+    $('sizeIncludeReturns').addEventListener('change', renderAdvancedStats);
 
     createCharts();
   })();
 
-  // auth state
-  onAuthStateChanged(auth, user=>{
+  // auth state handler
+  onAuthStateChanged(auth, user => {
     if(user){
-      $('loginCard').style.display='none'; $('app').style.display=''; $('userInfo').textContent = user.email || '';
-      $('logoutBtn').style.display = '';
+      console.log('Zalogowano jako', user.email);
+      $('loginCard').style.display = 'none';
+      $('app').style.display = '';
+      $('userInfo').textContent = user.email || '';
       startListeners();
     } else {
-      $('loginCard').style.display=''; $('app').style.display='none'; $('userInfo').textContent=''; $('logoutBtn').style.display='none';
+      console.log('Wylogowano');
+      $('loginCard').style.display = '';
+      $('app').style.display = 'none';
+      $('userInfo').textContent = '';
       stopListeners();
     }
   });
 
-  // listeners management
+  // listeners unsub
   let unsubDesigns=null, unsubOrders=null, unsubExpenses=null;
   function startListeners(){
-    subscribeDesigns(); subscribeOrders(); subscribeExpenses();
+    subscribeDesigns();
+    subscribeOrders();
+    subscribeExpenses();
   }
   function stopListeners(){
-    if(unsubDesigns) unsubDesigns(); if(unsubOrders) unsubOrders(); if(unsubExpenses) unsubExpenses();
+    if(unsubDesigns) unsubDesigns();
+    if(unsubOrders) unsubOrders();
+    if(unsubExpenses) unsubExpenses();
   }
 
-  // designs
+  // --- Designs ---
   function subscribeDesigns(){
     if(unsubDesigns) unsubDesigns();
     unsubDesigns = onSnapshot(collection(db,'designs'), snap=>{
-      designMap.clear(); snap.forEach(d=>designMap.set(d.id,{ id:d.id, ...d.data() }));
-      renderDesigns(); renderPicker();
+      designMap.clear();
+      snap.forEach(d=> designMap.set(d.id, { id:d.id, ...d.data() }));
+      renderDesigns();
+      renderPicker();
     }, err=>console.error(err));
   }
   function renderDesigns(){
-    const wrap = $('designsList'); wrap.innerHTML='';
+    const wrap = $('designsList'); wrap.innerHTML = '';
     Array.from(designMap.values()).sort((a,b)=> (a.name||'').localeCompare(b.name||'')).forEach(d=>{
-      const el=document.createElement('div'); el.className='design-card';
-      el.innerHTML = `${d.previewUrl?`<img class="thumb" src="${d.previewUrl}">`:`<div class="thumb"></div>`}<div style="margin-top:8px">${(d.name||'').replace(/</g,'&lt;')}</div>`;
-      wrap.appendChild(el);
+      const e = document.createElement('div'); e.className='design-card';
+      e.innerHTML = `${d.previewUrl?`<img class="thumb" src="${d.previewUrl}">`:`<div class="thumb"></div>`}<div style="margin-top:8px">${(d.name||'').replace(/</g,'&lt;')}</div>`;
+      wrap.appendChild(e);
     });
   }
   function renderPicker(){
     const grid = $('pickerGrid'); if(!grid) return; grid.innerHTML='';
     Array.from(designMap.values()).forEach(d=>{
-      const el=document.createElement('div'); el.className='design-card';
+      const el = document.createElement('div'); el.className='design-card';
       el.innerHTML = `${d.previewUrl?`<img class="thumb" src="${d.previewUrl}">`:`<div class="thumb"></div>`}<div style="margin-top:8px">${(d.name||'').replace(/</g,'&lt;')}</div>`;
-      el.onclick = ()=>{ $('designPicker').style.display='none'; $('addDesignText').value = d.name || ''; };
+      el.onclick = ()=>{ pickerContext.openForRow = null; document.getElementById('designPicker').style.display='none'; /* optional assignment usage */ };
       grid.appendChild(el);
     });
   }
   async function onAddDesign(){
-    const name = $('designName').value.trim(); const file = $('designFile').files[0] || null;
+    const name = $('designName').value.trim();
+    const file = $('designFile').files[0] || null;
     if(!name) return alert('Podaj nazwę wzoru');
     const id = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
-    let previewUrl = null; if(file) previewUrl = await fileToDataUrl(file);
+    let previewUrl = null;
+    if(file) previewUrl = await fileToDataUrl(file);
     await setDoc(doc(db,'designs',id), { name, previewUrl, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge:true });
     $('designName').value=''; $('designFile').value='';
   }
 
-  // orders
+  // --- Orders subscription and rendering (single stable impl) ---
   function subscribeOrders(){
     if(unsubOrders) unsubOrders();
     unsubOrders = onSnapshot(collection(db,'orderItems'), snap=>{
-      const docs=[]; snap.forEach(d=>docs.push({ id:d.id, ...d.data() }));
+      const docs = [];
+      snap.forEach(d=>docs.push({ id:d.id, ...d.data() }));
       const groups = new Map();
       for(const it of docs){
         const gid = it.orderGroupId || it.id;
@@ -396,8 +413,8 @@
         if(it.createdAt && (!g.createdMax || g.createdMax < it.createdAt.toDate().getTime())) g.createdMax = it.createdAt.toDate().getTime();
       }
       ordersGroupsAll = Array.from(groups.values()).sort((a,b)=> (b.createdMax||0) - (a.createdMax||0));
-      $('ordersCount').textContent = String(ordersGroupsAll.length);
       const revenue = ordersGroupsAll.reduce((s,g)=> s + (g.status === 'ZWROT' ? 0 : Number(g.total||0)), 0);
+      $('ordersCount').textContent = String(ordersGroupsAll.length);
       $('sumRevenue').textContent = fmt2(revenue);
       renderOrdersTable();
     }, err=>console.error(err));
@@ -409,76 +426,39 @@
     const selM = Number($('ordersMonth').value || new Date().getMonth());
     const mk = monthKey(selY, selM);
     const statusFilter = $('filterStatus').value;
-
     const groupsFiltered = ordersGroupsAll.filter(g=>{
-      const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
+      const d = g.date?.toDate?g.date.toDate(): new Date(g.date);
       const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
       if(key !== mk) return false;
       if(statusFilter !== 'ALL' && (g.status || '') !== statusFilter) return false;
       return true;
     });
-
-    // render groups: show first item with group-level info, then other items as separate rows
-    groupsFiltered.forEach(g=>{
-      // sort group's items to stable order (optional)
-      g.items.sort((a,b)=> (a.size||'').localeCompare(b.size||''));
-      const first = g.items[0];
+    for(const g of groupsFiltered){
       const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
-      const trMain = document.createElement('tr');
-      trMain.innerHTML = `<td><b>${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}</b></td>
-        <td>
-          <select data-gstatus="${g.id}">
-            <option ${g.status==='ZAMÓWIENIE PRZYJĘTE'?'selected':''}>ZAMÓWIENIE PRZYJĘTE</option>
-            <option ${g.status==='W TRAKCIE REALIZACJI'?'selected':''}>W TRAKCIE REALIZACJI</option>
-            <option ${g.status==='GOTOWE DO WYSYŁKI'?'selected':''}>GOTOWE DO WYSYŁKI</option>
-            <option ${g.status==='WYSŁANE'?'selected':''}>WYSŁANE</option>
-            <option ${g.status==='ZWROT'?'selected':''}>ZWROT</option>
-          </select>
-        </td>
-        <td><b>${first.size||''}</b></td>
-        <td>${first.designText||''}</td>
-        <td><b>${g.customer||''}</b></td>
-        <td><b>${fmt2(g.total)} zł</b></td>
-        <td><div class="inline-actions"><button class="action-btn" data-edit="${g.id}">Edytuj</button><button class="action-btn danger" data-del="${g.id}">Usuń</button></div></td>`;
-      tbody.appendChild(trMain);
-
-      // events for status change, edit, delete
-      trMain.querySelector(`[data-gstatus="${g.id}"]`).addEventListener('change', async (e)=>{
-        const newStatus = e.target.value;
-        try{
-          const snap = await getDocs(query(collection(db,'orderItems'), where('orderGroupId','==',g.id)));
-          const batch = writeBatch(db);
-          snap.forEach(d=> batch.update(doc(db,'orderItems',d.id), { status:newStatus, updatedAt: serverTimestamp() }));
-          await batch.commit();
-        }catch(err){ console.error(err); alert('Błąd aktualizacji statusu'); }
-      });
-      trMain.querySelector(`[data-del="${g.id}"]`).addEventListener('click', async ()=>{
-        if(!confirm('Usunąć całe zamówienie?')) return;
-        try{
-          const snap = await getDocs(query(collection(db,'orderItems'), where('orderGroupId','==',g.id)));
-          const batch = writeBatch(db);
-          snap.forEach(d=> batch.delete(doc(db,'orderItems',d.id)));
-          await batch.commit();
-        }catch(e){ console.error(e); alert('Błąd usuwania'); }
-      });
-      trMain.querySelector(`[data-edit="${g.id}"]`).addEventListener('click', ()=> openEditModal(g.id));
-
-      // render other items from group (if any)
-      for(let i=1;i<g.items.length;i++){
-        const it = g.items[i];
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td></td><td></td><td>${it.size||''}</td><td>${it.designText||''}</td><td></td><td>—</td><td></td>`;
-        tbody.appendChild(tr);
-      }
-    });
+      const tr = document.createElement('tr');
+      const it = g.items[0] || {};
+      tr.innerHTML = `<td>${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}</td>
+        <td>${g.status}</td><td>${it.size||''}</td><td>${it.designText||''}</td><td>${g.customer||''}</td><td>${fmt2(g.total)} zł</td>
+        <td><button class="ghost" data-edit="${g.id}">Edytuj</button> <button class="ghost danger" data-del="${g.id}">Usuń</button></td>`;
+      tbody.appendChild(tr);
+      tr.querySelector('[data-edit]')?.addEventListener('click', ()=> openEdit(g.id));
+      tr.querySelector('[data-del]')?.addEventListener('click', ()=> deleteGroupConfirm(g.id));
+    }
   }
 
-  function openEditModal(groupId){
-    // simple alert placeholder — can be extended to full modal edit later
-    alert('Edycja zamówienia: ' + groupId + '\nJeśli chcesz rozwinąć pełną edycję pozycji, powiedz a zrobię.');
+  async function deleteGroupConfirm(groupId){
+    if(!confirm('Usunąć całe zamówienie?')) return;
+    const snap = await getDocs(query(collection(db,'orderItems'), where('orderGroupId','==',groupId)));
+    const batch = writeBatch(db);
+    snap.forEach(d=> batch.delete(doc(db,'orderItems',d.id)));
+    await batch.commit();
   }
 
-  // expenses (with inline edit)
+  function openEdit(groupId){
+    alert('Edytuj: ' + groupId + ' — modal edycji nieotwarty w tej wersji. Jeśli chcesz, rozwinę edycję.');
+  }
+
+  // --- Expenses ---
   function subscribeExpenses(){
     if(unsubExpenses) unsubExpenses();
     unsubExpenses = onSnapshot(collection(db,'expenses'), snap=>{
@@ -488,48 +468,20 @@
       renderExpenses();
     }, err=>console.error(err));
   }
-
   function renderExpenses(){
     const tb = $('expTbody'); tb.innerHTML = '';
     for(const e of expensesList){
-      const d = e.date?.toDate?e.date.toDate(): new Date(e.date);
+      const d = e.date?.toDate?e.date.toDate():new Date(e.date);
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}</td>
         <td>${(e.name||'').replace(/</g,'&lt;')}</td><td>${fmt2(e.amount)} zł</td>
-        <td><div class="inline-actions"><button class="action-btn" data-edit="${e.id}">Edytuj</button><button class="action-btn danger" data-del="${e.id}">Usuń</button></div></td>`;
+        <td><button class="ghost" data-del="${e.id}">Usuń</button></td>`;
       tb.appendChild(tr);
-
-      tr.querySelector(`[data-del="${e.id}"]`).addEventListener('click', async ()=>{
-        if(!confirm('Usuń koszt?')) return;
-        try{ await deleteDoc(doc(db,'expenses',e.id)); }catch(err){ console.error(err); alert('Błąd'); }
-      });
-
-      tr.querySelector(`[data-edit="${e.id}"]`).addEventListener('click', ()=>{
-        // replace row with inline edit inputs
-        const editTr = document.createElement('tr');
-        editTr.innerHTML = `<td><input type="date" value="${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}" data-field="date"></td>
-          <td><input type="text" data-field="name" value="${(e.name||'').replace(/"/g,'&quot;')}"></td>
-          <td><input type="number" step="0.01" data-field="amount" value="${Number(e.amount||0)}"></td>
-          <td><div class="inline-actions"><button class="action-btn" data-save>Zapisz</button><button class="action-btn" data-cancel>Anuluj</button></div></td>`;
-        tb.replaceChild(editTr, tr);
-
-        editTr.querySelector('[data-cancel]').addEventListener('click', ()=> renderExpenses());
-        editTr.querySelector('[data-save]').addEventListener('click', async ()=>{
-          const newDate = editTr.querySelector('[data-field="date"]').value;
-          const newName = editTr.querySelector('[data-field="name"]').value.trim();
-          const newAmount = Number(editTr.querySelector('[data-field="amount"]').value||0);
-          if(!newName || !newAmount){ alert('Nazwa i kwota są wymagane'); return; }
-          try{
-            const dt = new Date(newDate + 'T12:00:00');
-            await updateDoc(doc(db,'expenses',e.id), { name:newName, amount:newAmount, date: Timestamp.fromDate(dt), updatedAt: serverTimestamp(), monthKey: monthKey(dt.getFullYear(), dt.getMonth()) });
-            // automatic re-render via onSnapshot
-          }catch(err){ console.error(err); alert('Błąd zapisu'); }
-        });
-      });
+      tr.querySelector('[data-del]')?.addEventListener('click', async ()=>{ if(!confirm('Usuń koszt?')) return; await deleteDoc(doc(db,'expenses',e.id)); });
     }
   }
 
-  // add helpers
+  // --- Add functions ---
   function fileToDataUrl(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
 
   async function onAddOrder(){
@@ -540,64 +492,30 @@
     if(!total) return alert('Podaj cenę');
     const date = new Date();
     const gid = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${Math.random().toString(36).slice(2,7)}`;
-    try{
-      await addDoc(collection(db,'orderItems'), {
-        date: Timestamp.fromDate(date),
-        monthKey: monthKey(date.getFullYear(), date.getMonth()),
-        createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-        status: "ZAMÓWIENIE PRZYJĘTE", size, color: "BIAŁA",
-        designId: 'custom', designText: design, previewUrl: null,
-        customer, note: '', orderTotalGross: total, priceGross:0, orderGroupId: gid
-      });
-      $('addMsg').textContent = 'Dodano';
-      setTimeout(()=> $('addMsg').textContent = '',1200);
-      // clear minimal fields
-      $('addDesignText').value=''; $('addCustomer').value=''; $('addTotal').value='';
-    }catch(e){ console.error(e); alert('Błąd dodawania zamówienia'); }
-  }
-
-  async function onAddDesign(){ /* duplicate safe wrapper (if user presses twice) */
-    const name = $('designName').value.trim(); const file = $('designFile').files[0] || null;
-    if(!name) return alert('Podaj nazwę wzoru');
-    const id = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
-    let previewUrl = null; if(file) previewUrl = await fileToDataUrl(file);
-    try{
-      await setDoc(doc(db,'designs',id), { name, previewUrl, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge:true });
-      $('designName').value=''; $('designFile').value='';
-    }catch(e){ console.error(e); alert('Błąd dodawania wzoru'); }
+    await addDoc(collection(db,'orderItems'), {
+      date: Timestamp.fromDate(date),
+      monthKey: monthKey(date.getFullYear(), date.getMonth()),
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      status: "ZAMÓWIENIE PRZYJĘTE", size, color: "BIAŁA",
+      designId: 'custom', designText: design, previewUrl: null,
+      customer, note: '', orderTotalGross: total, priceGross:0, orderGroupId: gid
+    });
+    $('addMsg').textContent = 'Dodano';
+    setTimeout(()=>$('addMsg').textContent='',1200);
   }
 
   async function onAddExpense(){
-    const name = $('expName').value.trim(); const amount = Number($('expAmount').value||0); const dateStr = $('expDate').value;
+    const name = $('expName').value.trim();
+    const amount = Number($('expAmount').value || 0);
+    const dateStr = $('expDate').value;
     if(!name || !amount || !dateStr) return alert('Uzupełnij pola');
-    const dt = new Date(dateStr + 'T12:00:00');
-    try{
-      await addDoc(collection(db,'expenses'), { name, amount, date: Timestamp.fromDate(dt), monthKey: monthKey(dt.getFullYear(), dt.getMonth()), createdAt: serverTimestamp() });
-      $('expMsg').textContent = 'Dodano';
-      setTimeout(()=> $('expMsg').textContent = '',1200);
-      $('expName').value=''; $('expAmount').value=''; $('expDate').value='';
-    }catch(e){ console.error(e); alert('Błąd dodawania kosztu'); }
+    const date = new Date(dateStr + 'T12:00:00');
+    await addDoc(collection(db,'expenses'), { name, amount, date: Timestamp.fromDate(date), monthKey: monthKey(date.getFullYear(), date.getMonth()), createdAt: serverTimestamp() });
+    $('expMsg').textContent = 'Dodano';
+    setTimeout(()=>$('expMsg').textContent='',1200);
   }
 
-  // stats: simple ranking for stats tab
-  function renderSimpleStats(){
-    // build counts from ordersGroupsAll items (exclude ZWROT)
-    const counts = new Map();
-    for(const g of ordersGroupsAll){
-      if(g.status === 'ZWROT') continue;
-      for(const it of g.items){
-        const id = it.designId || 'custom';
-        const name = it.designText || designMap.get(id)?.name || (id==='custom'?'CUSTOM':id);
-        const prev = counts.get(name) || 0;
-        counts.set(name, prev + 1);
-      }
-    }
-    const arr = Array.from(counts.entries()).map(([name,count])=>({ name, count })).sort((a,b)=>b.count-a.count);
-    const tb = $('statsTbody'); tb.innerHTML='';
-    arr.forEach((r,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${i+1}</td><td>${(r.name||'').replace(/</g,'&lt;')}</td><td>${r.count}</td>`; tb.appendChild(tr); });
-  }
-
-  // charts: create
+  // --- Charts ---
   function createCharts(){
     const common = { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } };
     if($('chartFinances')) charts.finances = new Chart($('chartFinances').getContext('2d'), { type:'line', data:{ labels:[], datasets:[
@@ -606,7 +524,7 @@
       { label:'Zysk', data:[], borderColor:'#a3e635', backgroundColor:'rgba(163,230,53,0.06)', fill:true }
     ] }, options:{...common, plugins:{legend:{position:'bottom'}}} });
 
-    if($('chartOrders')) charts.orders = new Chart($('chartOrders').getContext('2d'), { type:'bar', data:{ labels:[], datasets:[{ label:'Zamówienia', data:[] }] }, options:{...common, plugins:{legend:{display:false}}} });
+    if($('chartOrders')) charts.orders = new Chart($('chartOrders').getContext('2d'), { type:'bar', data:{ labels:[], datasets:[{ label:'Liczba zamówień', data:[] }] }, options:{...common, plugins:{legend:{display:false}}} });
 
     if($('chartCostBreakdown')) charts.costBreakdown = new Chart($('chartCostBreakdown').getContext('2d'), { type:'pie', data:{ labels:[], datasets:[{ data:[] }] }, options:{ responsive:true } });
 
@@ -619,7 +537,7 @@
     if($('chartSizes')) charts.sizes = new Chart($('chartSizes').getContext('2d'), { type:'bar', data:{ labels:[], datasets:[{ label:'Ilość', data:[] }] }, options:{...common, plugins:{legend:{display:false}}} });
   }
 
-  // advanced stats render (similar to previous)
+  // --- Advanced stats rendering ---
   async function renderAdvancedStats(){
     const period = $('advPeriod').value;
     const y = Number($('advYear').value || new Date().getFullYear());
@@ -630,7 +548,13 @@
     if(period==='year'){ startDate = new Date(y,0,1,0,0,0); endDate = new Date(y,11,31,23,59,59); }
     const includeReturns = $('advIncludeReturns').checked;
 
-    // compute labels & aggregates
+    // collect groups in range
+    const groupsInRange = ordersGroupsAll.filter(g=>{
+      const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
+      return d >= startDate && d <= endDate;
+    });
+
+    // revenue / costs by label
     const labelsMap = new Map();
     const labelFor = dt=>{
       if(period==='week' || period==='month') return `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}`;
@@ -638,49 +562,73 @@
       return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
     };
 
-    for(const g of ordersGroupsAll){
+    // init
+    for(const g of groupsInRange){
       const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
-      if(d < startDate || d > endDate) continue;
       const lb = labelFor(d);
       if(!labelsMap.has(lb)) labelsMap.set(lb,{revenue:0,costs:0,count:0});
       if(g.status !== 'ZWROT' || includeReturns) labelsMap.get(lb).revenue += Number(g.total||0);
       labelsMap.get(lb).count += 1;
     }
-    const expensesInRange = expensesList.filter(e=>{ const d = e.date?.toDate?e.date.toDate():new Date(e.date); return d>=startDate && d<=endDate; });
+
+    // include expenses by label
+    const expensesInRange = expensesList.filter(e=>{
+      const d = e.date?.toDate?e.date.toDate(): new Date(e.date);
+      return d >= startDate && d <= endDate;
+    });
     for(const e of expensesInRange){
-      const d = e.date?.toDate?e.date.toDate():new Date(e.date);
+      const d = e.date?.toDate?e.date.toDate(): new Date(e.date);
       const lb = labelFor(d);
       if(!labelsMap.has(lb)) labelsMap.set(lb,{revenue:0,costs:0,count:0});
-      labelsMap.get(lb).costs += Number(e.amount||0);
+      labelsMap.get(lb).costs += Number(e.amount || 0);
     }
 
-    const labels = Array.from(labelsMap.keys()).sort((a,b)=>{ const na=Number(a.replace(/\D/g,''))||0; const nb=Number(b.replace(/\D/g,''))||0; return na-nb; });
-    const revArr = labels.map(l=>labelsMap.get(l).revenue||0);
-    const costArr = labels.map(l=>labelsMap.get(l).costs||0);
+    const labels = Array.from(labelsMap.keys()).sort((a,b)=>{
+      const na = Number(a.replace(/\D/g,''))||0, nb = Number(b.replace(/\D/g,''))||0;
+      return na - nb;
+    });
+    const revArr = labels.map(l=>labelsMap.get(l).revenue || 0);
+    const costArr = labels.map(l=>labelsMap.get(l).costs || 0);
     const netArr = revArr.map((v,i)=> v - (costArr[i]||0));
-    const countArr = labels.map(l=>labelsMap.get(l).count||0);
+    const ordersCountArr = labels.map(l=>labelsMap.get(l).count || 0);
 
+    // update kpis
     const totalRevenue = revArr.reduce((s,v)=>s+v,0);
     const totalCosts = costArr.reduce((s,v)=>s+v,0);
     const totalNet = totalRevenue - totalCosts;
-    $('advRevenue').textContent = fmt2(totalRevenue); $('advCosts').textContent = fmt2(totalCosts); $('advNet').textContent = fmt2(totalNet);
-    $('advAOV').textContent = fmt2(totalRevenue / (countArr.reduce((s,v)=>s+v,0) || 1));
-    const returnsCount = ordersGroupsAll.filter(g=>{ const d=g.date?.toDate?g.date.toDate():new Date(g.date||Date.now()); return d>=startDate && d<=endDate && g.status==='ZWROT'; }).length;
-    const returnsPct = Math.round((returnsCount / (ordersGroupsAll.filter(g=>{ const d=g.date?.toDate?g.date.toDate():new Date(g.date||Date.now()); return d>=startDate && d<=endDate; }).length || 1)) * 100);
+    $('advRevenue').textContent = fmt2(totalRevenue);
+    $('advCosts').textContent = fmt2(totalCosts);
+    $('advNet').textContent = fmt2(totalNet);
+
+    const ordersCount = groupsInRange.filter(g=> includeReturns ? true : g.status !== 'ZWROT').length || 1;
+    $('advAOV').textContent = fmt2(totalRevenue / ordersCount);
+
+    const returnsCount = ordersGroupsAll.filter(g=>{
+      const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
+      return d >= startDate && d <= endDate && g.status === 'ZWROT';
+    }).length;
+    const returnsPct = Math.round((returnsCount / (groupsInRange.length || 1)) * 100);
     $('advReturnsPct').textContent = returnsPct + '%';
+
+    // margin
+    const marginArr = labels.map((l,i)=>{
+      const rev = revArr[i] || 0; const c = costArr[i] || 0;
+      return rev === 0 ? 0 : Math.max(0, ((rev - c) / rev) * 100);
+    });
+    $('advAvgMargin').textContent = (marginArr.length ? Math.round(marginArr.reduce((s,v)=>s+v,0)/marginArr.length) : 0) + '%';
 
     // update charts
     if(charts.finances){ charts.finances.data.labels = labels; charts.finances.data.datasets[0].data = revArr; charts.finances.data.datasets[1].data = costArr; charts.finances.data.datasets[2].data = netArr; charts.finances.update(); }
-    if(charts.orders){ charts.orders.data.labels = labels; charts.orders.data.datasets[0].data = countArr; charts.orders.update(); }
+    if(charts.orders){ charts.orders.data.labels = labels; charts.orders.data.datasets[0].data = ordersCountArr; charts.orders.update(); }
     if(charts.costBreakdown){
       const buckets = {};
       for(const e of expensesInRange){
-        const n = (e.name||'').toLowerCase();
+        const name = (e.name||'').toLowerCase();
         let cat='Inne';
-        if(/koszulk|materi|t-shirt|shirt/.test(n)) cat='Materiały';
-        else if(/druk|sitodruk/.test(n)) cat='Druk';
-        else if(/wysył|paczka|kurier/.test(n)) cat='Wysyłka';
-        else if(/reklam|facebook|google|ads|marketing/.test(n)) cat='Marketing';
+        if(/koszulk|materi|t-shirt|shirt/.test(name)) cat='Materiały';
+        else if(/druk|sitodruk/.test(name)) cat='Druk';
+        else if(/wysył|paczka|kurier/.test(name)) cat='Wysyłka';
+        else if(/reklam|facebook|google|ads|marketing/.test(name)) cat='Marketing';
         buckets[cat] = (buckets[cat]||0) + Number(e.amount||0);
       }
       charts.costBreakdown.data.labels = Object.keys(buckets);
@@ -688,39 +636,52 @@
       charts.costBreakdown.update();
     }
     if(charts.topDesigns){
-      const dCounts = {};
+      const designCounts = {};
       for(const g of ordersGroupsAll){
         const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
         if(d < startDate || d > endDate) continue;
-        if(!$('advIncludeReturns').checked && g.status === 'ZWROT') continue;
-        for(const it of g.items){ const id = it.designId || 'custom'; dCounts[id] = (dCounts[id]||0)+1; }
+        if(!includeReturns && g.status === 'ZWROT') continue;
+        for(const it of g.items){ const id = it.designId || 'custom'; designCounts[id] = (designCounts[id]||0) + 1; }
       }
-      const arr = Object.entries(dCounts).map(([id,c])=>({ id, name: designMap.get(id)?.name || (id==='custom'?'CUSTOM':id), count:c })).sort((a,b)=>b.count-a.count).slice(0,10);
-      charts.topDesigns.data.labels = arr.map(a=>a.name); charts.topDesigns.data.datasets[0].data = arr.map(a=>a.count); charts.topDesigns.update();
+      const arr = Object.entries(designCounts).map(([id,c])=>({ id, name: designMap.get(id)?.name || (id==='custom'?'CUSTOM':id), count:c })).sort((a,b)=>b.count-a.count).slice(0,10);
+      charts.topDesigns.data.labels = arr.map(x=>x.name); charts.topDesigns.data.datasets[0].data = arr.map(x=>x.count); charts.topDesigns.update();
+      // fill top designs table
       const tb = $('advTopDesignsTbody'); tb.innerHTML=''; arr.forEach(a=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${(a.name||'').replace(/</g,'&lt;')}</td><td>${a.count}</td>`; tb.appendChild(tr); });
     }
-    if(charts.margin){ const marginArr = revArr.map((r,i)=> r===0?0:Math.max(0,((r - (costArr[i]||0))/r)*100)); charts.margin.data.labels = labels; charts.margin.data.datasets[0].data = marginArr; charts.margin.update(); }
+
+    if(charts.margin){ charts.margin.data.labels = labels; charts.margin.data.datasets[0].data = marginArr; charts.margin.update(); }
     if(charts.cumNet){ let acc=0; const cum = netArr.map(v=> acc += v); charts.cumNet.data.labels = labels; charts.cumNet.data.datasets[0].data = cum; charts.cumNet.update(); }
 
     // sizes
-    const sizes = {};
+    const sizeMap = {};
     for(const g of ordersGroupsAll){
-      const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
-      if(d < startDate || d > endDate) continue;
+      const gd = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
+      if(gd < startDate || gd > endDate) continue;
       if(!($('sizeIncludeReturns').checked) && g.status === 'ZWROT') continue;
-      for(const it of g.items){ const s = it.size || 'UNKNOWN'; sizes[s] = (sizes[s]||0) + 1; }
+      for(const it of g.items){
+        const sz = it.size || 'UNKNOWN';
+        sizeMap[sz] = (sizeMap[sz]||0) + 1;
+      }
     }
-    const sizeLabels = Object.keys(sizes).sort(), sizeData = sizeLabels.map(l=>sizes[l]);
+    const sizeLabels = Object.keys(sizeMap).sort(); const sizeData = sizeLabels.map(l=>sizeMap[l]);
     if(charts.sizes){ charts.sizes.data.labels = sizeLabels; charts.sizes.data.datasets[0].data = sizeData; charts.sizes.update(); }
-    const tsz = $('advSizeTbody'); tsz.innerHTML=''; sizeLabels.forEach(s=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>-</td><td>${s}</td><td>${sizes[s]}</td>`; tsz.appendChild(tr); });
 
-    // adv detail table
-    const tbody = $('advDetailTbody'); tbody.innerHTML=''; tbody.appendChild(trRow('Przychód (sumarycznie)', fmt2(totalRevenue)+' zł')); tbody.appendChild(trRow('Koszty (sumarycznie)', fmt2(totalCosts)+' zł')); tbody.appendChild(trRow('Zysk netto', fmt2(totalNet)+' zł')); tbody.appendChild(trRow('AOV', fmt2(totalRevenue / (countArr.reduce((s,v)=>s+v,0)||1))+' zł')); tbody.appendChild(trRow('Udział zwrotów', returnsPct + ' %'));
+    // size table
+    const tsz = $('advSizeTbody'); tsz.innerHTML = '';
+    for(const s of sizeLabels){ const tr=document.createElement('tr'); tr.innerHTML = `<td>-</td><td>${s}</td><td>${sizeMap[s]}</td>`; tsz.appendChild(tr); }
+
+    // adv detail
+    const tbody = $('advDetailTbody'); tbody.innerHTML = '';
+    tbody.appendChild(trRow('Przychód (sumarycznie)', fmt2(totalRevenue)+' zł'));
+    tbody.appendChild(trRow('Koszty (sumarycznie)', fmt2(totalCosts)+' zł'));
+    tbody.appendChild(trRow('Zysk netto', fmt2(totalNet)+' zł'));
+    tbody.appendChild(trRow('AOV', fmt2(totalRevenue / ordersCount)+' zł'));
+    tbody.appendChild(trRow('Udział zwrotów', returnsPct + ' %'));
   }
 
   function trRow(k,v){ const tr=document.createElement('tr'); tr.innerHTML = `<td>Finanse</td><td>${k}</td><td>${v}</td>`; return tr; }
 
-  // utility: create months/years defaults
+  // --- utility and bootstrap ---
   (function defaults(){
     const now = new Date();
     if($('advMonth')) $('advMonth').value = String(now.getMonth());
@@ -729,9 +690,11 @@
     if($('ordersYear')) $('ordersYear').value = String(now.getFullYear());
   })();
 
-  // expose for tab clicks
+  // start listeners when user logged in (onAuthStateChanged does this)
+  // note: startListeners() called after onAuthStateChanged when logged
+
+  // expose helper for debug
   window.renderAdvancedStats = renderAdvancedStats;
-  window.renderSimpleStats = renderSimpleStats;
 
 </script>
 </body>
