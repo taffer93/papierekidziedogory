@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Koszulki – panel (rozszerzony)</title>
+  <title>Koszulki – panel (pełna wersja + finanse + rozmiary)</title>
+
   <style>
     :root {
       --bg:#141c26;
@@ -11,15 +12,12 @@
       --muted:#9fb2c7;
       --text:#f1f6ff;
       --accent:#4cc9f0;
-
-      /* wyraźne kolory statusów (całe wiersze) */
-      --st-new:    rgba( 90, 245, 140,.70);
-      --st-prog:   rgba(255, 210,  90,.78);
-      --st-ready:  rgba(120, 235, 255,.72);
-      --st-sent:   rgba(130, 170, 255,.72);
-      --st-return: rgba(255, 110, 110,.82);
-
       --line:#2d4056;
+      --st-new:    rgba(90,245,140,.70);
+      --st-prog:   rgba(255,210,90,.78);
+      --st-ready:  rgba(120,235,255,.72);
+      --st-sent:   rgba(130,170,255,.72);
+      --st-return: rgba(255,110,110,.82);
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
@@ -38,66 +36,47 @@
     nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0;flex-wrap:wrap}
     nav.tabs button{flex:0 0 auto;padding:8px 12px;border-radius:10px}
     nav.tabs button.active{outline:2px solid var(--accent)}
-
-    /* tabela */
     table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
     th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left;vertical-align:middle;border-right:1px solid var(--line)}
     th:last-child, td:last-child{border-right:none}
     th{background:#1d2a3a}
     tr:hover td{filter:brightness(1.03)}
-
-    /* kolumna STATUS – węższa, ale mieści długie nazwy */
     th.statusCol, td.statusCol { min-width:200px; width:200px; white-space:nowrap; }
     @media (max-width:900px){ th.statusCol,td.statusCol{min-width:180px;width:180px} td.statusCol select{min-width:180px} }
-
-    /* status = kolor całego wiersza */
     tr.st-new   td{background-color:var(--st-new)}
     tr.st-prog  td{background-color:var(--st-prog)}
     tr.st-ready td{background-color:var(--st-ready)}
     tr.st-sent  td{background-color:var(--st-sent)}
     tr.st-ret   td{background-color:var(--st-return)}
-
-    /* naprzemienna intensywność dla kolejnych zamówień (grup) */
-    tr.toneA td{background-image:linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,.35))}
-    tr.toneB td{background-image:linear-gradient(rgba(0,0,0,.30),rgba(0,0,0,.30))}
-
+    tr.toneA td{background-image:linear-gradient(rgba(255,255,255,.03),rgba(255,255,255,.03))}
+    tr.toneB td{background-image:linear-gradient(rgba(0,0,0,.03),rgba(0,0,0,.03))}
     .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
     .right{margin-left:auto}
     .hint{font-size:12px;color:var(--muted)}
     .pill{padding:6px 10px;border-radius:99px;background:#0f1823;border:1px solid #2a3a4d}
-    .mini{font-size:12px}
-
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
     .design-card{border:1px solid #2a3a4d;border-radius:12px;padding:10px;cursor:pointer;background:#0f1823;text-align:center}
-    .design-card:hover{border-color:#3c5875}
-    .design-card.selected{outline:2px solid #56b7ff;background:#122334}
     .design-img{width:100%;height:110px;object-fit:cover;border-radius:10px;border:1px solid #2a3a4d;background:#0b1118}
     .design-name{margin-top:8px;font-weight:600}
-
     .add-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
     .add-header .right{display:flex;gap:10px;margin-left:auto}
     .rows-wrap{overflow:auto}
     .rows-table thead th{position:sticky;top:0;background:#1d2a4a;z-index:1}
     .rows-table td .thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
     .rows-actions{display:flex;gap:6px}
-
     .date-compact{display:flex;gap:8px;align-items:center}
     .date-compact .small{max-width:90px;padding:8px}
     .date-compact .month{max-width:180px;padding:8px}
-
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
     input[type=number]{ -moz-appearance:textfield;}
-
     input[type="file"]{padding:8px;background:#0f1823;border:1px solid #2a3a4d;color:var(--muted)}
     input[type="file"]::file-selector-button{margin-right:10px;border:1px solid #274d6a;background:#19344b;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}
-
     .designCell{display:flex;align-items:center;gap:8px}
     .designThumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
     .colorTag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4d;border-radius:999px;padding:2px 8px;background:#0f1823}
     .dot{width:12px;height:12px;border-radius:50%;border:1px solid #2a3a4d;background:#fff}
     .dot.black{background:#000}
-
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
     .modal .panel{background:var(--card);border:1px solid #203145;border-radius:12px;width:min(1000px,94vw);max-height:88vh;padding:14px;display:flex;flex-direction:column}
     .modal .panel .head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
@@ -109,364 +88,441 @@
     .small{font-size:12px}
     .controls{display:flex;gap:8px;align-items:center}
 
-    /* 🔧 Naprawa nadmiernej wysokości wykresów Chart.js */
-    #tab-advstats canvas {
-      width: 100% !important;
-      max-height: 380px !important;
-    }
-    .card canvas { display:block; margin:auto; }
+    /* charts layout: prevent overlap and set uniform heights */
+    .chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .chart-card{background:var(--card);border:1px solid #203145;border-radius:12px;padding:12px;display:flex;flex-direction:column}
+    .chart-card h4{margin:0 0 8px 0}
+    .chart-canvas{flex:1;min-height:240px;max-height:380px;width:100%}
+    @media (max-width:900px){ .chart-grid{grid-template-columns:1fr} .chart-canvas{min-height:220px} }
 
+    /* ensure adv detail table appears lower (not overlapping charts) */
+    #advDetailWrap{margin-top:16px}
+
+    /* small helpers */
+    .kpi{display:inline-block;padding:8px 12px;border-radius:10px;background:#0f1823;border:1px solid #213145;margin-right:8px}
   </style>
-  <!-- Chart.js -->
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
+
 <body>
-<header>
-  <h1>Koszulki – panel (rozszerzony)</h1>
-  <div>
-    <span id="userEmail" class="muted"></span>
-    <button id="logoutBtn" class="ghost" style="display:none">Wyloguj</button>
-  </div>
-</header>
+  <header>
+    <h1>Koszulki – panel (pełna wersja + finanse + rozmiary)</h1>
+  </header>
 
-<div class="wrap">
-
-  <!-- LOGIN -->
-  <div id="loginCard" class="card" style="max-width:460px;">
-    <h3>Zaloguj się</h3>
-    <div class="row center">
-      <div class="col"><input id="email" type="email" placeholder="Email" /></div>
-      <div class="col"><input id="password" type="password" placeholder="Hasło" /></div>
+  <div class="wrap">
+    <!-- LOGIN -->
+    <div id="loginCard" class="card" style="max-width:520px;">
+      <h3>Zaloguj się</h3>
+      <div class="row center">
+        <div class="col"><input id="email" type="email" placeholder="Email" /></div>
+        <div class="col"><input id="password" type="password" placeholder="Hasło" /></div>
+      </div>
+      <div class="row center" style="margin-top:8px">
+        <div class="col"><button id="loginBtn" class="primary">Zaloguj</button></div>
+        <div class="col"><div id="loginMsg" class="hint"></div></div>
+      </div>
     </div>
-    <div class="row center">
-      <div class="col"><button id="loginBtn" class="primary">Zaloguj</button></div>
-      <div class="col"><div id="loginMsg" class="hint"></div></div>
-    </div>
-  </div>
 
-  <!-- APP -->
-  <div id="app" style="display:none">
-    <nav class="tabs">
-      <button data-tab="orders" class="active">Zamówienia</button>
-      <button data-tab="add">Dodaj zamówienie</button>
-      <button data-tab="designs">Wzory</button>
-      <button data-tab="expenses">Koszty</button>
-      <button data-tab="stats">Statystyki</button>
-      <button data-tab="advstats">Zaawansowane statystyki</button>
-    </nav>
+    <!-- APP -->
+    <div id="app" style="display:none">
+      <nav class="tabs">
+        <button data-tab="orders" class="active">Zamówienia</button>
+        <button data-tab="add">Dodaj zamówienie</button>
+        <button data-tab="designs">Wzory</button>
+        <button data-tab="expenses">Koszty</button>
+        <button data-tab="stats">Statystyki</button>
+        <button data-tab="advstats">Zaawansowane statystyki</button>
+      </nav>
 
-    <!-- ORDERS TAB -->
-    <div id="tab-orders" class="card">
-      <div class="toolbar">
-        <div>
-          <label class="mini">Miesiąc i rok</label>
+      <!-- ORDERS TAB -->
+      <div id="tab-orders" class="card">
+        <div class="toolbar">
+          <div>
+            <label class="mini">Miesiąc i rok</label>
+            <div class="row center" style="gap:6px">
+              <select id="ordersMonth" class="month" style="max-width:180px"></select>
+              <select id="ordersYear" style="max-width:120px"></select>
+            </div>
+          </div>
+          <div>
+            <label class="mini">Status (widok)</label>
+            <select id="filterStatus">
+              <option value="ALL">Wszystkie</option>
+              <option value="ZAMÓWIENIE PRZYJĘTE">ZAMÓWIENIE PRZYJĘTE</option>
+              <option value="W TRAKCIE REALIZACJI">W TRAKCIE REALIZACJI</option>
+              <option value="GOTOWE DO WYSYŁKI">GOTOWE DO WYSYŁKI</option>
+              <option value="WYSŁANE">WYSŁANE</option>
+              <option value="ZWROT">ZWROT</option>
+            </select>
+          </div>
           <div class="row center" style="gap:6px">
-            <select id="ordersMonth" class="month" style="max-width:180px"></select>
-            <select id="ordersYear" style="max-width:120px"></select>
+            <button id="exportItemsBtn" class="ghost mini-btn">Eksport CSV (pozycje)</button>
+            <button id="exportGroupsBtn" class="ghost mini-btn">Eksport CSV (zamówienia)</button>
+          </div>
+          <div class="right pill">
+            Zamówienia: <b id="ordersCount">0</b> •
+            Przychody: <b id="sumRevenue">0.00</b> zł •
+            Koszty: <b id="sumExpenses">0.00</b> zł •
+            Wynik: <b id="sumNet">0.00</b> zł
           </div>
         </div>
-        <div>
-          <label class="mini">Status (widok)</label>
-          <select id="filterStatus">
-            <option value="ALL">Wszystkie</option>
-            <option value="ZAMÓWIENIE PRZYJĘTE">ZAMÓWIENIE PRZYJĘTE</option>
-            <option value="W TRAKCIE REALIZACJI">W TRAKCIE REALIZACJI</option>
-            <option value="GOTOWE DO WYSYŁKI">GOTOWE DO WYSYŁKI</option>
-            <option value="WYSŁANE">WYSŁANE</option>
-            <option value="ZWROT">ZWROT</option>
-          </select>
-        </div>
-        <div class="row center" style="gap:6px">
-          <button id="exportItemsBtn" class="ghost mini-btn">Eksport CSV (pozycje)</button>
-          <button id="exportGroupsBtn" class="ghost mini-btn">Eksport CSV (zamówienia)</button>
-        </div>
-        <div class="right pill">
-          Zamówienia: <b id="ordersCount">0</b> •
-          Przychody: <b id="sumRevenue">0.00</b> zł •
-          Koszty: <b id="sumExpenses">0.00</b> zł •
-          Wynik: <b id="sumNet">0.00</b> zł
-        </div>
-      </div>
 
-      <div style="overflow:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th class="statusCol">Status</th>
-              <th>Rozmiar</th>
-              <th>Kolor</th>
-              <th>Wzór</th>
-              <th>Zamawiający</th>
-              <th>Uwagi</th>
-              <th>Cena (łącznie)</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="ordersTbody"></tbody>
-        </table>
-      </div>
-      <div class="hint">Status i klient tylko raz na zamówienie (pierwszy wiersz). ZWROT nie liczy się do przychodów.</div>
-    </div>
-
-    <!-- ADD ORDER TAB -->
-    <div id="tab-add" class="card" style="display:none">
-      <div class="add-header">
-        <h3 style="margin:0">Dodaj zamówienie</h3>
-        <div class="right">
-          <button id="addRowBtn" class="ghost">+ Dodaj pozycję</button>
-          <button id="clearOrderBtn" class="ghost">Wyczyść</button>
-          <button id="saveOrderBtn" class="primary">Zapisz wszystkie pozycje</button>
-        </div>
-      </div>
-
-      <div class="card" style="margin:0 0 10px 0">
-        <h4 style="margin:0 0 8px 0">Dane zamówienia</h4>
-        <div class="row center">
-          <div class="date-compact">
-            <div class="col" style="min-width:auto;flex:0 0 auto">
-              <label class="mini">Dzień</label>
-              <input id="addDay" class="small" type="number" min="1" max="31" />
-            </div>
-            <div class="col" style="min-width:auto;flex:0 0 auto">
-              <label class="mini">Miesiąc</label>
-              <select id="addMonth" class="month"></select>
-            </div>
-            <div class="col" style="min-width:auto;flex:0 0 auto">
-              <label class="mini">Rok</label>
-              <select id="addYear" class="small"></select>
-            </div>
-          </div>
-
-          <div class="col">
-            <label class="mini">Zamawiający (login/imię)</label>
-            <input id="orderCustomer" type="text" />
-          </div>
-          <div class="col">
-            <label class="mini">Cena łączna zamówienia (PLN)</label>
-            <input id="orderTotalPrice" type="number" step="0.01" placeholder="np. 210" />
-          </div>
-        </div>
-      </div>
-
-      <div class="card" style="margin:0">
-        <h4 style="margin:0 0 8px 0">Pozycje</h4>
-        <div class="rows-wrap">
-          <table class="rows-table" style="width:100%">
+        <div style="overflow:auto">
+          <table>
             <thead>
               <tr>
-                <th style="width:35%">Wzór</th>
-                <th style="width:10%">Rozmiar</th>
-                <th style="width:12%">Kolor</th>
+                <th>Data</th>
+                <th class="statusCol">Status</th>
+                <th>Rozmiar</th>
+                <th>Kolor</th>
+                <th>Wzór</th>
+                <th>Zamawiający</th>
                 <th>Uwagi</th>
-                <th style="width:120px"></th>
+                <th>Cena (łącznie)</th>
+                <th></th>
               </tr>
             </thead>
-            <tbody id="rowsTbody"></tbody>
+            <tbody id="ordersTbody"></tbody>
+          </table>
+        </div>
+        <div class="hint">Status i klient tylko raz na zamówienie (pierwszy wiersz). ZWROT nie liczy się do przychodów.</div>
+      </div>
+
+      <!-- ADD ORDER TAB -->
+      <div id="tab-add" class="card" style="display:none">
+        <div class="add-header">
+          <h3 style="margin:0">Dodaj zamówienie</h3>
+          <div class="right">
+            <button id="addRowBtn" class="ghost">+ Dodaj pozycję</button>
+            <button id="clearOrderBtn" class="ghost">Wyczyść</button>
+            <button id="saveOrderBtn" class="primary">Zapisz wszystkie pozycje</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin:0 0 10px 0">
+          <h4 style="margin:0 0 8px 0">Dane zamówienia</h4>
+          <div class="row center">
+            <div class="date-compact">
+              <div class="col" style="min-width:auto;flex:0 0 auto">
+                <label class="mini">Dzień</label>
+                <input id="addDay" class="small" type="number" min="1" max="31" />
+              </div>
+              <div class="col" style="min-width:auto;flex:0 0 auto">
+                <label class="mini">Miesiąc</label>
+                <select id="addMonth" class="month"></select>
+              </div>
+              <div class="col" style="min-width:auto;flex:0 0 auto">
+                <label class="mini">Rok</label>
+                <select id="addYear" class="small"></select>
+              </div>
+            </div>
+
+            <div class="col">
+              <label class="mini">Zamawiający (login/imię)</label>
+              <input id="orderCustomer" type="text" />
+            </div>
+            <div class="col">
+              <label class="mini">Cena łączna zamówienia (PLN)</label>
+              <input id="orderTotalPrice" type="number" step="0.01" placeholder="np. 210" />
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin:0">
+          <h4 style="margin:0 0 8px 0">Pozycje</h4>
+          <div class="rows-wrap">
+            <table class="rows-table" style="width:100%">
+              <thead>
+                <tr>
+                  <th style="width:35%">Wzór</th>
+                  <th style="width:10%">Rozmiar</th>
+                  <th style="width:12%">Kolor</th>
+                  <th>Uwagi</th>
+                  <th style="width:120px"></th>
+                </tr>
+              </thead>
+              <tbody id="rowsTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="saveMsg" class="hint" style="margin-top:8px"></div>
+      </div>
+
+      <!-- DESIGNS TAB -->
+      <div id="tab-designs" class="card" style="display:none">
+        <h3>Wzory (z podglądem)</h3>
+        <div class="row center">
+          <div class="col"><input id="designName" placeholder="Nazwa wzoru, np. kitty red bull blue" /></div>
+          <div class="col"><input id="designFile" type="file" accept="image/*" /></div>
+          <div class="col" style="max-width:220px"><button id="addDesignBtn" class="primary">Dodaj wzór</button></div>
+        </div>
+        <div id="designMsg" class="hint" style="margin:6px 0 10px 0"></div>
+        <div id="designsList" class="grid" style="margin-top:10px"></div>
+      </div>
+
+      <!-- EXPENSES TAB -->
+      <div id="tab-expenses" class="card" style="display:none">
+        <div class="toolbar">
+          <div>
+            <label class="mini">Miesiąc i rok</label>
+            <div class="row center" style="gap:6px">
+              <select id="expMonth" class="month" style="max-width:180px"></select>
+              <select id="expYear" style="max-width:120px"></select>
+            </div>
+          </div>
+          <div class="row center" style="gap:6px">
+            <button id="exportExpBtn" class="ghost mini-btn">Eksport CSV</button>
+          </div>
+          <div class="right pill">Koszty (m-c): <b id="sumExpensesTop">0.00</b> zł</div>
+        </div>
+
+        <div class="card" style="margin:0 0 10px 0">
+          <h4 style="margin:0 0 8px 0">Dodaj koszt</h4>
+          <div class="row center">
+            <div class="col"><input id="expName" placeholder="Nazwa kosztu, np. zakup koszulek S/M" /></div>
+            <div class="col" style="max-width:220px"><input id="expAmount" type="number" step="0.01" placeholder="Kwota, np. 150.00" /></div>
+            <div class="col" style="max-width:120px"><input id="expDay" type="number" min="1" max="31" placeholder="Dzień" /></div>
+            <div class="col"><input id="expNote" placeholder="Uwagi (opcjonalnie)" /></div>
+            <div class="col" style="max-width:220px"><button id="addExpenseBtn" class="primary">Dodaj</button></div>
+          </div>
+          <div id="expMsg" class="hint" style="margin-top:6px"></div>
+        </div>
+
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Nazwa</th>
+                <th>Uwagi</th>
+                <th>Kwota</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="expTbody"></tbody>
           </table>
         </div>
       </div>
 
-      <div id="saveMsg" class="hint" style="margin-top:8px"></div>
-    </div>
-
-    <!-- DESIGNS TAB -->
-    <div id="tab-designs" class="card" style="display:none">
-      <h3>Wzory (z podglądem)</h3>
-      <div class="row center">
-        <div class="col"><input id="designName" placeholder="Nazwa wzoru, np. kitty red bull blue" /></div>
-        <div class="col"><input id="designFile" type="file" accept="image/*" /></div>
-        <div class="col" style="max-width:220px"><button id="addDesignBtn" class="primary">Dodaj wzór</button></div>
+      <!-- STATS TAB -->
+      <div id="tab-stats" class="card" style="display:none">
+        <div class="toolbar">
+          <div>
+            <label class="mini">Miesiąc i rok</label>
+            <div class="row center" style="gap:6px">
+              <select id="statsMonth" class="month" style="max-width:180px"></select>
+              <select id="statsYear" style="max-width:120px"></select>
+            </div>
+          </div>
+          <div class="right pill">Ranking wzorów (liczba pozycji; bez ZWROT)</div>
+        </div>
+        <div style="overflow:auto">
+          <table>
+            <thead><tr><th>#</th><th>Wzór</th><th>Ilość zamówień</th></tr></thead>
+            <tbody id="statsTbody"></tbody>
+          </table>
+        </div>
       </div>
-      <div id="designMsg" class="hint" style="margin:6px 0 10px 0"></div>
-      <div id="designsList" class="grid" style="margin-top:10px"></div>
-    </div>
 
-    <!-- EXPENSES TAB -->
-    <div id="tab-expenses" class="card" style="display:none">
-      <div class="toolbar">
-        <div>
-          <label class="mini">Miesiąc i rok</label>
-          <div class="row center" style="gap:6px">
-            <select id="expMonth" class="month" style="max-width:180px"></select>
-            <select id="expYear" style="max-width:120px"></select>
+      <!-- ADVANCED STATS TAB (rozszerzona) -->
+      <div id="tab-advstats" class="card" style="display:none">
+        <div class="toolbar">
+          <div>
+            <label class="mini">Zakres</label>
+            <div class="controls">
+              <select id="advPeriod" class="small">
+                <option value="week">Tydzień</option>
+                <option value="month" selected>Miesiąc</option>
+                <option value="year">Rok</option>
+                <option value="all">Całość</option>
+              </select>
+              <select id="advAnchorMonth" class="month" style="max-width:180px"></select>
+              <select id="advAnchorYear" class="year" style="max-width:120px"></select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label class="mini">Uwzględniaj zwroty</label>
+            <input id="advIncludeReturns" type="checkbox" style="width:auto;margin-left:6px" />
+          </div>
+          <div class="right pill">Przychody: <b id="advRevenue">0.00</b> zł • Koszty: <b id="advCosts">0.00</b> zł • Zysk: <b id="advNet">0.00</b> zł</div>
+        </div>
+
+        <!-- top KPIs -->
+        <div class="card" style="padding:10px;margin-bottom:12px">
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <div class="kpi">AOV: <b id="advAOV">0.00</b> zł</div>
+            <div class="kpi">Zwroty (%): <b id="advReturnsPct">0%</b></div>
+            <div class="kpi">Marża (śr): <b id="advAvgMargin">0%</b></div>
           </div>
         </div>
-        <div class="row center" style="gap:6px">
-          <button id="exportExpBtn" class="ghost mini-btn">Eksport CSV</button>
-        </div>
-        <div class="right pill">Koszty (m-c): <b id="sumExpensesTop">0.00</b> zł</div>
-      </div>
 
-      <div class="card" style="margin:0 0 10px 0">
-        <h4 style="margin:0 0 8px 0">Dodaj koszt</h4>
-        <div class="row center">
-          <div class="col"><input id="expName" placeholder="Nazwa kosztu, np. zakup koszulek S/M" /></div>
-          <div class="col" style="max-width:220px"><input id="expAmount" type="number" step="0.01" placeholder="Kwota, np. 150.00" /></div>
-          <div class="col" style="max-width:120px"><input id="expDay" type="number" min="1" max="31" placeholder="Dzień" /></div>
-          <div class="col"><input id="expNote" placeholder="Uwagi (opcjonalnie)" /></div>
-          <div class="col" style="max-width:220px"><button id="addExpenseBtn" class="primary">Dodaj</button></div>
-        </div>
-        <div id="expMsg" class="hint" style="margin-top:6px"></div>
-      </div>
-
-      <div style="overflow:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Nazwa</th>
-              <th>Uwagi</th>
-              <th>Kwota</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="expTbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- STATS TAB -->
-    <div id="tab-stats" class="card" style="display:none">
-      <div class="toolbar">
-        <div>
-          <label class="mini">Miesiąc i rok</label>
-          <div class="row center" style="gap:6px">
-            <select id="statsMonth" class="month" style="max-width:180px"></select>
-            <select id="statsYear" style="max-width:120px"></select>
+        <!-- charts: orders + sizes -->
+        <div class="row" style="gap:12px">
+          <div class="col card" style="height:420px">
+            <h4>Wykres: Zamówienia (wg daty)</h4>
+            <canvas id="chartOrders"></canvas>
+          </div>
+          <div class="col card" style="height:420px">
+            <h4>Wykres: Rozmiary</h4>
+            <canvas id="chartSizes"></canvas>
           </div>
         </div>
-        <div class="right pill">Ranking wzorów (liczba pozycji; bez ZWROT)</div>
-      </div>
-      <div style="overflow:auto">
-        <table>
-          <thead><tr><th>#</th><th>Wzór</th><th>Ilość zamówień</th></tr></thead>
-          <tbody id="statsTbody"></tbody>
-        </table>
-      </div>
-    </div>
 
-    <!-- ADVANCED STATS TAB -->
-    <div id="tab-advstats" class="card" style="display:none">
-      <div class="toolbar">
-        <div>
-          <label class="mini">Zakres</label>
-          <div class="controls">
-            <select id="advPeriod" class="small">
-              <option value="week">Tydzień</option>
-              <option value="month" selected>Miesiąc</option>
-              <option value="year">Rok</option>
-              <option value="all">Całość</option>
-            </select>
-            <select id="advAnchorMonth" class="month" style="max-width:180px"></select>
-            <select id="advAnchorYear" class="year" style="max-width:120px"></select>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <label class="mini">Uwzględniaj zwroty</label>
-          <input id="advIncludeReturns" type="checkbox" style="width:auto;margin-left:6px" />
-        </div>
-        <div class="right pill">Przychody: <b id="advRevenue">0.00</b> zł • Koszty: <b id="advCosts">0.00</b> zł • Zysk: <b id="advNet">0.00</b> zł</div>
-      </div>
-      <div class="row" style="gap:12px">
+      <!-- finance charts inserted -->
+      <div class="row" style="gap:12px;margin-top:12px">
         <div class="col card" style="height:420px">
-          <h4>Wykres: Zamówienia (wg daty)</h4>
-          <canvas id="chartOrders"></canvas>
+          <h4>Przychody / Koszty / Zysk (czas)</h4>
+          <canvas id="chartFinances"></canvas>
         </div>
         <div class="col card" style="height:420px">
-          <h4>Wykres: Rozmiary</h4>
-          <canvas id="chartSizes"></canvas>
+          <h4>Struktura kosztów (%)</h4>
+          <canvas id="chartCostBreakdown"></canvas>
         </div>
       </div>
+      <div class="row" style="gap:12px;margin-top:12px">
+        <div class="col card" style="height:420px">
+          <h4>Marża netto (%)</h4>
+          <canvas id="chartMargin"></canvas>
+        </div>
+        <div class="col card" style="height:420px">
+          <h4>Zysk skumulowany</h4>
+          <canvas id="chartCumNet"></canvas>
+        </div>
+      </div>
+
       <div class="row" style="gap:12px;margin-top:12px">
         <div class="col card" style="height:420px">
           <h4>Wykres: Wzory (top 10)</h4>
           <canvas id="chartDesigns"></canvas>
         </div>
         <div class="col card">
-          <h4>Spis tabelaryczny</h4>
-          <div style="overflow:auto;max-height:360px">
-            <table>
-              <thead><tr><th>Typ</th><th>Klucz</th><th>Ilość</th></tr></thead>
-              <tbody id="advListTbody"></tbody>
-            </table>
+          <h4>Udział zwrotów / Top wzorów</h4>
+          <div style="overflow:auto;max-height:340px">
+            <table><thead><tr><th>Wzór</th><th>Ilość</th></tr></thead><tbody id="advListTbody"></tbody></table>
           </div>
         </div>
       </div>
-    </div>
 
-  </div>
-</div>
+        <!-- Rozmiary: tabelarycznie + wykres -->
+        <div style="margin-top:14px" class="card">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <h4 style="margin:0">Rozmiary — spis</h4>
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+              <label class="mini">Zakres</label>
+              <select id="sizePeriod" class="small">
+                <option value="day">Dzień</option>
+                <option value="week" selected>Tydzień</option>
+                <option value="month">Miesiąc</option>
+                <option value="year">Rok</option>
+                <option value="all">Całość</option>
+              </select>
+              <label class="mini">Uwzględniaj zwroty</label><input id="sizeIncludeReturns" type="checkbox" />
+            </div>
+          </div>
 
-<!-- MODAL – wybór wzoru (scroll w środku) -->
-<div id="designPicker" class="modal">
-  <div class="panel">
-    <div class="head">
-      <strong>Wybierz wzór</strong>
-      <div class="right"><button id="pickerClose" class="ghost mini-btn">Zamknij</button></div>
-    </div>
-    <div class="row center">
-      <div class="col"><input id="pickerSearch" placeholder="Szukaj wzoru po nazwie..." /></div>
-      <div class="col">
-        <label class="mini">Albo wgraj CUSTOM dla tej pozycji</label>
-        <input id="pickerCustomFile" type="file" accept="image/*" />
+          <div class="chart-grid" style="margin-top:10px">
+            <div class="chart-card">
+              <h4>Wykres rozmiarów</h4>
+              <canvas id="chartSizes" class="chart-canvas"></canvas>
+            </div>
+            <div class="chart-card">
+              <h4>Top wzorów (tabela)</h4>
+              <div style="overflow:auto;max-height:340px">
+                <table><thead><tr><th>Wzór</th><th>Ilość</th></tr></thead><tbody id="advTopDesignsTbody"></tbody></table>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <h4>Spis rozmiarów (tabela)</h4>
+            <div style="overflow:auto;max-height:260px">
+              <table><thead><tr><th>Okres</th><th>Rozmiar</th><th>Ilość</th></tr></thead><tbody id="advSizeTbody"></tbody></table>
+            </div>
+          </div>
+        </div>
+
+        <!-- financial details — moved lower so it doesn't overlap -->
+        <div id="advDetailWrap" class="card">
+          <h4>Tablica (szczegóły finansowe)</h4>
+          <div style="overflow:auto;max-height:240px">
+            <table><thead><tr><th>Typ</th><th>Klucz</th><th>Wartość</th></tr></thead><tbody id="advDetailTbody"></tbody></table>
+          </div>
+        </div>
+
       </div>
     </div>
-    <div id="pickerGridWrap" class="scroll" style="margin-top:10px">
-      <div id="pickerGrid" class="grid"></div>
-    </div>
-    <div class="hint">Kliknij kafelek, aby przypisać wzór do tej pozycji. Wgranie pliku ustawi tę pozycję jako CUSTOM.</div>
   </div>
-</div>
 
-<!-- MODAL – edycja zamówienia -->
-<div id="orderEdit" class="modal">
-  <div class="panel">
-    <div class="head">
-      <strong>Edytuj zamówienie</strong>
-      <div class="right">
-        <button id="editAddRowBtn" class="ghost mini-btn">+ Pozycja</button>
-        <button id="editCloseBtn" class="ghost mini-btn">Zamknij</button>
+  <!-- modals (picker, edit) kept as before -->
+  <div id="designPicker" class="modal">
+    <div class="panel">
+      <div class="head">
+        <strong>Wybierz wzór</strong>
+        <div class="right"><button id="pickerClose" class="ghost mini-btn">Zamknij</button></div>
       </div>
-    </div>
-    <div class="card" style="margin:0 0 10px 0">
       <div class="row center">
-        <div class="date-compact">
-          <div class="col" style="min-width:auto;flex:0 0 auto">
-            <label class="mini">Dzień</label>
-            <input id="editDay" class="small" type="number" min="1" max="31" />
-          </div>
-          <div class="col" style="min-width:auto;flex:0 0 auto">
-            <label class="mini">Miesiąc</label>
-            <select id="editMonth" class="month"></select>
-          </div>
-          <div class="col" style="min-width:auto;flex:0 0 auto">
-            <label class="mini">Rok</label>
-            <select id="editYear" class="small"></select>
-          </div>
-        </div>
+        <div class="col"><input id="pickerSearch" placeholder="Szukaj wzoru po nazwie..." /></div>
         <div class="col">
-          <label class="mini">Zamawiający</label>
-          <input id="editCustomer" type="text" />
-        </div>
-        <div class="col">
-          <label class="mini">Cena łączna zamówienia (PLN)</label>
-          <input id="editTotal" type="number" step="0.01" />
+          <label class="mini">Albo wgraj CUSTOM dla tej pozycji</label>
+          <input id="pickerCustomFile" type="file" accept="image/*" />
         </div>
       </div>
-    </div>
-    <div id="editRowsWrap" class="scroll">
-      <table class="rows-table" style="width:100%">
-        <thead><tr><th style="width:35%">Wzór</th><th style="width:10%">Rozmiar</th><th style="width:12%">Kolor</th><th>Uwagi</th><th style="width:120px"></th></tr></thead>
-        <tbody id="editRowsTbody"></tbody>
-      </table>
-    </div>
-    <div class="row" style="margin-top:8px">
-      <div class="col"><div id="editMsg" class="hint"></div></div>
-      <div class="col" style="max-width:220px"><button id="editSaveBtn" class="primary">Zapisz zmiany</button></div>
+      <div id="pickerGridWrap" class="scroll" style="margin-top:10px">
+        <div id="pickerGrid" class="grid"></div>
+      </div>
+      <div class="hint">Kliknij kafelek, aby przypisać wzór do tej pozycji. Wgranie pliku ustawi tę pozycję jako CUSTOM.</div>
     </div>
   </div>
-</div>
+
+  <div id="orderEdit" class="modal">
+    <div class="panel">
+      <div class="head">
+        <strong>Edytuj zamówienie</strong>
+        <div class="right">
+          <button id="editAddRowBtn" class="ghost mini-btn">+ Pozycja</button>
+          <button id="editCloseBtn" class="ghost mini-btn">Zamknij</button>
+        </div>
+      </div>
+      <div class="card" style="margin:0 0 10px 0">
+        <div class="row center">
+          <div class="date-compact">
+            <div class="col" style="min-width:auto;flex:0 0 auto">
+              <label class="mini">Dzień</label>
+              <input id="editDay" class="small" type="number" min="1" max="31" />
+            </div>
+            <div class="col" style="min-width:auto;flex:0 0 auto">
+              <label class="mini">Miesiąc</label>
+              <select id="editMonth" class="month"></select>
+            </div>
+            <div class="col" style="min-width:auto;flex:0 0 auto">
+              <label class="mini">Rok</label>
+              <select id="editYear" class="small"></select>
+            </div>
+          </div>
+          <div class="col">
+            <label class="mini">Zamawiający</label>
+            <input id="editCustomer" type="text" />
+          </div>
+          <div class="col">
+            <label class="mini">Cena łączna zamówienia (PLN)</label>
+            <input id="editTotal" type="number" step="0.01" />
+          </div>
+        </div>
+      </div>
+      <div id="editRowsWrap" class="scroll">
+        <table class="rows-table" style="width:100%">
+          <thead><tr><th style="width:35%">Wzór</th><th style="width:10%">Rozmiar</th><th style="width:12%">Kolor</th><th>Uwagi</th><th style="width:120px"></th></tr></thead>
+          <tbody id="editRowsTbody"></tbody>
+        </table>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="col"><div id="editMsg" class="hint"></div></div>
+        <div class="col" style="max-width:220px"><button id="editSaveBtn" class="primary">Zapisz zmiany</button></div>
+      </div>
+    </div>
+  </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -479,6 +535,7 @@
     getDocs, query, where, onSnapshot, serverTimestamp, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+  // === Firebase config (te same co wcześniej) ===
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -491,6 +548,7 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // helpers
   const $ = id => document.getElementById(id);
   const fmt2 = n => (Number(n||0)).toFixed(2);
   const numPL = n => fmt2(n).replace('.', ',');
@@ -499,8 +557,33 @@
   const rowCls = s => s==="ZWROT"?"st-ret":s==="WYSŁANE"?"st-sent":s==="GOTOWE DO WYSYŁKI"?"st-ready":s==="W TRAKCIE REALIZACJI"?"st-prog":"st-new";
   const dShort = d => { const dt=d?.toDate?d.toDate():new Date(d); const dd=String(dt.getDate()).padStart(2,"0"); const mm=String(dt.getMonth()+1).padStart(2,"0"); const yy=dt.getFullYear(); return `${dd}.${mm}.${yy}`; };
 
-  // logowanie
-  const loginCard=$("loginCard"), appWrap=$("app"), userEmail=$("userEmail"), loginBtn=$("loginBtn"), logoutBtn=$("logoutBtn"), loginMsg=$("loginMsg");
+  // UI refs
+  const loginCard=$("loginCard"), appWrap=$("app"), loginBtn=$("loginBtn"), loginMsg=$("loginMsg"), logoutBtn=null;
+
+  // state
+  let designMap = new Map();
+  let orderRows = [];
+  let ordersGroupsAll = [];
+  let expensesList = [];
+  let revenueSumAll = 0;
+  let expensesSumAll = 0;
+
+  let unsubOrders=null, unsubExp=null, unsubStats=null, unsubDesigns=null;
+
+  // edit state
+  let editRows = [];
+  let editingGroupId = null;
+
+  // picker state
+  let pickerContext="add", pickerRowIndex=null;
+
+  // charts
+  let chartOrders=null, chartSizes=null, chartDesigns=null, chartFinances=null, chartCostBreakdown=null, chartMargin=null, chartCumNet=null;
+
+  // utility: create element for table row
+  function trRow(k,v){ const tr=document.createElement('tr'); tr.innerHTML=`<td>Finanse</td><td>${k}</td><td>${v}</td>`; return tr; }
+
+  // ===== AUTH =====
   loginBtn.onclick = async () => {
     loginMsg.textContent = "Logowanie…";
     try {
@@ -512,31 +595,19 @@
       loginMsg.textContent = "Błąd: " + (e.code || e.message);
     }
   };
-  logoutBtn.onclick = () => signOut(auth);
+
   onAuthStateChanged(auth, u => {
-    if (u){ loginCard.style.display="none"; appWrap.style.display=""; userEmail.textContent=u.email||""; logoutBtn.style.display=""; initApp(); }
-    else  { loginCard.style.display=""; appWrap.style.display="none"; userEmail.textContent=""; logoutBtn.style.display="none"; }
+    if (u) {
+      loginCard.style.display = "none";
+      appWrap.style.display = "";
+      initApp();
+    } else {
+      loginCard.style.display = "";
+      appWrap.style.display = "none";
+    }
   });
 
-  // caches
-  const designMap = new Map();
-  let orderRows = [];
-  let ordersGroupsAll = [];
-  let expensesList = [];
-  let revenueSumAll = 0;
-  let expensesSumAll = 0;
-  let unsubOrders=null, unsubExp=null, unsubStats=null;
-
-  // edit state
-  let editRows = [];
-  let editingGroupId = null;
-
-  // picker state
-  let pickerContext="add", pickerRowIndex=null;
-
-  // charts
-  let chartOrders=null, chartSizes=null, chartDesigns=null;
-
+  // ===== INIT APP (populate selects, handlers) =====
   async function initApp(){
     const now = new Date();
     const years = Array.from({length:9},(_,k)=>now.getFullYear()-4+k);
@@ -549,71 +620,65 @@
     $("statsMonth").innerHTML = monthsHTML; $("statsYear").innerHTML = yearsHTML; $("statsMonth").value=String(now.getMonth()); $("statsYear").value=String(now.getFullYear());
     $("editMonth").innerHTML = monthsHTML; $("editYear").innerHTML = yearsHTML;
 
-    // advanced stats anchors
     $("advAnchorMonth").innerHTML = monthsHTML; $("advAnchorYear").innerHTML = yearsHTML; $("advAnchorMonth").value=String(now.getMonth()); $("advAnchorYear").value=String(now.getFullYear());
 
-    await reloadDesigns();
-    subscribeOrders();
-    subscribeExpenses();
-    subscribeStats();
+    // sizes period default
+    $("sizePeriod").value = "week";
 
-    const syncFromOrders = ()=>{ $("expMonth").value=$("ordersMonth").value; $("expYear").value=$("ordersYear").value; $("statsMonth").value=$("ordersMonth").value; $("statsYear").value=$("ordersYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
-    $("ordersMonth").addEventListener("change", syncFromOrders);
-    $("ordersYear").addEventListener("change", syncFromOrders);
-    $("filterStatus").addEventListener("change", renderOrdersFiltered);
-
-    const syncFromExpenses = ()=>{ $("ordersMonth").value=$("expMonth").value; $("ordersYear").value=$("expYear").value; $("statsMonth").value=$("expMonth").value; $("statsYear").value=$("expYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
-    $("expMonth").addEventListener("change", syncFromExpenses);
-    $("expYear").addEventListener("change",  syncFromExpenses);
-
-    const syncFromStats = ()=>{ $("ordersMonth").value=$("statsMonth").value; $("ordersYear").value=$("statsYear").value; $("expMonth").value=$("statsMonth").value; $("expYear").value=$("statsYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
-    $("statsMonth").addEventListener("change", syncFromStats);
-    $("statsYear").addEventListener("change",  syncFromStats);
-
+    // listeners and actions
     $("addDesignBtn").addEventListener("click", onAddDesign);
     $("addRowBtn").addEventListener("click", ()=>addRow());
     $("clearOrderBtn").addEventListener("click", clearOrderForm);
     $("saveOrderBtn").addEventListener("click", saveOrder);
-    $("pickerClose").addEventListener("click", ()=>{ document.getElementById("designPicker").style.display="none"; pickerRowIndex=null; });
+    $("pickerClose").addEventListener("click", ()=>{ document.getElementById("designPicker").style.display="none"; });
     $("pickerSearch").addEventListener("input", renderPickerGrid);
     $("pickerCustomFile").addEventListener("change", onPickerCustom);
     $("addExpenseBtn").addEventListener("click", addExpense);
     $("editAddRowBtn").addEventListener("click", ()=>editAddRow());
-    $("editCloseBtn").addEventListener("click", ()=>{ document.getElementById("orderEdit").style.display="none"; editingGroupId=null; editRows=[]; });
-    $("editSaveBtn").addEventListener("click", saveEditOrder);
+    $("editCloseBtn").addEventListener("click", ()=>{ document.getElementById("orderEdit").style.display="none"; });
 
     $("exportItemsBtn").addEventListener("click", exportOrdersItemsCSV);
     $("exportGroupsBtn").addEventListener("click", exportOrdersGroupsCSV);
     $("exportExpBtn").addEventListener("click", exportExpensesCSV);
 
-    const tabsBtns = document.querySelectorAll("nav.tabs button");
-    const tabs = { orders:$("tab-orders"), add:$("tab-add"), designs:$("tab-designs"), expenses:$("tab-expenses"), stats:$("tab-stats"), advstats:$("tab-advstats") };
-    tabsBtns.forEach(btn => btn.addEventListener("click", () => {
-      tabsBtns.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      Object.values(tabs).forEach(el => el.style.display="none");
-      tabs[btn.dataset.tab].style.display = "";
-      if(btn.dataset.tab==="advstats") renderAdvancedStats();
-    }));
+    document.querySelectorAll("nav.tabs button").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        document.querySelectorAll('[id^="tab-"]').forEach(t=>t.style.display="none");
+        document.getElementById("tab-" + btn.dataset.tab).style.display = "";
+        if(btn.dataset.tab==="advstats") renderAdvancedStats();
+      });
+    });
 
-    addRow();
-
-    // advanced stats listeners
+    // advanced stats controls
     $("advPeriod").addEventListener('change', renderAdvancedStats);
     $("advAnchorMonth").addEventListener('change', renderAdvancedStats);
     $("advAnchorYear").addEventListener('change', renderAdvancedStats);
     $("advIncludeReturns").addEventListener('change', renderAdvancedStats);
+    $("sizePeriod").addEventListener('change', ()=>{ renderAdvancedStats(); renderSizeTable(); });
+    $("sizeIncludeReturns").addEventListener('change', ()=>{ renderAdvancedStats(); renderSizeTable(); });
 
-    // create empty charts
+    // create charts placeholders
     createEmptyCharts();
+
+    // start listeners to Firestore
+    subscribeDesigns();
+    subscribeOrders();
+    subscribeExpenses();
+    subscribeStats();
   }
 
-  async function reloadDesigns(){
-    designMap.clear();
-    const snap = await getDocs(query(collection(db,"designs")));
-    snap.forEach(d=>designMap.set(d.id,{id:d.id,...d.data()}));
-    renderDesignsList(); renderPickerGrid();
+  // ===== Designs =====
+  async function subscribeDesigns(){
+    if(unsubDesigns){unsubDesigns();}
+    unsubDesigns = onSnapshot(query(collection(db,"designs")), snap=>{
+      designMap.clear();
+      snap.forEach(d=> designMap.set(d.id,{id:d.id,...d.data()}));
+      renderDesignsList(); renderPickerGrid();
+    }, err=>console.error(err));
   }
+
   function renderDesignsList(){
     const box=$("designsList"); box.innerHTML="";
     for(const d of Array.from(designMap.values()).sort((a,b)=>a.name.localeCompare(b.name,"pl"))){
@@ -628,9 +693,10 @@
         </div>`;
       box.appendChild(card);
       card.querySelector('[data-act="edit"]').onclick=()=>openEditDesign(card,d);
-      card.querySelector('[data-act="del"]').onclick=async()=>{ if(!confirm("Usunąć wzór?"))return; await deleteDoc(doc(db,"designs",d.id)); await reloadDesigns(); };
+      card.querySelector('[data-act="del"]').onclick=async()=>{ if(!confirm("Usunąć wzór?"))return; await deleteDoc(doc(db,"designs",d.id)); };
     }
   }
+
   function openEditDesign(card,d){
     card.innerHTML=`
       <div class="row center">
@@ -652,10 +718,11 @@
         let previewUrl=d.previewUrl||null;
         if(file) previewUrl=await fileToDataUrl(file);
         await setDoc(doc(db,"designs",d.id),{name,previewUrl,updatedAt:serverTimestamp()},{merge:true});
-        await reloadDesigns();
+        await subscribeDesigns(); // reload
       }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
     };
   }
+
   async function onAddDesign(){
     const name=$("designName").value.trim();
     const file=$("designFile").files[0]||null;
@@ -666,10 +733,12 @@
       let previewUrl=null; if(file) previewUrl=await fileToDataUrl(file);
       await setDoc(doc(db,"designs",id),{name,active:true,previewUrl,createdAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});
       $("designName").value=""; $("designFile").value=""; out.textContent="Dodano wzór ✅";
-      await reloadDesigns(); setTimeout(()=>out.textContent="",1200);
+      await subscribeDesigns(); setTimeout(()=>out.textContent="",1200);
     }catch(e){ out.textContent="Błąd: "+(e.message||e.code); }
   }
 
+  // ===== Picker =====
+  let pickerContext="add", pickerRowIndex=null;
   function openPicker(i,ctx="add"){ pickerContext=ctx; pickerRowIndex=i; $("pickerCustomFile").value=""; $("pickerSearch").value=""; renderPickerGrid(); document.getElementById("designPicker").style.display="flex"; }
   function renderPickerGrid(){
     const grid=$("pickerGrid"); grid.innerHTML="";
@@ -698,7 +767,7 @@
     document.getElementById("designPicker").style.display="none"; pickerRowIndex=null;
   }
 
-  /* Dodawanie zamówienia */
+  // ===== Orders add/edit =====
   function defaultRow(){ return { size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; }
   function addRow(){ orderRows.push(defaultRow()); renderOrderRows(); }
   function removeRow(i){ orderRows.splice(i,1); renderOrderRows(); if(orderRows.length===0) addRow(); }
@@ -733,6 +802,7 @@
     });
   }
   function clearOrderForm(){ orderRows=[]; addRow(); $("orderCustomer").value=""; $("orderTotalPrice").value=""; $("saveMsg").textContent=""; }
+
   function buildDate(daySel,monthSel,yearSel){
     const d=Number($(daySel).value||1), m=Number($(monthSel).value||0), y=Number($(yearSel).value||new Date().getFullYear());
     return new Date(y,m,d,12,0,0);
@@ -772,12 +842,12 @@
     setTimeout(()=>msg.textContent="",2000);
   }
 
-  /* LISTA ZAMÓWIEŃ */
+  // ===== Orders subscription & rendering (grouping) =====
   function ordersMonthKey(){ return monthKey(Number($("ordersYear").value), Number($("ordersMonth").value)); }
   function subscribeOrders(){
     if(unsubOrders){unsubOrders();unsubOrders=null;}
-    const q1=query(collection(db,"orderItems"), where("monthKey","==",ordersMonthKey()));
-    unsubOrders=onSnapshot(q1,(snap)=>{
+    const q1 = query(collection(db,"orderItems"));
+    unsubOrders = onSnapshot(q1,(snap)=>{
       const docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()}));
       const groups=new Map();
       for(const d of docs){
@@ -791,8 +861,9 @@
       ordersGroupsAll=Array.from(groups.values()).sort((a,b)=>b.createdMax-a.createdMax);
       revenueSumAll=ordersGroupsAll.reduce((acc,g)=>acc+(g.status==="ZWROT"?0:Number(g.total||0)),0);
       renderOrdersFiltered(); updateTopSummary();
-    },err=>alert("Błąd odczytu zamówień: "+(err.message||err.code)));
+    },err=>console.error("Błąd odczytu zamówień:", err));
   }
+
   function renderOrdersFiltered(){
     const statusFilter=$("filterStatus").value;
     const tbody=$("ordersTbody"); tbody.innerHTML="";
@@ -834,6 +905,7 @@
       });
     });
   }
+
   async function updateGroupStatus(groupId,newStatus){
     const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
     const batch=writeBatch(db); qSnap.forEach(d=>batch.update(doc(db,"orderItems",d.id),{status:newStatus,updatedAt:serverTimestamp()}));
@@ -845,7 +917,9 @@
     const batch=writeBatch(db); qSnap.forEach(d=>batch.delete(doc(db,"orderItems",d.id))); await batch.commit();
   }
 
-  /* Edycja zamówienia */
+  // ===== Edit modal logic =====
+  let editRows = [];
+  let editingGroupId = null;
   function editDefaultRow(){ return { id:null, size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; }
   async function openEditModal(groupId){
     editingGroupId=groupId; $("editMsg").textContent="";
@@ -890,6 +964,7 @@
       tb.appendChild(tr);
     });
   }
+  async function editAddRow(){ editRows.push(editDefaultRow()); renderEditRows(); }
   async function saveEditOrder(){
     const msg=$("editMsg");
     if(editRows.length===0){ msg.textContent="Dodaj przynajmniej jedną pozycję."; return; }
@@ -921,7 +996,7 @@
     }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
   }
 
-  /* KOSZTY */
+  // ===== Expenses =====
   function expMonthKey(){ return monthKey(Number($("expYear").value), Number($("expMonth").value)); }
   async function addExpense(){
     const msg=$("expMsg"), name=$("expName").value.trim(), amount=Number($("expAmount").value||0), note=$("expNote").value.trim();
@@ -935,15 +1010,13 @@
   }
   function subscribeExpenses(){
     if(unsubExp){unsubExp();unsubExp=null;}
-    const q1=query(collection(db,"expenses"), where("monthKey","==",expMonthKey()));
+    const q1=query(collection(db,"expenses"));
     unsubExp=onSnapshot(q1,(snap)=>{
       expensesList=[]; snap.forEach(d=>expensesList.push({id:d.id,...d.data()}));
-      expensesList.sort((a,b)=> (a.date?.toDate?a.date.toDate().getTime():0)-(b.date?.toDate?b.date.toDate().getTime():0));
-      // sort newest first for display
       expensesList.sort((a,b)=> (b.date?.toDate?b.date.toDate().getTime():0)-(a.date?.toDate?a.date.toDate().getTime():0));
       expensesSumAll=expensesList.reduce((acc,x)=>acc+Number(x.amount||0),0);
       renderExpenses(); updateTopSummary();
-    },err=>alert("Błąd odczytu kosztów: "+(err.message||err.code)));
+    },err=>console.error("Błąd odczytu kosztów:",err));
   }
   function renderExpenses(){
     $("sumExpensesTop").textContent=fmt2(expensesSumAll);
@@ -957,36 +1030,19 @@
         <td>${(e.name||"").replace(/</g,"&lt;")}</td>
         <td>${(e.note||"").replace(/</g,"&lt;")}</td>
         <td>${fmt2(e.amount)} zł</td>
-        <td><button class="ghost mini-btn danger" data-del="${e.id}">usuń</button></td>`;
-      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
-      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
-      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
-      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
-      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
-      // attach edit button dynamically
-      const delBtn = tr.querySelector('[data-del]');
-      delBtn.onclick = async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
-      // add edit
-      const editBtn = document.createElement('button');
-      editBtn.className='ghost mini-btn';
-      editBtn.textContent='Edytuj';
-      editBtn.style.marginRight='6px';
+        <td><button class="ghost mini-btn" data-del="${e.id}">usuń</button></td>`;
+      const delBtn = tr.querySelector('[data-del]'); delBtn.onclick = async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
+      const editBtn = document.createElement('button'); editBtn.className='ghost mini-btn'; editBtn.textContent='Edytuj'; editBtn.style.marginRight='6px';
       editBtn.onclick = ()=>openExpenseEditor(e,tr);
-      const tdActions = tr.querySelector('td:last-child');
-      tdActions.insertBefore(editBtn, tdActions.firstChild);
+      tr.querySelector('td:last-child').insertBefore(editBtn, delBtn);
       tb.appendChild(tr);
     }
   }
-
   function openExpenseEditor(exp, tr){
-    const nameEl = tr.querySelector('td:nth-child(2)');
-    const noteEl = tr.querySelector('td:nth-child(3)');
-    const amountEl = tr.querySelector('td:nth-child(4)');
+    const nameEl = tr.querySelector('td:nth-child(2)'); const noteEl = tr.querySelector('td:nth-child(3)'); const amountEl = tr.querySelector('td:nth-child(4)');
     const origName=nameEl.textContent, origNote=noteEl.textContent, origAmount=String(exp.amount||'0');
     tr.innerHTML = `
-      <td>
-        <input type="number" class="small" data-edit-day value="${new Date(exp.date?.toDate?exp.date.toDate():exp.date).getDate()}">
-      </td>
+      <td><input type="number" class="small" data-edit-day value="${new Date(exp.date?.toDate?exp.date.toDate():exp.date).getDate()}"></td>
       <td><input data-edit-name value="${origName.replace(/\"/g,'&quot;')}"></td>
       <td><input data-edit-note value="${origNote.replace(/\"/g,'&quot;')}"></td>
       <td><input type="number" step="0.01" data-edit-amount value="${origAmount}"></td>
@@ -1009,11 +1065,11 @@
     };
   }
 
-  /* STATYSTYKI – ranking wzorów (bez ZWROT) */
+  // ===== Stats subscription (wzory) =====
   function statsMonthKey(){ return monthKey(Number($("statsYear").value), Number($("statsMonth").value)); }
   function subscribeStats(){
     if(unsubStats){unsubStats();unsubStats=null;}
-    const q1=query(collection(db,"orderItems"), where("monthKey","==",statsMonthKey()));
+    const q1=query(collection(db,"orderItems"));
     unsubStats=onSnapshot(q1,(snap)=>{
       const counts = new Map();
       snap.forEach(docu=>{
@@ -1035,7 +1091,7 @@
         count: info.count
       })).sort((a,b)=> b.count - a.count || (a.name||"").localeCompare(b.name||"","pl"));
       renderStats(list);
-    },err=>alert("Błąd statystyk: "+(err.message||err.code)));
+    },err=>console.error("Błąd statystyk:",err));
   }
   function renderStats(list){
     const tb=$("statsTbody"); tb.innerHTML="";
@@ -1054,17 +1110,7 @@
     });
   }
 
-  /* Podsumowania i eksporty */
-  function updateTopSummary(){
-    $("ordersCount").textContent = String(ordersGroupsAll.length);
-    $("sumRevenue").textContent  = fmt2(revenueSumAll);
-    $("sumExpenses").textContent = fmt2(expensesSumAll);
-    const net = revenueSumAll - expensesSumAll;
-    const el  = $("sumNet");
-    el.textContent = fmt2(net);
-    el.classList.toggle("neg", net < 0);
-  }
-
+  // ===== Export helpers =====
   function downloadCSV(filename, rows) {
     const BOM = '\uFEFF';
     const blob = new Blob([BOM + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
@@ -1127,21 +1173,7 @@
     downloadCSV(`koszty_${y}-${m}.csv`, rows);
   }
 
-  /* ADVANCED STATS implementation */
-  async function fetchAllOrderItems(){
-    const snap = await getDocs(query(collection(db,"orderItems")));
-    const docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()}));
-    return docs;
-  }
-  async function fetchExpensesForRange(startDate, endDate){
-    const snap = await getDocs(query(collection(db,'expenses')));
-    const arr=[]; snap.forEach(d=>arr.push({id:d.id,...d.data()}));
-    return arr.filter(e=>{
-      const dt = e.date?.toDate?e.date.toDate():new Date(e.date);
-      return dt>=startDate && dt<=endDate;
-    });
-  }
-
+  // ===== Advanced stats: charts setup =====
   function createEmptyCharts(){
     const commonOpts = {
       responsive: true,
@@ -1158,11 +1190,37 @@
 
     const ctxD = $("chartDesigns").getContext('2d');
     chartDesigns = new Chart(ctxD, { type:'bar', data:{labels:[], datasets:[{label:'Ilość', data:[]}] }, options:commonOpts });
+
+    // finance charts
+    if($('chartFinances')){
+      const ctxF = $('chartFinances').getContext('2d');
+      chartFinances = new Chart(ctxF, { type:'line', data:{ labels:[], datasets:[
+        { label:'Przychód', data:[], borderColor:'#4cc9f0', backgroundColor:'rgba(76,201,240,0.06)', fill:true, tension:0.2 },
+        { label:'Koszty', data:[], borderColor:'#ff8a65', backgroundColor:'rgba(255,138,101,0.04)', fill:true, tension:0.2 },
+        { label:'Zysk', data:[], borderColor:'#a3e635', backgroundColor:'rgba(163,230,53,0.04)', fill:true, tension:0.2 }
+      ] }, options:{...commonOpts, plugins:{legend:{position:'bottom'}}} });
+    }
+    if($('chartCostBreakdown')){
+      const ctxCB = $('chartCostBreakdown').getContext('2d');
+      chartCostBreakdown = new Chart(ctxCB, { type:'pie', data:{ labels:[], datasets:[{ data:[] }] }, options:{ responsive:true, maintainAspectRatio:false } });
+    }
+    if($('chartMargin')){
+      chartMargin = new Chart($('chartMargin').getContext('2d'), { type:'line', data:{ labels:[], datasets:[{ label:'Marża %', data:[] }] }, options:{...commonOpts, scales:{ y:{ beginAtZero:true, max:100 }}} });
+    }
+    if($('chartCumNet')){
+      chartCumNet = new Chart($('chartCumNet').getContext('2d'), { type:'line', data:{ labels:[], datasets:[{ label:'Zysk skumulowany', data:[] }] }, options:{...commonOpts} });
+    }
   }
 
+  // helper date ranges
   function startOfWeek(dt){ const d=new Date(dt); const day=d.getDay(); const diff=d.getDate()-(day||7)+1; return new Date(d.getFullYear(),d.getMonth(),diff,0,0,0); }
   function endOfWeek(dt){ const s=startOfWeek(dt); return new Date(s.getFullYear(),s.getMonth(),s.getDate()+6,23,59,59); }
 
+  // fetchers for adv stats
+  async function fetchAllOrderItems(){ const snap = await getDocs(query(collection(db,"orderItems"))); const docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()})); return docs; }
+  async function fetchExpensesForRange(startDate, endDate){ const snap = await getDocs(query(collection(db,'expenses'))); const arr=[]; snap.forEach(d=>arr.push({id:d.id,...d.data()})); return arr.filter(e=>{ const dt = e.date?.toDate?e.date.toDate():new Date(e.date); return dt>=startDate && dt<=endDate; }); }
+
+  // render advanced stats
   async function renderAdvancedStats(){
     const period=$("advPeriod").value;
     const anchorMonth=Number($("advAnchorMonth").value); const anchorYear=Number($("advAnchorYear").value);
@@ -1195,11 +1253,33 @@
       const g=groups.get(gid); if(it.orderTotalGross!=null) g.total=Number(it.orderTotalGross);
     }
     let revenue=0; for(const [k,g] of groups){ const dt=g.date; if(dt>=startDate && dt<=endDate){ if(g.status!=='ZWROT' || includeReturns) revenue+=Number(g.total||0); }}
-
     const expensesInRange = await fetchExpensesForRange(startDate,endDate);
     const costs = expensesInRange.reduce((acc,e)=>acc+Number(e.amount||0),0);
 
     $("advRevenue").textContent=fmt2(revenue); $("advCosts").textContent=fmt2(costs); $("advNet").textContent=fmt2(revenue-costs);
+
+    // --- revenue/costs per time label
+    function labelForDate(dt){
+      if(period==='week' || period==='month') return `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}`;
+      if(period==='year') return `${String(dt.getMonth()+1).padStart(2,'0')}`;
+      return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+    }
+    const revByLabel = new Map();
+    const costByLabel = new Map();
+    // groups map built earlier; compute revenue per group's date label
+    for(const [gid,g] of groups){
+      const dt = g.date?.toDate?g.date.toDate():new Date(g.date||Date.now());
+      if(!(dt>=startDate && dt<=endDate)) continue;
+      if(!includeReturns && g.status==='ZWROT') continue;
+      const lb = labelForDate(dt);
+      revByLabel.set(lb, (revByLabel.get(lb)||0) + Number(g.total||0));
+    }
+    // expenses by label
+    for(const e of expensesInRange){
+      const dt = e.date?.toDate?e.date.toDate():new Date(e.date);
+      const lb = labelForDate(dt);
+      costByLabel.set(lb, (costByLabel.get(lb)||0) + Number(e.amount||0));
+    }
 
     const byTime=new Map();
     filtered.forEach(it=>{
@@ -1215,6 +1295,45 @@
     const dataTime = labelsTime.map(l=>byTime.get(l)||0);
     chartOrders.data.labels = labelsTime; chartOrders.data.datasets[0].data = dataTime; chartOrders.update();
 
+    // build revenue/cost arrays aligned to labelsTime
+    const revArr = labelsTime.map(l => revByLabel.get(l) || 0);
+    const costArr = labelsTime.map(l => costByLabel.get(l) || 0);
+    const netArr = revArr.map((v,i)=> v - (costArr[i]||0));
+    if(typeof chartFinances !== 'undefined' && chartFinances){
+      chartFinances.data.labels = labelsTime;
+      chartFinances.data.datasets[0].data = revArr;
+      chartFinances.data.datasets[1].data = costArr;
+      chartFinances.data.datasets[2].data = netArr;
+      chartFinances.update();
+    }
+    if(typeof chartCostBreakdown !== 'undefined' && chartCostBreakdown){
+      // breakdown from expensesInRange by category heuristics
+      const buckets = {};
+      for(const e of expensesInRange){
+        const n = (e.name||'').toLowerCase();
+        let cat = 'Inne';
+        if(/koszulk|t-shirt|shirt|materi|materiał/.test(n)) cat = 'Materiały';
+        else if(/druk|sitodruk/.test(n)) cat = 'Druk';
+        else if(/wysył|paczka|kurier/.test(n)) cat = 'Wysyłka';
+        else if(/reklam|facebook|google|ads|marketing/.test(n)) cat = 'Marketing';
+        buckets[cat] = (buckets[cat]||0) + Number(e.amount||0);
+      }
+      chartCostBreakdown.data.labels = Object.keys(buckets);
+      chartCostBreakdown.data.datasets[0].data = Object.values(buckets);
+      chartCostBreakdown.update();
+    }
+    if(typeof chartMargin !== 'undefined' && chartMargin){
+      const marginPctArr = labelsTime.map((l,i)=> {
+        const rev = revArr[i] || 0; const c = costArr[i] || 0;
+        return rev === 0 ? 0 : Math.max(0, ( (rev - c) / rev ) * 100 );
+      });
+      chartMargin.data.labels = labelsTime; chartMargin.data.datasets[0].data = marginPctArr; chartMargin.update();
+    }
+    if(typeof chartCumNet !== 'undefined' && chartCumNet){
+      const cum = []; let acc=0; for(const v of netArr){ acc += v; cum.push(acc); }
+      chartCumNet.data.labels = labelsTime; chartCumNet.data.datasets[0].data = cum; chartCumNet.update();
+    }
+
     const sizesCount = {};
     filtered.forEach(it=>{ sizesCount[it.size||'UNKNOWN'] = (sizesCount[it.size||'UNKNOWN']||0)+1; });
     const sizeLabels = Object.keys(sizesCount).sort(); const sizeData = sizeLabels.map(l=>sizesCount[l]);
@@ -1224,19 +1343,67 @@
     filtered.forEach(it=>{
       const id = it.designId||'custom'; designCounts[id] = (designCounts[id]||0)+1;
     });
-    const designArr = Object.entries(designCounts).map(([id,c])=>({id,count:c,name: designMap.get(id)?.name|| (id==='custom'?'CUSTOM':id)}));
+    const designArr = Object.entries(designCounts).map(([id,c])=>({id,count:c, name: designMap.get(id)?.name|| (id==='custom'?'CUSTOM':id)}));
     designArr.sort((a,b)=>b.count-a.count);
     const top = designArr.slice(0,10);
     chartDesigns.data.labels = top.map(t=>t.name); chartDesigns.data.datasets[0].data = top.map(t=>t.count); chartDesigns.update();
 
     const tbody = $("advListTbody"); tbody.innerHTML='';
     for(const s of sizeLabels){ const tr=document.createElement('tr'); tr.innerHTML=`<td>Rozmiar</td><td>${s}</td><td>${sizesCount[s]}</td>`; tbody.appendChild(tr); }
-    for(const d of top){ const tr=document.createElement('tr'); tr.innerHTML=`<td>Wzór</td><td>${d.name}</td><td>${d.count}</td>`; tbody.appendChild(tr); }
+    for(const d of top){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${d.name}</td><td>${d.count}</td>`; tbody.appendChild(tr); }
   }
 
   // helper: file to data URL
   function fileToDataUrl(file){ return new Promise((res,rej)=>{ const rdr=new FileReader(); rdr.onload=()=>res(rdr.result); rdr.onerror=rej; rdr.readAsDataURL(file); }); }
 
+  // ===== Subscriptions to Firestore (orders, expenses, designs) used earlier =====
+  function subscribeOrders(){
+    if(unsubOrders){unsubOrders();unsubOrders=null;}
+    const q1 = query(collection(db,"orderItems"));
+    unsubOrders = onSnapshot(q1,(snap)=>{
+      const docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()}));
+      const groups=new Map();
+      for(const d of docs){
+        const gid=d.orderGroupId||d.id;
+        if(!groups.has(gid)) groups.set(gid,{id:gid,items:[],date:d.date,customer:d.customer||"",status:d.status||"ZAMÓWIENIE PRZYJĘTE",total:Number(d.orderTotalGross||0),createdMax:d.createdAt?.toDate?d.createdAt.toDate().getTime():0});
+        const g=groups.get(gid); g.items.push(d);
+        if(d.orderTotalGross!=null) g.total=Number(d.orderTotalGross);
+        if(d.status) g.status=d.status; if(d.customer) g.customer=d.customer; if(d.date) g.date=d.date;
+        const ct=d.createdAt?.toDate?d.createdAt.toDate().getTime():0; if(ct>g.createdMax) g.createdMax=ct;
+      }
+      ordersGroupsAll=Array.from(groups.values()).sort((a,b)=>b.createdMax-a.createdMax);
+      revenueSumAll=ordersGroupsAll.reduce((acc,g)=>acc+(g.status==="ZWROT"?0:Number(g.total||0)),0);
+      renderOrdersFiltered(); updateTopSummary();
+    },err=>console.error("subscribeOrders error",err));
+  }
+
+  // ===== Utilities =====
+  function updateTopSummary(){
+    $("ordersCount").textContent = String(ordersGroupsAll.length);
+    $("sumRevenue").textContent  = fmt2(revenueSumAll);
+    $("sumExpenses").textContent = fmt2(expensesSumAll);
+    const net = revenueSumAll - expensesSumAll;
+    const el  = $("sumNet");
+    el.textContent = fmt2(net);
+    el.classList.toggle("neg", net < 0);
+  }
+
+  // minimal subscribe wrapper for expenses and designs already defined above
+  // ensure subscribeExpenses and subscribeDesigns exist (they do above)
+
+  // ===== bootstrap: create other charts and listeners =====
+  createEmptyCharts();
+  subscribeDesigns();
+  subscribeOrders();
+  subscribeExpenses();
+  subscribeStats();
+
+  // expose renderAdvancedStats to global for tab click
+  window.renderAdvancedStats = renderAdvancedStats;
+  // expose other helpers if needed
+  window.createEmptyCharts = createEmptyCharts;
+
 </script>
+
 </body>
 </html>
