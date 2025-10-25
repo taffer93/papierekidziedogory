@@ -3,63 +3,144 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Koszulki — Panel (pełny, poprawiony)</title>
+  <title>Koszulki – panel (rozszerzony)</title>
   <style>
-    :root{
-      --bg:#0f1720; --card:#111820; --muted:#9fb2c7; --text:#eaf4ff; --accent:#4cc9f0; --line:#223042;
+    :root {
+      --bg:#141c26;
+      --card:#1a2635;
+      --muted:#9fb2c7;
+      --text:#f1f6ff;
+      --accent:#4cc9f0;
+
+      /* wyraźne kolory statusów (całe wiersze) */
+      --st-new:    rgba( 90, 245, 140,.70);
+      --st-prog:   rgba(255, 210,  90,.78);
+      --st-ready:  rgba(120, 235, 255,.72);
+      --st-sent:   rgba(130, 170, 255,.72);
+      --st-return: rgba(255, 110, 110,.82);
+
+      --line:#2d4056;
     }
     *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text);font-size:14px}
-    header{padding:14px 18px;border-bottom:1px solid #12202b;display:flex;align-items:center;gap:12px}
-    h1{font-size:18px;margin:0}
-    .wrap{max-width:1200px;margin:18px auto;padding:14px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
-    nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0;flex-wrap:wrap}
-    nav.tabs button{background:transparent;color:var(--text);border:1px solid #172630;padding:8px 12px;border-radius:8px;cursor:pointer}
-    nav.tabs button.active{outline:2px solid var(--accent)}
+    body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    header{padding:16px 20px;border-bottom:1px solid #243344;display:flex;justify-content:space-between;align-items:center;gap:10px}
+    h1{font-size:18px;margin:0} .muted{color:var(--muted)}
+    .wrap{max-width:1200px;margin:0 auto;padding:16px}
+    .card{background:var(--card);border:1px solid #203145;border-radius:12px;padding:14px;margin-bottom:14px}
     .row{display:flex;gap:10px;flex-wrap:wrap}
-    .col{flex:1 1 240px;min-width:220px}
-    input,select,button,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #213244;background:#0b1420;color:var(--text)}
-    button.primary{background:linear-gradient(180deg,#177ea6,#0e5f80);border-color:#0e5f80;color:#fff}
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    th,td{padding:8px;border-bottom:1px solid #172a36;text-align:left}
-    th{background:#0e1b27;position:sticky;top:0}
+    .row.center{align-items:center}
+    .col{flex:1 1 220px;min-width:220px}
+    input,select,button,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a4d;background:#0f1823;color:var(--text)}
+    button{cursor:pointer;background:#19344b;border-color:#274d6a}
+    button.primary{background:linear-gradient(180deg,#2a87b9,#1b5f86);border-color:#1b5f86;font-weight:600}
+    button.ghost{background:#0f1823;border-color:#2a3a4d}
+    .mini-btn{padding:6px 10px;border-radius:8px}
+    nav.tabs{display:flex;gap:8px;margin:10px 0 14px 0;flex-wrap:wrap}
+    nav.tabs button{flex:0 0 auto;padding:8px 12px;border-radius:10px}
+    nav.tabs button.active{outline:2px solid var(--accent)}
+
+    /* tabela */
+    table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+    th,td{border-bottom:1px solid #233244;padding:8px 6px;text-align:left;vertical-align:middle;border-right:1px solid var(--line)}
+    th:last-child, td:last-child{border-right:none}
+    th{background:#1d2a3a}
+    tr:hover td{filter:brightness(1.03)}
+
+    /* kolumna STATUS – węższa, ale mieści długie nazwy */
+    th.statusCol, td.statusCol { min-width:200px; width:200px; white-space:nowrap; }
+    @media (max-width:900px){ th.statusCol,td.statusCol{min-width:180px;width:180px} td.statusCol select{min-width:180px} }
+
+    /* status = kolor całego wiersza */
+    tr.st-new   td{background-color:var(--st-new)}
+    tr.st-prog  td{background-color:var(--st-prog)}
+    tr.st-ready td{background-color:var(--st-ready)}
+    tr.st-sent  td{background-color:var(--st-sent)}
+    tr.st-ret   td{background-color:var(--st-return)}
+
+    /* naprzemienna intensywność dla kolejnych zamówień (grup) */
+    tr.toneA td{background-image:linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,.35))}
+    tr.toneB td{background-image:linear-gradient(rgba(0,0,0,.30),rgba(0,0,0,.30))}
+
     .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
     .right{margin-left:auto}
-    .pill{padding:6px 10px;border-radius:999px;background:#0b1220;border:1px solid #193040}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-    .design-card{padding:8px;border-radius:8px;border:1px solid #203145;background:#081118;text-align:center}
-    .thumb{width:48px;height:48px;border-radius:6px;object-fit:cover;background:#07121a}
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:2000}
-    .modal .panel{background:var(--card);border-radius:10px;padding:12px;width:min(980px,96vw);max-height:88vh;overflow:auto;border:1px solid #162a36}
-    /* charts */
-    .chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    .chart-card{background:var(--card);border:1px solid #203145;border-radius:10px;padding:10px;display:flex;flex-direction:column}
-    .chart-canvas{flex:1;min-height:240px;max-height:360px;width:100%}
-    @media (max-width:900px){ .chart-grid{grid-template-columns:1fr} .chart-canvas{min-height:220px} }
-    .danger{color:#ff8a8a}
-    .small{font-size:12px;color:var(--muted)}
-  </style>
+    .hint{font-size:12px;color:var(--muted)}
+    .pill{padding:6px 10px;border-radius:99px;background:#0f1823;border:1px solid #2a3a4d}
+    .mini{font-size:12px}
 
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+    .design-card{border:1px solid #2a3a4d;border-radius:12px;padding:10px;cursor:pointer;background:#0f1823;text-align:center}
+    .design-card:hover{border-color:#3c5875}
+    .design-card.selected{outline:2px solid #56b7ff;background:#122334}
+    .design-img{width:100%;height:110px;object-fit:cover;border-radius:10px;border:1px solid #2a3a4d;background:#0b1118}
+    .design-name{margin-top:8px;font-weight:600}
+
+    .add-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .add-header .right{display:flex;gap:10px;margin-left:auto}
+    .rows-wrap{overflow:auto}
+    .rows-table thead th{position:sticky;top:0;background:#1d2a4a;z-index:1}
+    .rows-table td .thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
+    .rows-actions{display:flex;gap:6px}
+
+    .date-compact{display:flex;gap:8px;align-items:center}
+    .date-compact .small{max-width:90px;padding:8px}
+    .date-compact .month{max-width:180px;padding:8px}
+
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
+    input[type=number]{ -moz-appearance:textfield;}
+
+    input[type="file"]{padding:8px;background:#0f1823;border:1px solid #2a3a4d;color:var(--muted)}
+    input[type="file"]::file-selector-button{margin-right:10px;border:1px solid #274d6a;background:#19344b;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}
+
+    .designCell{display:flex;align-items:center;gap:8px}
+    .designThumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #2a3a4d;background:#0b1118}
+    .colorTag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4d;border-radius:999px;padding:2px 8px;background:#0f1823}
+    .dot{width:12px;height:12px;border-radius:50%;border:1px solid #2a3a4d;background:#fff}
+    .dot.black{background:#000}
+
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
+    .modal .panel{background:var(--card);border:1px solid #203145;border-radius:12px;width:min(1000px,94vw);max-height:88vh;padding:14px;display:flex;flex-direction:column}
+    .modal .panel .head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+    .modal .panel .head .right{margin-left:auto}
+    .scroll{overflow:auto;flex:1 1 auto;min-height:0}
+    .danger{color:#ff6b6b}
+    .neg{color:#ff9e9e}
+    .bold{font-weight:700}
+    .small{font-size:12px}
+    .controls{display:flex;gap:8px;align-items:center}
+
+    /* 🔧 Naprawa nadmiernej wysokości wykresów Chart.js */
+    #tab-advstats canvas {
+      width: 100% !important;
+      max-height: 380px !important;
+    }
+    .card canvas { display:block; margin:auto; }
+
+  </style>
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <header>
-  <h1>Koszulki — Panel</h1>
-  <div id="userInfo" style="margin-left:auto" class="small"></div>
+  <h1>Koszulki – panel (rozszerzony)</h1>
+  <div>
+    <span id="userEmail" class="muted"></span>
+    <button id="logoutBtn" class="ghost" style="display:none">Wyloguj</button>
+  </div>
 </header>
 
 <div class="wrap">
+
   <!-- LOGIN -->
-  <div id="loginCard" class="card" style="max-width:620px">
-    <h3>Logowanie</h3>
-    <div class="row">
-      <div class="col"><input id="email" type="email" placeholder="email@example.com"></div>
-      <div class="col"><input id="password" type="password" placeholder="Hasło"></div>
+  <div id="loginCard" class="card" style="max-width:460px;">
+    <h3>Zaloguj się</h3>
+    <div class="row center">
+      <div class="col"><input id="email" type="email" placeholder="Email" /></div>
+      <div class="col"><input id="password" type="password" placeholder="Hasło" /></div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-      <button id="loginBtn" class="primary">Zaloguj</button>
-      <div id="loginMsg" class="small"></div>
+    <div class="row center">
+      <div class="col"><button id="loginBtn" class="primary">Zaloguj</button></div>
+      <div class="col"><div id="loginMsg" class="hint"></div></div>
     </div>
   </div>
 
@@ -67,25 +148,25 @@
   <div id="app" style="display:none">
     <nav class="tabs">
       <button data-tab="orders" class="active">Zamówienia</button>
-      <button data-tab="add">Dodaj</button>
+      <button data-tab="add">Dodaj zamówienie</button>
       <button data-tab="designs">Wzory</button>
       <button data-tab="expenses">Koszty</button>
       <button data-tab="stats">Statystyki</button>
       <button data-tab="advstats">Zaawansowane statystyki</button>
     </nav>
 
-    <!-- ORDERS -->
+    <!-- ORDERS TAB -->
     <div id="tab-orders" class="card">
       <div class="toolbar">
         <div>
-          <label class="small">Miesiąc</label>
-          <div style="display:flex;gap:6px">
-            <select id="ordersMonth"></select>
-            <select id="ordersYear" style="max-width:110px"></select>
+          <label class="mini">Miesiąc i rok</label>
+          <div class="row center" style="gap:6px">
+            <select id="ordersMonth" class="month" style="max-width:180px"></select>
+            <select id="ordersYear" style="max-width:120px"></select>
           </div>
         </div>
         <div>
-          <label class="small">Status</label>
+          <label class="mini">Status (widok)</label>
           <select id="filterStatus">
             <option value="ALL">Wszystkie</option>
             <option value="ZAMÓWIENIE PRZYJĘTE">ZAMÓWIENIE PRZYJĘTE</option>
@@ -95,147 +176,309 @@
             <option value="ZWROT">ZWROT</option>
           </select>
         </div>
+        <div class="row center" style="gap:6px">
+          <button id="exportItemsBtn" class="ghost mini-btn">Eksport CSV (pozycje)</button>
+          <button id="exportGroupsBtn" class="ghost mini-btn">Eksport CSV (zamówienia)</button>
+        </div>
         <div class="right pill">
-          Zamówienia: <b id="ordersCount">0</b> • Przychód: <b id="sumRevenue">0.00</b> zł
+          Zamówienia: <b id="ordersCount">0</b> •
+          Przychody: <b id="sumRevenue">0.00</b> zł •
+          Koszty: <b id="sumExpenses">0.00</b> zł •
+          Wynik: <b id="sumNet">0.00</b> zł
         </div>
       </div>
 
       <div style="overflow:auto">
         <table>
           <thead>
-            <tr><th>Data</th><th>Status</th><th>Rozmiar</th><th>Wzór</th><th>Klient</th><th>Cena</th><th></th></tr>
+            <tr>
+              <th>Data</th>
+              <th class="statusCol">Status</th>
+              <th>Rozmiar</th>
+              <th>Kolor</th>
+              <th>Wzór</th>
+              <th>Zamawiający</th>
+              <th>Uwagi</th>
+              <th>Cena (łącznie)</th>
+              <th></th>
+            </tr>
           </thead>
           <tbody id="ordersTbody"></tbody>
         </table>
       </div>
+      <div class="hint">Status i klient tylko raz na zamówienie (pierwszy wiersz). ZWROT nie liczy się do przychodów.</div>
     </div>
 
-    <!-- ADD -->
+    <!-- ADD ORDER TAB -->
     <div id="tab-add" class="card" style="display:none">
-      <h3>Dodaj zamówienie</h3>
-      <div class="row">
-        <div class="col"><input id="addDesignText" placeholder="Nazwa wzoru"></div>
-        <div class="col"><select id="addSize"><option>S</option><option>M</option><option>L</option><option>XL</option></select></div>
-        <div class="col"><input id="addCustomer" placeholder="Klient"></div>
-        <div class="col"><input id="addTotal" type="number" placeholder="Łączna cena"></div>
+      <div class="add-header">
+        <h3 style="margin:0">Dodaj zamówienie</h3>
+        <div class="right">
+          <button id="addRowBtn" class="ghost">+ Dodaj pozycję</button>
+          <button id="clearOrderBtn" class="ghost">Wyczyść</button>
+          <button id="saveOrderBtn" class="primary">Zapisz wszystkie pozycje</button>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button id="addOrderBtn" class="primary">Dodaj</button>
-        <div id="addMsg" class="small"></div>
+
+      <div class="card" style="margin:0 0 10px 0">
+        <h4 style="margin:0 0 8px 0">Dane zamówienia</h4>
+        <div class="row center">
+          <div class="date-compact">
+            <div class="col" style="min-width:auto;flex:0 0 auto">
+              <label class="mini">Dzień</label>
+              <input id="addDay" class="small" type="number" min="1" max="31" />
+            </div>
+            <div class="col" style="min-width:auto;flex:0 0 auto">
+              <label class="mini">Miesiąc</label>
+              <select id="addMonth" class="month"></select>
+            </div>
+            <div class="col" style="min-width:auto;flex:0 0 auto">
+              <label class="mini">Rok</label>
+              <select id="addYear" class="small"></select>
+            </div>
+          </div>
+
+          <div class="col">
+            <label class="mini">Zamawiający (login/imię)</label>
+            <input id="orderCustomer" type="text" />
+          </div>
+          <div class="col">
+            <label class="mini">Cena łączna zamówienia (PLN)</label>
+            <input id="orderTotalPrice" type="number" step="0.01" placeholder="np. 210" />
+          </div>
+        </div>
       </div>
+
+      <div class="card" style="margin:0">
+        <h4 style="margin:0 0 8px 0">Pozycje</h4>
+        <div class="rows-wrap">
+          <table class="rows-table" style="width:100%">
+            <thead>
+              <tr>
+                <th style="width:35%">Wzór</th>
+                <th style="width:10%">Rozmiar</th>
+                <th style="width:12%">Kolor</th>
+                <th>Uwagi</th>
+                <th style="width:120px"></th>
+              </tr>
+            </thead>
+            <tbody id="rowsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="saveMsg" class="hint" style="margin-top:8px"></div>
     </div>
 
-    <!-- DESIGNS -->
+    <!-- DESIGNS TAB -->
     <div id="tab-designs" class="card" style="display:none">
-      <h3>Wzory</h3>
-      <div class="row">
-        <div class="col"><input id="designName" placeholder="Nazwa wzoru"></div>
-        <div class="col"><input id="designFile" type="file" accept="image/*"></div>
-        <div style="max-width:220px"><button id="addDesignBtn" class="primary">Dodaj wzór</button></div>
+      <h3>Wzory (z podglądem)</h3>
+      <div class="row center">
+        <div class="col"><input id="designName" placeholder="Nazwa wzoru, np. kitty red bull blue" /></div>
+        <div class="col"><input id="designFile" type="file" accept="image/*" /></div>
+        <div class="col" style="max-width:220px"><button id="addDesignBtn" class="primary">Dodaj wzór</button></div>
       </div>
-      <div id="designsList" class="grid" style="margin-top:12px"></div>
+      <div id="designMsg" class="hint" style="margin:6px 0 10px 0"></div>
+      <div id="designsList" class="grid" style="margin-top:10px"></div>
     </div>
 
-    <!-- EXPENSES -->
+    <!-- EXPENSES TAB -->
     <div id="tab-expenses" class="card" style="display:none">
-      <h3>Koszty</h3>
-      <div class="row">
-        <div class="col"><input id="expName" placeholder="Nazwa kosztu"></div>
-        <div class="col"><input id="expAmount" type="number" placeholder="Kwota"></div>
-        <div class="col"><input id="expDate" type="date"></div>
-        <div style="max-width:220px"><button id="addExpenseBtn" class="primary">Dodaj koszt</button></div>
+      <div class="toolbar">
+        <div>
+          <label class="mini">Miesiąc i rok</label>
+          <div class="row center" style="gap:6px">
+            <select id="expMonth" class="month" style="max-width:180px"></select>
+            <select id="expYear" style="max-width:120px"></select>
+          </div>
+        </div>
+        <div class="row center" style="gap:6px">
+          <button id="exportExpBtn" class="ghost mini-btn">Eksport CSV</button>
+        </div>
+        <div class="right pill">Koszty (m-c): <b id="sumExpensesTop">0.00</b> zł</div>
       </div>
-      <div id="expMsg" class="small" style="margin-top:8px"></div>
-      <div style="overflow:auto;margin-top:8px">
-        <table><thead><tr><th>Data</th><th>Nazwa</th><th>Kwota</th><th></th></tr></thead><tbody id="expTbody"></tbody></table>
+
+      <div class="card" style="margin:0 0 10px 0">
+        <h4 style="margin:0 0 8px 0">Dodaj koszt</h4>
+        <div class="row center">
+          <div class="col"><input id="expName" placeholder="Nazwa kosztu, np. zakup koszulek S/M" /></div>
+          <div class="col" style="max-width:220px"><input id="expAmount" type="number" step="0.01" placeholder="Kwota, np. 150.00" /></div>
+          <div class="col" style="max-width:120px"><input id="expDay" type="number" min="1" max="31" placeholder="Dzień" /></div>
+          <div class="col"><input id="expNote" placeholder="Uwagi (opcjonalnie)" /></div>
+          <div class="col" style="max-width:220px"><button id="addExpenseBtn" class="primary">Dodaj</button></div>
+        </div>
+        <div id="expMsg" class="hint" style="margin-top:6px"></div>
+      </div>
+
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Nazwa</th>
+              <th>Uwagi</th>
+              <th>Kwota</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="expTbody"></tbody>
+        </table>
       </div>
     </div>
 
-    <!-- STATS -->
+    <!-- STATS TAB -->
     <div id="tab-stats" class="card" style="display:none">
-      <h3>Ranking wzorów (miesiąc)</h3>
-      <div style="overflow:auto"><table><thead><tr><th>#</th><th>Wzór</th><th>Ilość</th></tr></thead><tbody id="statsTbody"></tbody></table></div>
+      <div class="toolbar">
+        <div>
+          <label class="mini">Miesiąc i rok</label>
+          <div class="row center" style="gap:6px">
+            <select id="statsMonth" class="month" style="max-width:180px"></select>
+            <select id="statsYear" style="max-width:120px"></select>
+          </div>
+        </div>
+        <div class="right pill">Ranking wzorów (liczba pozycji; bez ZWROT)</div>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>#</th><th>Wzór</th><th>Ilość zamówień</th></tr></thead>
+          <tbody id="statsTbody"></tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- ADV STATS -->
+    <!-- ADVANCED STATS TAB -->
     <div id="tab-advstats" class="card" style="display:none">
       <div class="toolbar">
         <div>
-          <label class="small">Zakres</label>
-          <select id="advPeriod"><option value="month">Miesiąc</option><option value="week">Tydzień</option><option value="year">Rok</option><option value="all">Całość</option></select>
-          <select id="advMonth"></select>
-          <select id="advYear"></select>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <label class="small">Uwzględniaj zwroty</label><input id="advIncludeReturns" type="checkbox" />
-        </div>
-        <div class="right pill">
-          Przychody: <b id="advRevenue">0.00</b> zł • Koszty: <b id="advCosts">0.00</b> zł • Zysk: <b id="advNet">0.00</b> zł
-        </div>
-      </div>
-
-      <div class="card" style="padding:10px;margin-bottom:12px">
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <div class="pill">AOV: <b id="advAOV">0.00</b> zł</div>
-          <div class="pill">Zwroty (%): <b id="advReturnsPct">0%</b></div>
-          <div class="pill">Marża (śr): <b id="advAvgMargin">0%</b></div>
-        </div>
-      </div>
-
-      <div class="chart-grid">
-        <div class="chart-card"><h4>Przychody / Koszty / Zysk</h4><canvas id="chartFinances" class="chart-canvas"></canvas></div>
-        <div class="chart-card"><h4>Ilość zamówień</h4><canvas id="chartOrders" class="chart-canvas"></canvas></div>
-        <div class="chart-card"><h4>Struktura kosztów (%)</h4><canvas id="chartCostBreakdown" class="chart-canvas"></canvas></div>
-        <div class="chart-card"><h4>Top 10 wzorów</h4><canvas id="chartTopDesigns" class="chart-canvas"></canvas></div>
-        <div class="chart-card"><h4>Marża netto (%)</h4><canvas id="chartMargin" class="chart-canvas"></canvas></div>
-        <div class="chart-card"><h4>Zysk skumulowany</h4><canvas id="chartCumNet" class="chart-canvas"></canvas></div>
-      </div>
-
-      <div style="margin-top:12px" class="card">
-        <div style="display:flex;align-items:center;gap:8px">
-          <h4 style="margin:0">Rozmiary — spis</h4>
-          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-            <label class="small">Zakres</label>
-            <select id="sizePeriod"><option value="day">Dzień</option><option value="week" selected>Tydzień</option><option value="month">Miesiąc</option><option value="year">Rok</option><option value="all">Całość</option></select>
-            <label class="small">Uwzględniaj zwroty</label><input id="sizeIncludeReturns" type="checkbox" />
+          <label class="mini">Zakres</label>
+          <div class="controls">
+            <select id="advPeriod" class="small">
+              <option value="week">Tydzień</option>
+              <option value="month" selected>Miesiąc</option>
+              <option value="year">Rok</option>
+              <option value="all">Całość</option>
+            </select>
+            <select id="advAnchorMonth" class="month" style="max-width:180px"></select>
+            <select id="advAnchorYear" class="year" style="max-width:120px"></select>
           </div>
         </div>
-
-        <div class="chart-grid" style="margin-top:10px">
-          <div class="chart-card"><h4>Wykres rozmiarów</h4><canvas id="chartSizes" class="chart-canvas"></canvas></div>
-          <div class="chart-card"><h4>Top wzorów (tabela)</h4><div style="overflow:auto;max-height:340px"><table><thead><tr><th>Wzór</th><th>Ilość</th></tr></thead><tbody id="advTopDesignsTbody"></tbody></table></div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label class="mini">Uwzględniaj zwroty</label>
+          <input id="advIncludeReturns" type="checkbox" style="width:auto;margin-left:6px" />
         </div>
-
-        <div style="margin-top:12px">
-          <h4>Spis rozmiarów (tabela)</h4>
-          <div style="overflow:auto;max-height:260px"><table><thead><tr><th>Okres</th><th>Rozmiar</th><th>Ilość</th></tr></thead><tbody id="advSizeTbody"></tbody></table></div>
+        <div class="right pill">Przychody: <b id="advRevenue">0.00</b> zł • Koszty: <b id="advCosts">0.00</b> zł • Zysk: <b id="advNet">0.00</b> zł</div>
+      </div>
+      <div class="row" style="gap:12px">
+        <div class="col card" style="height:420px">
+          <h4>Wykres: Zamówienia (wg daty)</h4>
+          <canvas id="chartOrders"></canvas>
+        </div>
+        <div class="col card" style="height:420px">
+          <h4>Wykres: Rozmiary</h4>
+          <canvas id="chartSizes"></canvas>
         </div>
       </div>
-
-      <div id="advDetailWrap" class="card" style="margin-top:12px">
-        <h4>Tablica (szczegóły finansowe)</h4>
-        <div style="overflow:auto;max-height:240px"><table><thead><tr><th>Typ</th><th>Klucz</th><th>Wartość</th></tr></thead><tbody id="advDetailTbody"></tbody></table></div>
+      <div class="row" style="gap:12px;margin-top:12px">
+        <div class="col card" style="height:420px">
+          <h4>Wykres: Wzory (top 10)</h4>
+          <canvas id="chartDesigns"></canvas>
+        </div>
+        <div class="col card">
+          <h4>Spis tabelaryczny</h4>
+          <div style="overflow:auto;max-height:360px">
+            <table>
+              <thead><tr><th>Typ</th><th>Klucz</th><th>Ilość</th></tr></thead>
+              <tbody id="advListTbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
-
     </div>
 
   </div>
 </div>
 
-<!-- design picker modal -->
-<div id="designPicker" class="modal"><div class="panel"><h3>Wybierz wzór</h3><div id="pickerGrid" class="grid" style="margin-top:10px"></div><div style="margin-top:10px"><button onclick="document.getElementById('designPicker').style.display='none'">Zamknij</button></div></div></div>
+<!-- MODAL – wybór wzoru (scroll w środku) -->
+<div id="designPicker" class="modal">
+  <div class="panel">
+    <div class="head">
+      <strong>Wybierz wzór</strong>
+      <div class="right"><button id="pickerClose" class="ghost mini-btn">Zamknij</button></div>
+    </div>
+    <div class="row center">
+      <div class="col"><input id="pickerSearch" placeholder="Szukaj wzoru po nazwie..." /></div>
+      <div class="col">
+        <label class="mini">Albo wgraj CUSTOM dla tej pozycji</label>
+        <input id="pickerCustomFile" type="file" accept="image/*" />
+      </div>
+    </div>
+    <div id="pickerGridWrap" class="scroll" style="margin-top:10px">
+      <div id="pickerGrid" class="grid"></div>
+    </div>
+    <div class="hint">Kliknij kafelek, aby przypisać wzór do tej pozycji. Wgranie pliku ustawi tę pozycję jako CUSTOM.</div>
+  </div>
+</div>
+
+<!-- MODAL – edycja zamówienia -->
+<div id="orderEdit" class="modal">
+  <div class="panel">
+    <div class="head">
+      <strong>Edytuj zamówienie</strong>
+      <div class="right">
+        <button id="editAddRowBtn" class="ghost mini-btn">+ Pozycja</button>
+        <button id="editCloseBtn" class="ghost mini-btn">Zamknij</button>
+      </div>
+    </div>
+    <div class="card" style="margin:0 0 10px 0">
+      <div class="row center">
+        <div class="date-compact">
+          <div class="col" style="min-width:auto;flex:0 0 auto">
+            <label class="mini">Dzień</label>
+            <input id="editDay" class="small" type="number" min="1" max="31" />
+          </div>
+          <div class="col" style="min-width:auto;flex:0 0 auto">
+            <label class="mini">Miesiąc</label>
+            <select id="editMonth" class="month"></select>
+          </div>
+          <div class="col" style="min-width:auto;flex:0 0 auto">
+            <label class="mini">Rok</label>
+            <select id="editYear" class="small"></select>
+          </div>
+        </div>
+        <div class="col">
+          <label class="mini">Zamawiający</label>
+          <input id="editCustomer" type="text" />
+        </div>
+        <div class="col">
+          <label class="mini">Cena łączna zamówienia (PLN)</label>
+          <input id="editTotal" type="number" step="0.01" />
+        </div>
+      </div>
+    </div>
+    <div id="editRowsWrap" class="scroll">
+      <table class="rows-table" style="width:100%">
+        <thead><tr><th style="width:35%">Wzór</th><th style="width:10%">Rozmiar</th><th style="width:12%">Kolor</th><th>Uwagi</th><th style="width:120px"></th></tr></thead>
+        <tbody id="editRowsTbody"></tbody>
+      </table>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><div id="editMsg" class="hint"></div></div>
+      <div class="col" style="max-width:220px"><button id="editSaveBtn" class="primary">Zapisz zmiany</button></div>
+    </div>
+  </div>
+</div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
-    getAuth, onAuthStateChanged, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, signOut
+    getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+    setPersistence, browserLocalPersistence
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc,
     getDocs, query, where, onSnapshot, serverTimestamp, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // --- Firebase config (twój projekt) ---
   const firebaseConfig = {
     apiKey: "AIzaSyCGNcCqcQdLoOnWFEI1a7XhAsQtj6ECvfg",
     authDomain: "papierek-idzie-do-gory.firebaseapp.com",
@@ -248,453 +491,751 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // helpers
   const $ = id => document.getElementById(id);
   const fmt2 = n => (Number(n||0)).toFixed(2);
+  const numPL = n => fmt2(n).replace('.', ',');
   const monthsPL = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
-  const monthKey = (y,m)=> `${y}-${String(m+1).padStart(2,'0')}`;
+  const monthKey = (y,mIndex) => `${y}-${String(mIndex+1).padStart(2,"0")}`;
+  const rowCls = s => s==="ZWROT"?"st-ret":s==="WYSŁANE"?"st-sent":s==="GOTOWE DO WYSYŁKI"?"st-ready":s==="W TRAKCIE REALIZACJI"?"st-prog":"st-new";
+  const dShort = d => { const dt=d?.toDate?d.toDate():new Date(d); const dd=String(dt.getDate()).padStart(2,"0"); const mm=String(dt.getMonth()+1).padStart(2,"0"); const yy=dt.getFullYear(); return `${dd}.${mm}.${yy}`; };
 
-  // state
-  let designMap = new Map();
-  let ordersGroupsAll = [];
-  let expensesList = [];
-  let charts = {};
-
-  // single declaration for picker context (no duplicates)
-  let pickerContext = { openForRow: null };
-
-  // UI init
-  (function initUI(){
-    const now = new Date();
-    const yearsArr = Array.from({length:9},(_,k)=>now.getFullYear()-4+k);
-    $('ordersMonth').innerHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
-    $('advMonth').innerHTML = $('ordersMonth').innerHTML;
-    $('advYear').innerHTML = yearsArr.map(y=>`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`).join('');
-    $('ordersYear').innerHTML = $('advYear').innerHTML;
-    $('expDate').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-
-    // tabs
-    document.querySelectorAll('nav.tabs button').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        document.querySelectorAll('[id^="tab-"]').forEach(t=>t.style.display='none');
-        const id = 'tab-' + btn.dataset.tab;
-        if($(id)) $(id).style.display = '';
-        if(btn.dataset.tab === 'advstats') renderAdvancedStats();
-      });
-    });
-
-    // listeners
-    $('loginBtn').onclick = async () => {
-      const email = $('email').value.trim();
-      const pass = $('password').value.trim();
-      if(!email || !pass){ $('loginMsg').textContent = 'Podaj e-mail i hasło'; return; }
-      $('loginMsg').textContent = 'Trwa logowanie...';
-      try{
-        await setPersistence(auth, browserLocalPersistence);
-        const userCred = await signInWithEmailAndPassword(auth, email, pass);
-        if(userCred?.user){
-          $('loginMsg').textContent = 'Zalogowano';
-          $('loginCard').style.display = 'none';
-          $('app').style.display = '';
-          $('userInfo').textContent = userCred.user.email || '';
-        } else {
-          $('loginMsg').textContent = 'Nie udało się zalogować';
-        }
-      } catch(err){
-        console.error('Błąd logowania', err);
-        let msg = 'Błąd logowania.';
-        if(err.code === 'auth/wrong-password') msg = 'Niepoprawne hasło.';
-        else if(err.code === 'auth/user-not-found') msg = 'Nie znaleziono konta.';
-        else if(err.code === 'auth/invalid-email') msg = 'Niepoprawny e-mail.';
-        else if(err.code === 'auth/network-request-failed') msg = 'Brak sieci.';
-        $('loginMsg').textContent = msg;
-      }
-    };
-
-    $('addDesignBtn').addEventListener('click', onAddDesign);
-    $('addOrderBtn').addEventListener('click', onAddOrder);
-    $('addExpenseBtn').addEventListener('click', onAddExpense);
-
-    $('advPeriod').addEventListener('change', renderAdvancedStats);
-    $('advMonth').addEventListener('change', renderAdvancedStats);
-    $('advYear').addEventListener('change', renderAdvancedStats);
-    $('advIncludeReturns').addEventListener('change', renderAdvancedStats);
-    $('sizePeriod').addEventListener('change', renderAdvancedStats);
-    $('sizeIncludeReturns').addEventListener('change', renderAdvancedStats);
-
-    createCharts();
-  })();
-
-  // auth state handler
-  onAuthStateChanged(auth, user => {
-    if(user){
-      console.log('Zalogowano jako', user.email);
-      $('loginCard').style.display = 'none';
-      $('app').style.display = '';
-      $('userInfo').textContent = user.email || '';
-      startListeners();
-    } else {
-      console.log('Wylogowano');
-      $('loginCard').style.display = '';
-      $('app').style.display = 'none';
-      $('userInfo').textContent = '';
-      stopListeners();
+  // logowanie
+  const loginCard=$("loginCard"), appWrap=$("app"), userEmail=$("userEmail"), loginBtn=$("loginBtn"), logoutBtn=$("logoutBtn"), loginMsg=$("loginMsg");
+  loginBtn.onclick = async () => {
+    loginMsg.textContent = "Logowanie…";
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithEmailAndPassword(auth, $("email").value, $("password").value);
+      loginMsg.textContent = "";
+    } catch (e) {
+      console.error(e);
+      loginMsg.textContent = "Błąd: " + (e.code || e.message);
     }
+  };
+  logoutBtn.onclick = () => signOut(auth);
+  onAuthStateChanged(auth, u => {
+    if (u){ loginCard.style.display="none"; appWrap.style.display=""; userEmail.textContent=u.email||""; logoutBtn.style.display=""; initApp(); }
+    else  { loginCard.style.display=""; appWrap.style.display="none"; userEmail.textContent=""; logoutBtn.style.display="none"; }
   });
 
-  // listeners unsub
-  let unsubDesigns=null, unsubOrders=null, unsubExpenses=null;
-  function startListeners(){
-    subscribeDesigns();
+  // caches
+  const designMap = new Map();
+  let orderRows = [];
+  let ordersGroupsAll = [];
+  let expensesList = [];
+  let revenueSumAll = 0;
+  let expensesSumAll = 0;
+  let unsubOrders=null, unsubExp=null, unsubStats=null;
+
+  // edit state
+  let editRows = [];
+  let editingGroupId = null;
+
+  // picker state
+  let pickerContext="add", pickerRowIndex=null;
+
+  // charts
+  let chartOrders=null, chartSizes=null, chartDesigns=null;
+
+  async function initApp(){
+    const now = new Date();
+    const years = Array.from({length:9},(_,k)=>now.getFullYear()-4+k);
+    const monthsHTML = monthsPL.map((m,i)=>`<option value="${i}">${m}</option>`).join("");
+    const yearsHTML  = years.map(y=>`<option ${y===now.getFullYear()?"selected":""}>${y}</option>`).join("");
+
+    $("ordersMonth").innerHTML = monthsHTML; $("ordersYear").innerHTML = yearsHTML; $("ordersMonth").value = String(now.getMonth());
+    $("addMonth").innerHTML = monthsHTML; $("addYear").innerHTML = yearsHTML; $("addMonth").value=String(now.getMonth()); $("addYear").value=String(now.getFullYear()); $("addDay").value=String(now.getDate());
+    $("expMonth").innerHTML = monthsHTML; $("expYear").innerHTML = yearsHTML; $("expMonth").value=String(now.getMonth()); $("expYear").value=String(now.getFullYear()); $("expDay").value=String(now.getDate());
+    $("statsMonth").innerHTML = monthsHTML; $("statsYear").innerHTML = yearsHTML; $("statsMonth").value=String(now.getMonth()); $("statsYear").value=String(now.getFullYear());
+    $("editMonth").innerHTML = monthsHTML; $("editYear").innerHTML = yearsHTML;
+
+    // advanced stats anchors
+    $("advAnchorMonth").innerHTML = monthsHTML; $("advAnchorYear").innerHTML = yearsHTML; $("advAnchorMonth").value=String(now.getMonth()); $("advAnchorYear").value=String(now.getFullYear());
+
+    await reloadDesigns();
     subscribeOrders();
     subscribeExpenses();
-  }
-  function stopListeners(){
-    if(unsubDesigns) unsubDesigns();
-    if(unsubOrders) unsubOrders();
-    if(unsubExpenses) unsubExpenses();
+    subscribeStats();
+
+    const syncFromOrders = ()=>{ $("expMonth").value=$("ordersMonth").value; $("expYear").value=$("ordersYear").value; $("statsMonth").value=$("ordersMonth").value; $("statsYear").value=$("ordersYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
+    $("ordersMonth").addEventListener("change", syncFromOrders);
+    $("ordersYear").addEventListener("change", syncFromOrders);
+    $("filterStatus").addEventListener("change", renderOrdersFiltered);
+
+    const syncFromExpenses = ()=>{ $("ordersMonth").value=$("expMonth").value; $("ordersYear").value=$("expYear").value; $("statsMonth").value=$("expMonth").value; $("statsYear").value=$("expYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
+    $("expMonth").addEventListener("change", syncFromExpenses);
+    $("expYear").addEventListener("change",  syncFromExpenses);
+
+    const syncFromStats = ()=>{ $("ordersMonth").value=$("statsMonth").value; $("ordersYear").value=$("statsYear").value; $("expMonth").value=$("statsMonth").value; $("expYear").value=$("statsYear").value; subscribeOrders(); subscribeExpenses(); subscribeStats(); };
+    $("statsMonth").addEventListener("change", syncFromStats);
+    $("statsYear").addEventListener("change",  syncFromStats);
+
+    $("addDesignBtn").addEventListener("click", onAddDesign);
+    $("addRowBtn").addEventListener("click", ()=>addRow());
+    $("clearOrderBtn").addEventListener("click", clearOrderForm);
+    $("saveOrderBtn").addEventListener("click", saveOrder);
+    $("pickerClose").addEventListener("click", ()=>{ document.getElementById("designPicker").style.display="none"; pickerRowIndex=null; });
+    $("pickerSearch").addEventListener("input", renderPickerGrid);
+    $("pickerCustomFile").addEventListener("change", onPickerCustom);
+    $("addExpenseBtn").addEventListener("click", addExpense);
+    $("editAddRowBtn").addEventListener("click", ()=>editAddRow());
+    $("editCloseBtn").addEventListener("click", ()=>{ document.getElementById("orderEdit").style.display="none"; editingGroupId=null; editRows=[]; });
+    $("editSaveBtn").addEventListener("click", saveEditOrder);
+
+    $("exportItemsBtn").addEventListener("click", exportOrdersItemsCSV);
+    $("exportGroupsBtn").addEventListener("click", exportOrdersGroupsCSV);
+    $("exportExpBtn").addEventListener("click", exportExpensesCSV);
+
+    const tabsBtns = document.querySelectorAll("nav.tabs button");
+    const tabs = { orders:$("tab-orders"), add:$("tab-add"), designs:$("tab-designs"), expenses:$("tab-expenses"), stats:$("tab-stats"), advstats:$("tab-advstats") };
+    tabsBtns.forEach(btn => btn.addEventListener("click", () => {
+      tabsBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      Object.values(tabs).forEach(el => el.style.display="none");
+      tabs[btn.dataset.tab].style.display = "";
+      if(btn.dataset.tab==="advstats") renderAdvancedStats();
+    }));
+
+    addRow();
+
+    // advanced stats listeners
+    $("advPeriod").addEventListener('change', renderAdvancedStats);
+    $("advAnchorMonth").addEventListener('change', renderAdvancedStats);
+    $("advAnchorYear").addEventListener('change', renderAdvancedStats);
+    $("advIncludeReturns").addEventListener('change', renderAdvancedStats);
+
+    // create empty charts
+    createEmptyCharts();
   }
 
-  // --- Designs ---
-  function subscribeDesigns(){
-    if(unsubDesigns) unsubDesigns();
-    unsubDesigns = onSnapshot(collection(db,'designs'), snap=>{
-      designMap.clear();
-      snap.forEach(d=> designMap.set(d.id, { id:d.id, ...d.data() }));
-      renderDesigns();
-      renderPicker();
-    }, err=>console.error(err));
+  async function reloadDesigns(){
+    designMap.clear();
+    const snap = await getDocs(query(collection(db,"designs")));
+    snap.forEach(d=>designMap.set(d.id,{id:d.id,...d.data()}));
+    renderDesignsList(); renderPickerGrid();
   }
-  function renderDesigns(){
-    const wrap = $('designsList'); wrap.innerHTML = '';
-    Array.from(designMap.values()).sort((a,b)=> (a.name||'').localeCompare(b.name||'')).forEach(d=>{
-      const e = document.createElement('div'); e.className='design-card';
-      e.innerHTML = `${d.previewUrl?`<img class="thumb" src="${d.previewUrl}">`:`<div class="thumb"></div>`}<div style="margin-top:8px">${(d.name||'').replace(/</g,'&lt;')}</div>`;
-      wrap.appendChild(e);
-    });
+  function renderDesignsList(){
+    const box=$("designsList"); box.innerHTML="";
+    for(const d of Array.from(designMap.values()).sort((a,b)=>a.name.localeCompare(b.name,"pl"))){
+      const card=document.createElement("div");
+      card.className="design-card";
+      card.innerHTML=`
+        ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`}
+        <div class="design-name">${(d.name||"").replace(/</g,"&lt;")}</div>
+        <div class="row center" style="margin-top:8px">
+          <button class="ghost mini-btn" data-act="edit">Edytuj</button>
+          <button class="ghost mini-btn danger" data-act="del">Usuń</button>
+        </div>`;
+      box.appendChild(card);
+      card.querySelector('[data-act="edit"]').onclick=()=>openEditDesign(card,d);
+      card.querySelector('[data-act="del"]').onclick=async()=>{ if(!confirm("Usunąć wzór?"))return; await deleteDoc(doc(db,"designs",d.id)); await reloadDesigns(); };
+    }
   }
-  function renderPicker(){
-    const grid = $('pickerGrid'); if(!grid) return; grid.innerHTML='';
-    Array.from(designMap.values()).forEach(d=>{
-      const el = document.createElement('div'); el.className='design-card';
-      el.innerHTML = `${d.previewUrl?`<img class="thumb" src="${d.previewUrl}">`:`<div class="thumb"></div>`}<div style="margin-top:8px">${(d.name||'').replace(/</g,'&lt;')}</div>`;
-      el.onclick = ()=>{ pickerContext.openForRow = null; document.getElementById('designPicker').style.display='none'; /* optional assignment usage */ };
-      grid.appendChild(el);
-    });
+  function openEditDesign(card,d){
+    card.innerHTML=`
+      <div class="row center">
+        <div class="col"><input value="${(d.name||"").replace(/"/g,'&quot;')}" data-role="name"/></div>
+        <div class="col"><input type="file" accept="image/*" data-role="file"/></div>
+      </div>
+      <div class="row center" style="margin-top:8px">
+        <button class="primary mini-btn" data-act="save">Zapisz</button>
+        <button class="ghost mini-btn" data-act="cancel">Anuluj</button>
+      </div>
+      <div class="hint mini" data-role="msg"></div>`;
+    card.querySelector('[data-act="cancel"]').onclick=renderDesignsList;
+    card.querySelector('[data-act="save"]').onclick=async()=>{
+      const name=card.querySelector('[data-role="name"]').value.trim();
+      const file=card.querySelector('[data-role="file"]').files[0]||null;
+      const msg=card.querySelector('[data-role="msg"]');
+      if(!name){msg.textContent="Podaj nazwę.";return;}
+      try{
+        let previewUrl=d.previewUrl||null;
+        if(file) previewUrl=await fileToDataUrl(file);
+        await setDoc(doc(db,"designs",d.id),{name,previewUrl,updatedAt:serverTimestamp()},{merge:true});
+        await reloadDesigns();
+      }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
+    };
   }
   async function onAddDesign(){
-    const name = $('designName').value.trim();
-    const file = $('designFile').files[0] || null;
-    if(!name) return alert('Podaj nazwę wzoru');
-    const id = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
-    let previewUrl = null;
-    if(file) previewUrl = await fileToDataUrl(file);
-    await setDoc(doc(db,'designs',id), { name, previewUrl, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge:true });
-    $('designName').value=''; $('designFile').value='';
+    const name=$("designName").value.trim();
+    const file=$("designFile").files[0]||null;
+    const out=$("designMsg");
+    if(!name){out.textContent="Podaj nazwę wzoru.";return;}
+    const id=name.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,"");
+    try{
+      let previewUrl=null; if(file) previewUrl=await fileToDataUrl(file);
+      await setDoc(doc(db,"designs",id),{name,active:true,previewUrl,createdAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});
+      $("designName").value=""; $("designFile").value=""; out.textContent="Dodano wzór ✅";
+      await reloadDesigns(); setTimeout(()=>out.textContent="",1200);
+    }catch(e){ out.textContent="Błąd: "+(e.message||e.code); }
   }
 
-  // --- Orders subscription and rendering (single stable impl) ---
-  function subscribeOrders(){
-    if(unsubOrders) unsubOrders();
-    unsubOrders = onSnapshot(collection(db,'orderItems'), snap=>{
-      const docs = [];
-      snap.forEach(d=>docs.push({ id:d.id, ...d.data() }));
-      const groups = new Map();
-      for(const it of docs){
-        const gid = it.orderGroupId || it.id;
-        if(!groups.has(gid)) groups.set(gid, { id:gid, items:[], total:0, status: it.status || 'ZAMÓWIENIE PRZYJĘTE', date: it.date, createdMax: it.createdAt?.toDate?it.createdAt.toDate().getTime():0, customer: it.customer || '' });
-        const g = groups.get(gid);
-        g.items.push(it);
-        if(it.orderTotalGross != null) g.total = Number(it.orderTotalGross);
-        if(it.status) g.status = it.status;
-        if(it.date) g.date = it.date;
-        if(it.createdAt && (!g.createdMax || g.createdMax < it.createdAt.toDate().getTime())) g.createdMax = it.createdAt.toDate().getTime();
-      }
-      ordersGroupsAll = Array.from(groups.values()).sort((a,b)=> (b.createdMax||0) - (a.createdMax||0));
-      const revenue = ordersGroupsAll.reduce((s,g)=> s + (g.status === 'ZWROT' ? 0 : Number(g.total||0)), 0);
-      $('ordersCount').textContent = String(ordersGroupsAll.length);
-      $('sumRevenue').textContent = fmt2(revenue);
-      renderOrdersTable();
-    }, err=>console.error(err));
-  }
-
-  function renderOrdersTable(){
-    const tbody = $('ordersTbody'); tbody.innerHTML = '';
-    const selY = Number($('ordersYear').value || new Date().getFullYear());
-    const selM = Number($('ordersMonth').value || new Date().getMonth());
-    const mk = monthKey(selY, selM);
-    const statusFilter = $('filterStatus').value;
-    const groupsFiltered = ordersGroupsAll.filter(g=>{
-      const d = g.date?.toDate?g.date.toDate(): new Date(g.date);
-      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      if(key !== mk) return false;
-      if(statusFilter !== 'ALL' && (g.status || '') !== statusFilter) return false;
-      return true;
-    });
-    for(const g of groupsFiltered){
-      const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
-      const tr = document.createElement('tr');
-      const it = g.items[0] || {};
-      tr.innerHTML = `<td>${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}</td>
-        <td>${g.status}</td><td>${it.size||''}</td><td>${it.designText||''}</td><td>${g.customer||''}</td><td>${fmt2(g.total)} zł</td>
-        <td><button class="ghost" data-edit="${g.id}">Edytuj</button> <button class="ghost danger" data-del="${g.id}">Usuń</button></td>`;
-      tbody.appendChild(tr);
-      tr.querySelector('[data-edit]')?.addEventListener('click', ()=> openEdit(g.id));
-      tr.querySelector('[data-del]')?.addEventListener('click', ()=> deleteGroupConfirm(g.id));
+  function openPicker(i,ctx="add"){ pickerContext=ctx; pickerRowIndex=i; $("pickerCustomFile").value=""; $("pickerSearch").value=""; renderPickerGrid(); document.getElementById("designPicker").style.display="flex"; }
+  function renderPickerGrid(){
+    const grid=$("pickerGrid"); grid.innerHTML="";
+    const term=($("pickerSearch").value||"").toLowerCase();
+    const list=Array.from(designMap.values()).filter(d=>d.active!==false).filter(d=>term?d.name.toLowerCase().includes(term):true).sort((a,b)=>a.name.localeCompare(b.name,"pl"));
+    for(const d of list){
+      const card=document.createElement("div"); card.className="design-card";
+      card.innerHTML=`
+        ${d.previewUrl?`<img class="design-img" src="${d.previewUrl}" alt="">`:`<div class="design-img" style="display:flex;align-items:center;justify-content:center;color:#6d8096">brak podglądu</div>`}
+        <div class="design-name">${(d.name||"").replace(/</g,"&lt;")}</div>`;
+      card.onclick=()=>{
+        const arr=(pickerContext==="edit")?editRows:orderRows;
+        const r=arr[pickerRowIndex];
+        r.designId=d.id; r.designName=d.name; r.previewUrl=d.previewUrl||null; r.customFile=null; r.customLocalUrl=null;
+        (pickerContext==="edit")?renderEditRows():renderOrderRows();
+        document.getElementById("designPicker").style.display="none"; pickerRowIndex=null;
+      };
+      grid.appendChild(card);
     }
   }
+  async function onPickerCustom(e){
+    const file=e.target.files[0]; if(!file||pickerRowIndex==null)return;
+    const arr=(pickerContext==="edit")?editRows:orderRows; const r=arr[pickerRowIndex];
+    r.designId="custom"; r.designName="CUSTOM"; r.customFile=file; r.customLocalUrl=URL.createObjectURL(file); r.previewUrl=r.customLocalUrl;
+    (pickerContext==="edit")?renderEditRows():renderOrderRows();
+    document.getElementById("designPicker").style.display="none"; pickerRowIndex=null;
+  }
 
-  async function deleteGroupConfirm(groupId){
-    if(!confirm('Usunąć całe zamówienie?')) return;
-    const snap = await getDocs(query(collection(db,'orderItems'), where('orderGroupId','==',groupId)));
-    const batch = writeBatch(db);
-    snap.forEach(d=> batch.delete(doc(db,'orderItems',d.id)));
+  /* Dodawanie zamówienia */
+  function defaultRow(){ return { size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; }
+  function addRow(){ orderRows.push(defaultRow()); renderOrderRows(); }
+  function removeRow(i){ orderRows.splice(i,1); renderOrderRows(); if(orderRows.length===0) addRow(); }
+  function renderOrderRows(){
+    const tb=$("rowsTbody"); tb.innerHTML="";
+    orderRows.forEach((r,i)=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            ${r.previewUrl?`<img class="thumb" src="${r.previewUrl}" alt="">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#6d8096">?</div>`}
+            <div style="min-width:180px"><b>${(r.designName||"Nie wybrano").replace(/</g,"&lt;")}</b></div>
+            <div class="rows-actions">
+              <button class="ghost mini-btn" data-act="pick">Wybierz wzór</button>
+              <label class="ghost mini-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+                <input data-act="custom" type="file" accept="image/*" style="display:none"> Upload CUSTOM
+              </label>
+            </div>
+          </div>
+        </td>
+        <td><select data-act="size">${["S","M","L","XL","XXL","3XL"].map(s=>`<option ${r.size===s?"selected":""}>${s}</option>`).join("")}</select></td>
+        <td><select data-act="color">${["BIAŁA","CZARNA"].map(c=>`<option ${r.color===c?"selected":""}>${c}</option>`).join("")}</select></td>
+        <td><input data-act="note" type="text" value="${(r.note||"").replace(/"/g,'&quot;')}" placeholder="Uwagi do tej pozycji"></td>
+        <td class="rows-actions"><button class="ghost mini-btn danger" data-act="remove">Usuń</button></td>`;
+      tr.querySelector('[data-act="pick"]').onclick=()=>openPicker(i,"add");
+      tr.querySelector('[data-act="remove"]').onclick=()=>removeRow(i);
+      tr.querySelector('[data-act="size"]').onchange=e=>r.size=e.target.value;
+      tr.querySelector('[data-act="color"]').onchange=e=>r.color=e.target.value;
+      tr.querySelector('[data-act="note"]').oninput=e=>r.note=e.target.value;
+      tr.querySelector('[data-act="custom"]').onchange=e=>{ const f=e.target.files[0]; if(!f)return; r.designId="custom"; r.designName="CUSTOM"; r.customFile=f; r.customLocalUrl=URL.createObjectURL(f); r.previewUrl=r.customLocalUrl; renderOrderRows(); };
+      tb.appendChild(tr);
+    });
+  }
+  function clearOrderForm(){ orderRows=[]; addRow(); $("orderCustomer").value=""; $("orderTotalPrice").value=""; $("saveMsg").textContent=""; }
+  function buildDate(daySel,monthSel,yearSel){
+    const d=Number($(daySel).value||1), m=Number($(monthSel).value||0), y=Number($(yearSel).value||new Date().getFullYear());
+    return new Date(y,m,d,12,0,0);
+  }
+  function genGroupId(date, customer){
+    const y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,"0"), d=String(date.getDate()).padStart(2,"0");
+    const rnd=Math.random().toString(36).slice(2,6), cust=(customer||"order").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,8);
+    return `${y}-${m}-${d}-${cust||"order"}-${rnd}`;
+  }
+  async function saveOrder(){
+    const msg=$("saveMsg");
+    if(orderRows.length===0) return msg.textContent="Dodaj przynajmniej jedną pozycję.";
+    if(orderRows.some(r=>!r.designId&&!r.customFile)) return msg.textContent="Każda pozycja musi mieć wybrany wzór/CUSTOM.";
+    const total=Number($("orderTotalPrice").value||0); if(!total) return msg.textContent="Podaj cenę łączną.";
+    const date=buildDate("addDay","addMonth","addYear");
+    const customer=$("orderCustomer").value.trim();
+    const groupId=genGroupId(date, customer);
+    msg.textContent="Zapisywanie…";
+    try{
+      const processed=await Promise.all(orderRows.map(async r=>{
+        let previewUrl=r.previewUrl||null;
+        if(r.customFile) previewUrl=await fileToDataUrl(r.customFile); else if(r.designId) previewUrl=designMap.get(r.designId)?.previewUrl||null;
+        return {...r, previewUrl};
+      }));
+      for(const r of processed){
+        await addDoc(collection(db,"orderItems"),{
+          date:Timestamp.fromDate(date), monthKey:monthKey(date.getFullYear(),date.getMonth()),
+          createdAt:serverTimestamp(), updatedAt:serverTimestamp(),
+          status:"ZAMÓWIENIE PRZYJĘTE",
+          size:r.size, color:r.color, designId:r.designId||"custom", designText:r.designName||"CUSTOM",
+          previewUrl:r.previewUrl||null, customer, note:r.note||"",
+          orderTotalGross: total, priceGross:0, orderGroupId: groupId
+        });
+      }
+      msg.textContent=`Zapisano ${processed.length} pozycji ✅`; clearOrderForm();
+    }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
+    setTimeout(()=>msg.textContent="",2000);
+  }
+
+  /* LISTA ZAMÓWIEŃ */
+  function ordersMonthKey(){ return monthKey(Number($("ordersYear").value), Number($("ordersMonth").value)); }
+  function subscribeOrders(){
+    if(unsubOrders){unsubOrders();unsubOrders=null;}
+    const q1=query(collection(db,"orderItems"), where("monthKey","==",ordersMonthKey()));
+    unsubOrders=onSnapshot(q1,(snap)=>{
+      const docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()}));
+      const groups=new Map();
+      for(const d of docs){
+        const gid=d.orderGroupId||d.id;
+        if(!groups.has(gid)) groups.set(gid,{id:gid,items:[],date:d.date,customer:d.customer||"",status:d.status||"ZAMÓWIENIE PRZYJĘTE",total:Number(d.orderTotalGross||0),createdMax:d.createdAt?.toDate?d.createdAt.toDate().getTime():0});
+        const g=groups.get(gid); g.items.push(d);
+        if(d.orderTotalGross!=null) g.total=Number(d.orderTotalGross);
+        if(d.status) g.status=d.status; if(d.customer) g.customer=d.customer; if(d.date) g.date=d.date;
+        const ct=d.createdAt?.toDate?d.createdAt.toDate().getTime():0; if(ct>g.createdMax) g.createdMax=ct;
+      }
+      ordersGroupsAll=Array.from(groups.values()).sort((a,b)=>b.createdMax-a.createdMax);
+      revenueSumAll=ordersGroupsAll.reduce((acc,g)=>acc+(g.status==="ZWROT"?0:Number(g.total||0)),0);
+      renderOrdersFiltered(); updateTopSummary();
+    },err=>alert("Błąd odczytu zamówień: "+(err.message||err.code)));
+  }
+  function renderOrdersFiltered(){
+    const statusFilter=$("filterStatus").value;
+    const tbody=$("ordersTbody"); tbody.innerHTML="";
+    const groups=statusFilter==="ALL"?ordersGroupsAll:ordersGroupsAll.filter(g=>(g.status||"ZAMÓWIENIE PRZYJĘTE")===statusFilter);
+    groups.forEach((g,gi)=>{
+      g.items.sort((a,b)=>(a.size||"").localeCompare(b.size||""));
+      const cls=rowCls(g.status), tone=gi%2===0?"toneA":"toneB";
+      g.items.forEach((it,idx)=>{
+        const tr=document.createElement("tr"); tr.className=`${cls} ${tone}`;
+        const dt=it.date?.toDate?it.date.toDate():new Date(it.date);
+        const dstr=`${String(dt.getDate()).padStart(2,"0")}.${String(dt.getMonth()+1).padStart(2,"0")}.${dt.getFullYear()}`;
+        tr.innerHTML=`
+          <td>${idx===0?`<span class="bold">${dstr}</span>`:""}</td>
+          <td class="statusCol" data-status></td>
+          <td class="bold">${it.size||""}</td>
+          <td>
+            <span class="colorTag"><span class="dot ${it.color==="CZARNA"?"black":""}"></span>${it.color||""}</span>
+          </td>
+          <td>
+            <div class="designCell">
+              ${it.previewUrl?`<img class="designThumb" src="${it.previewUrl}" alt="">`:""}
+              <span>${(it.designText||"").replace(/</g,"&lt;")}</span>
+            </div>
+          </td>
+          <td>${idx===0?(g.customer||"").replace(/</g,"&lt;"):""}</td>
+          <td>${(it.note||"").replace(/</g,"&lt;")}</td>
+          <td>${idx===0?`${fmt2(g.total)} zł`:"—"}</td>
+          <td>${idx===0?`<button class="ghost mini-btn" data-edit="${g.id}">Edytuj</button> <button class="ghost mini-btn danger" data-del="${g.id}">Usuń</button>`:""}</td>`;
+        if(idx===0){
+          const sel=document.createElement("select");
+          const ST=["ZAMÓWIENIE PRZYJĘTE","W TRAKCIE REALIZACJI","GOTOWE DO WYSYŁKI","WYSŁANE","ZWROT"];
+          sel.innerHTML=ST.map(s=>`<option ${s===g.status?"selected":""}>${s}</option>`).join("");
+          sel.onchange=async e=>{ await updateGroupStatus(g.id,e.target.value); };
+          tr.querySelector('[data-status]').appendChild(sel);
+          tr.querySelector(`[data-del="${g.id}"]`).onclick=()=>deleteGroup(g.id);
+          tr.querySelector(`[data-edit="${g.id}"]`).onclick=()=>openEditModal(g.id);
+        }
+        tbody.appendChild(tr);
+      });
+    });
+  }
+  async function updateGroupStatus(groupId,newStatus){
+    const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
+    const batch=writeBatch(db); qSnap.forEach(d=>batch.update(doc(db,"orderItems",d.id),{status:newStatus,updatedAt:serverTimestamp()}));
     await batch.commit();
   }
-
-  function openEdit(groupId){
-    alert('Edytuj: ' + groupId + ' — modal edycji nieotwarty w tej wersji. Jeśli chcesz, rozwinę edycję.');
+  async function deleteGroup(groupId){
+    if(!confirm("Usunąć CAŁE zamówienie (wszystkie pozycje)?")) return;
+    const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
+    const batch=writeBatch(db); qSnap.forEach(d=>batch.delete(doc(db,"orderItems",d.id))); await batch.commit();
   }
 
-  // --- Expenses ---
+  /* Edycja zamówienia */
+  function editDefaultRow(){ return { id:null, size:"M", color:"BIAŁA", note:"", designId:null, designName:"", previewUrl:null, customFile:null, customLocalUrl:null }; }
+  async function openEditModal(groupId){
+    editingGroupId=groupId; $("editMsg").textContent="";
+    const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",groupId)));
+    const docs=[]; qSnap.forEach(d=>docs.push({id:d.id,...d.data()}));
+    if(docs.length===0){ alert("Nie znaleziono pozycji."); return; }
+    const any=docs[0];
+    const dt=any.date?.toDate?any.date.toDate():new Date(any.date);
+    $("editDay").value=dt.getDate(); $("editMonth").value=String(dt.getMonth()); $("editYear").value=String(dt.getFullYear());
+    $("editCustomer").value=any.customer||""; $("editTotal").value=any.orderTotalGross||0;
+    editRows = docs.map(d=>({ id:d.id, size:d.size, color:d.color, note:d.note||"", designId:d.designId||"custom", designName:d.designText||"CUSTOM", previewUrl:d.previewUrl||null, customFile:null, customLocalUrl:null }));
+    renderEditRows();
+    document.getElementById("orderEdit").style.display="flex";
+  }
+  function renderEditRows(){
+    const tb=$("editRowsTbody"); tb.innerHTML="";
+    editRows.forEach((r,i)=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            ${r.previewUrl?`<img class="thumb" src="${r.previewUrl}" alt="">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#6d8096">?</div>`}
+            <div style="min-width:180px"><b>${(r.designName||"Nie wybrano").replace(/</g,"&lt;")}</b></div>
+            <div class="rows-actions">
+              <button class="ghost mini-btn" data-act="pick">Wybierz wzór</button>
+              <label class="ghost mini-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+                <input data-act="custom" type="file" accept="image/*" style="display:none"> Upload CUSTOM
+              </label>
+            </div>
+          </div>
+        </td>
+        <td><select data-act="size">${["S","M","L","XL","XXL","3XL"].map(s=>`<option ${r.size===s?"selected":""}>${s}</option>`).join("")}</select></td>
+        <td><select data-act="color">${["BIAŁA","CZARNA"].map(c=>`<option ${r.color===c?"selected":""}>${c}</option>`).join("")}</select></td>
+        <td><input data-act="note" type="text" value="${(r.note||"").replace(/"/g,'&quot;')}" placeholder="Uwagi do tej pozycji"></td>
+        <td class="rows-actions"><button class="ghost mini-btn danger" data-act="remove">Usuń</button></td>`;
+      tr.querySelector('[data-act="pick"]').onclick=()=>openPicker(i,"edit");
+      tr.querySelector('[data-act="remove"]').onclick=()=>{ editRows.splice(i,1); renderEditRows(); if(editRows.length===0) editRows.push(editDefaultRow()); };
+      tr.querySelector('[data-act="size"]').onchange=e=>r.size=e.target.value;
+      tr.querySelector('[data-act="color"]').onchange=e=>r.color=e.target.value;
+      tr.querySelector('[data-act="note"]').oninput=e=>r.note=e.target.value;
+      tr.querySelector('[data-act="custom"]').onchange=e=>{ const f=e.target.files[0]; if(!f)return; r.designId="custom"; r.designName="CUSTOM"; r.customFile=f; r.customLocalUrl=URL.createObjectURL(f); r.previewUrl=r.customLocalUrl; renderEditRows(); };
+      tb.appendChild(tr);
+    });
+  }
+  async function saveEditOrder(){
+    const msg=$("editMsg");
+    if(editRows.length===0){ msg.textContent="Dodaj przynajmniej jedną pozycję."; return; }
+    if(editRows.some(r=>!r.designId&&!r.customFile)){ msg.textContent="Każda pozycja musi mieć wzór/CUSTOM."; return; }
+    const total=Number($("editTotal").value||0); if(!total){ msg.textContent="Podaj cenę łączną."; return; }
+    msg.textContent="Zapisywanie zmian…";
+    try{
+      const date=buildDate("editDay","editMonth","editYear");
+      const customer=$("editCustomer").value.trim();
+      const processed=await Promise.all(editRows.map(async r=>{
+        let previewUrl=r.previewUrl||null;
+        if(r.customFile) previewUrl=await fileToDataUrl(r.customFile); else if(r.designId) previewUrl=designMap.get(r.designId)?.previewUrl||r.previewUrl||null;
+        return {...r, previewUrl};
+      }));
+      const qSnap=await getDocs(query(collection(db,"orderItems"), where("orderGroupId","==",editingGroupId)));
+      const existingIds=new Set(); qSnap.forEach(d=>existingIds.add(d.id));
+      const keepIds=new Set(processed.filter(r=>r.id).map(r=>r.id));
+      const batch=writeBatch(db);
+      for(const r of processed){
+        const payload={ date:Timestamp.fromDate(date), monthKey:monthKey(date.getFullYear(),date.getMonth()), updatedAt:serverTimestamp(),
+          size:r.size, color:r.color, designId:r.designId||"custom", designText:r.designName||"CUSTOM",
+          previewUrl:r.previewUrl||null, customer, note:r.note||"", orderTotalGross: total };
+        if(r.id){ batch.update(doc(db,"orderItems",r.id), payload); }
+        else { const ref=doc(collection(db,"orderItems")); batch.set(ref,{...payload, createdAt:serverTimestamp(), status:"ZAMÓWIENIE PRZYJĘTE", orderGroupId:editingGroupId, priceGross:0}); }
+      }
+      existingIds.forEach(id=>{ if(!keepIds.has(id)) batch.delete(doc(db,"orderItems",id)); });
+      await batch.commit();
+      msg.textContent="Zapisano zmiany ✅"; setTimeout(()=>{ msg.textContent=""; document.getElementById("orderEdit").style.display="none"; editingGroupId=null; editRows=[]; },800);
+    }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
+  }
+
+  /* KOSZTY */
+  function expMonthKey(){ return monthKey(Number($("expYear").value), Number($("expMonth").value)); }
+  async function addExpense(){
+    const msg=$("expMsg"), name=$("expName").value.trim(), amount=Number($("expAmount").value||0), note=$("expNote").value.trim();
+    const day=Number($("expDay").value||1), y=Number($("expYear").value), m=Number($("expMonth").value);
+    if(!name){msg.textContent="Podaj nazwę kosztu.";return;} if(!amount){msg.textContent="Podaj kwotę.";return;}
+    const date=new Date(y,m,Math.min(Math.max(day,1),31),12,0,0);
+    try{
+      await addDoc(collection(db,"expenses"),{name,amount,note,date:Timestamp.fromDate(date),monthKey:expMonthKey(),createdAt:serverTimestamp()});
+      $("expName").value=""; $("expAmount").value=""; $("expNote").value=""; msg.textContent="Dodano koszt ✅"; setTimeout(()=>msg.textContent="",1200);
+    }catch(e){ msg.textContent="Błąd: "+(e.message||e.code); }
+  }
   function subscribeExpenses(){
-    if(unsubExpenses) unsubExpenses();
-    unsubExpenses = onSnapshot(collection(db,'expenses'), snap=>{
-      expensesList = [];
-      snap.forEach(d=> expensesList.push({ id:d.id, ...d.data() }));
-      expensesList.sort((a,b)=> (b.date?.toDate?b.date.toDate().getTime():0) - (a.date?.toDate?a.date.toDate().getTime():0));
-      renderExpenses();
-    }, err=>console.error(err));
+    if(unsubExp){unsubExp();unsubExp=null;}
+    const q1=query(collection(db,"expenses"), where("monthKey","==",expMonthKey()));
+    unsubExp=onSnapshot(q1,(snap)=>{
+      expensesList=[]; snap.forEach(d=>expensesList.push({id:d.id,...d.data()}));
+      expensesList.sort((a,b)=> (a.date?.toDate?a.date.toDate().getTime():0)-(b.date?.toDate?b.date.toDate().getTime():0));
+      // sort newest first for display
+      expensesList.sort((a,b)=> (b.date?.toDate?b.date.toDate().getTime():0)-(a.date?.toDate?a.date.toDate().getTime():0));
+      expensesSumAll=expensesList.reduce((acc,x)=>acc+Number(x.amount||0),0);
+      renderExpenses(); updateTopSummary();
+    },err=>alert("Błąd odczytu kosztów: "+(err.message||err.code)));
   }
   function renderExpenses(){
-    const tb = $('expTbody'); tb.innerHTML = '';
+    $("sumExpensesTop").textContent=fmt2(expensesSumAll);
+    const tb=$("expTbody"); tb.innerHTML="";
     for(const e of expensesList){
-      const d = e.date?.toDate?e.date.toDate():new Date(e.date);
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}</td>
-        <td>${(e.name||'').replace(/</g,'&lt;')}</td><td>${fmt2(e.amount)} zł</td>
-        <td><button class="ghost" data-del="${e.id}">Usuń</button></td>`;
+      const dt=e.date?.toDate?e.date.toDate():new Date(e.date);
+      const dstr=`${String(dt.getDate()).padStart(2,"0")}.${String(dt.getMonth()+1).padStart(2,"0")}.${dt.getFullYear()}`;
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>${dstr}</td>
+        <td>${(e.name||"").replace(/</g,"&lt;")}</td>
+        <td>${(e.note||"").replace(/</g,"&lt;")}</td>
+        <td>${fmt2(e.amount)} zł</td>
+        <td><button class="ghost mini-btn danger" data-del="${e.id}">usuń</button></td>`;
+      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
+      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
+      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
+      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
+      tr.querySelector('[data-del]').onclick=async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
+      // attach edit button dynamically
+      const delBtn = tr.querySelector('[data-del]');
+      delBtn.onclick = async()=>{ if(!confirm("Usunąć koszt?"))return; await deleteDoc(doc(db,"expenses",e.id)); };
+      // add edit
+      const editBtn = document.createElement('button');
+      editBtn.className='ghost mini-btn';
+      editBtn.textContent='Edytuj';
+      editBtn.style.marginRight='6px';
+      editBtn.onclick = ()=>openExpenseEditor(e,tr);
+      const tdActions = tr.querySelector('td:last-child');
+      tdActions.insertBefore(editBtn, tdActions.firstChild);
       tb.appendChild(tr);
-      tr.querySelector('[data-del]')?.addEventListener('click', async ()=>{ if(!confirm('Usuń koszt?')) return; await deleteDoc(doc(db,'expenses',e.id)); });
     }
   }
 
-  // --- Add functions ---
-  function fileToDataUrl(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
+  function openExpenseEditor(exp, tr){
+    const nameEl = tr.querySelector('td:nth-child(2)');
+    const noteEl = tr.querySelector('td:nth-child(3)');
+    const amountEl = tr.querySelector('td:nth-child(4)');
+    const origName=nameEl.textContent, origNote=noteEl.textContent, origAmount=String(exp.amount||'0');
+    tr.innerHTML = `
+      <td>
+        <input type="number" class="small" data-edit-day value="${new Date(exp.date?.toDate?exp.date.toDate():exp.date).getDate()}">
+      </td>
+      <td><input data-edit-name value="${origName.replace(/\"/g,'&quot;')}"></td>
+      <td><input data-edit-note value="${origNote.replace(/\"/g,'&quot;')}"></td>
+      <td><input type="number" step="0.01" data-edit-amount value="${origAmount}"></td>
+      <td>
+        <div class="rows-actions">
+          <button class="primary mini-btn" data-save>Save</button>
+          <button class="ghost mini-btn" data-cancel>Cancel</button>
+        </div>
+      </td>`;
+    tr.querySelector('[data-cancel]').onclick = ()=>renderExpenses();
+    tr.querySelector('[data-save]').onclick = async ()=>{
+      const newName = tr.querySelector('[data-edit-name]').value.trim();
+      const newNote = tr.querySelector('[data-edit-note]').value.trim();
+      const newAmount = Number(tr.querySelector('[data-edit-amount]').value||0);
+      const day = Number(tr.querySelector('[data-edit-day]').value||1);
+      if(!newName||!newAmount){ alert('Nazwa i kwota są wymagane'); return; }
+      const dt = new Date(Number($("expYear").value), Number($("expMonth").value), Math.min(Math.max(day,1),31),12,0,0);
+      await updateDoc(doc(db,'expenses',exp.id), { name:newName, note:newNote, amount:newAmount, date:Timestamp.fromDate(dt), monthKey:expMonthKey(), updatedAt:serverTimestamp() });
+      renderExpenses();
+    };
+  }
 
-  async function onAddOrder(){
-    const design = $('addDesignText').value.trim() || 'CUSTOM';
-    const size = $('addSize').value;
-    const customer = $('addCustomer').value.trim();
-    const total = Number($('addTotal').value || 0);
-    if(!total) return alert('Podaj cenę');
-    const date = new Date();
-    const gid = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${Math.random().toString(36).slice(2,7)}`;
-    await addDoc(collection(db,'orderItems'), {
-      date: Timestamp.fromDate(date),
-      monthKey: monthKey(date.getFullYear(), date.getMonth()),
-      createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-      status: "ZAMÓWIENIE PRZYJĘTE", size, color: "BIAŁA",
-      designId: 'custom', designText: design, previewUrl: null,
-      customer, note: '', orderTotalGross: total, priceGross:0, orderGroupId: gid
+  /* STATYSTYKI – ranking wzorów (bez ZWROT) */
+  function statsMonthKey(){ return monthKey(Number($("statsYear").value), Number($("statsMonth").value)); }
+  function subscribeStats(){
+    if(unsubStats){unsubStats();unsubStats=null;}
+    const q1=query(collection(db,"orderItems"), where("monthKey","==",statsMonthKey()));
+    unsubStats=onSnapshot(q1,(snap)=>{
+      const counts = new Map();
+      snap.forEach(docu=>{
+        const it=docu.data();
+        if (it.status === "ZWROT") return;
+        const id = it.designId || "custom";
+        const prev = counts.get(id) || { count:0, name:"", preview:null };
+        prev.count += 1;
+        prev.name = it.designText || prev.name || (designMap.get(id)?.name || (id==="custom"?"CUSTOM":id));
+        prev.preview = it.previewUrl || prev.preview || (designMap.get(id)?.previewUrl || null);
+        counts.set(id, prev);
+      });
+      for (const d of designMap.values()){
+        if (!counts.has(d.id)) counts.set(d.id, { count:0, name:d.name||d.id, preview:d.previewUrl||null });
+      }
+      const list = Array.from(counts.entries()).map(([id,info])=>({
+        id, name: info.name || (id==="custom"?"CUSTOM":id),
+        preview: info.preview || null,
+        count: info.count
+      })).sort((a,b)=> b.count - a.count || (a.name||"").localeCompare(b.name||"","pl"));
+      renderStats(list);
+    },err=>alert("Błąd statystyk: "+(err.message||err.code)));
+  }
+  function renderStats(list){
+    const tb=$("statsTbody"); tb.innerHTML="";
+    list.forEach((row,i)=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>${i+1}</td>
+        <td>
+          <div class="designCell">
+            ${row.preview?`<img class="designThumb" src="${row.preview}" alt="">`:""}
+            <span>${(row.name||"").replace(/</g,"&lt;")}</span>
+          </div>
+        </td>
+        <td>${row.count}</td>`;
+      tb.appendChild(tr);
     });
-    $('addMsg').textContent = 'Dodano';
-    setTimeout(()=>$('addMsg').textContent='',1200);
   }
 
-  async function onAddExpense(){
-    const name = $('expName').value.trim();
-    const amount = Number($('expAmount').value || 0);
-    const dateStr = $('expDate').value;
-    if(!name || !amount || !dateStr) return alert('Uzupełnij pola');
-    const date = new Date(dateStr + 'T12:00:00');
-    await addDoc(collection(db,'expenses'), { name, amount, date: Timestamp.fromDate(date), monthKey: monthKey(date.getFullYear(), date.getMonth()), createdAt: serverTimestamp() });
-    $('expMsg').textContent = 'Dodano';
-    setTimeout(()=>$('expMsg').textContent='',1200);
+  /* Podsumowania i eksporty */
+  function updateTopSummary(){
+    $("ordersCount").textContent = String(ordersGroupsAll.length);
+    $("sumRevenue").textContent  = fmt2(revenueSumAll);
+    $("sumExpenses").textContent = fmt2(expensesSumAll);
+    const net = revenueSumAll - expensesSumAll;
+    const el  = $("sumNet");
+    el.textContent = fmt2(net);
+    el.classList.toggle("neg", net < 0);
   }
 
-  // --- Charts ---
-  function createCharts(){
-    const common = { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } };
-    if($('chartFinances')) charts.finances = new Chart($('chartFinances').getContext('2d'), { type:'line', data:{ labels:[], datasets:[
-      { label:'Przychód', data:[], borderColor:'#4cc9f0', backgroundColor:'rgba(76,201,240,0.06)', fill:true },
-      { label:'Koszty', data:[], borderColor:'#ff8a65', backgroundColor:'rgba(255,138,101,0.06)', fill:true },
-      { label:'Zysk', data:[], borderColor:'#a3e635', backgroundColor:'rgba(163,230,53,0.06)', fill:true }
-    ] }, options:{...common, plugins:{legend:{position:'bottom'}}} });
-
-    if($('chartOrders')) charts.orders = new Chart($('chartOrders').getContext('2d'), { type:'bar', data:{ labels:[], datasets:[{ label:'Liczba zamówień', data:[] }] }, options:{...common, plugins:{legend:{display:false}}} });
-
-    if($('chartCostBreakdown')) charts.costBreakdown = new Chart($('chartCostBreakdown').getContext('2d'), { type:'pie', data:{ labels:[], datasets:[{ data:[] }] }, options:{ responsive:true } });
-
-    if($('chartTopDesigns')) charts.topDesigns = new Chart($('chartTopDesigns').getContext('2d'), { type:'bar', data:{ labels:[], datasets:[{ label:'Sprzedaż', data:[] }] }, options:{...common} });
-
-    if($('chartMargin')) charts.margin = new Chart($('chartMargin').getContext('2d'), { type:'line', data:{ labels:[], datasets:[{ label:'Marża %', data:[] }] }, options:{...common, scales:{ y:{ beginAtZero:true, max:100 } } } });
-
-    if($('chartCumNet')) charts.cumNet = new Chart($('chartCumNet').getContext('2d'), { type:'line', data:{ labels:[], datasets:[{ label:'Zysk skumulowany', data:[] }] }, options:{...common} });
-
-    if($('chartSizes')) charts.sizes = new Chart($('chartSizes').getContext('2d'), { type:'bar', data:{ labels:[], datasets:[{ label:'Ilość', data:[] }] }, options:{...common, plugins:{legend:{display:false}}} });
+  function downloadCSV(filename, rows) {
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+  function exportOrdersItemsCSV() {
+    const header = ['DATA','STATUS ZAMÓWIENIA','ROZMIAR','KOLOR','WZÓR','DANE ZAMAWIAJĄCEGO','UWAGI','CENA'];
+    const rows = [header.join(';')];
+    const groups = ordersGroupsAll.slice();
+    for (const g of groups) {
+      const items = g.items.slice().sort((a,b)=>(a.size||"").localeCompare(b.size||""));
+      items.forEach((it, idx) => {
+        rows.push([
+          dShort(g.date),
+          g.status || 'ZAMÓWIENIE PRZYJĘTE',
+          (it.size || ''),
+          (it.color || ''),
+          (it.designText || '').replace(/;/g, ','),
+          idx===0 ? (g.customer || '') : '',
+          (it.note || '').replace(/;/g, ','),
+          (idx===0 && g.status!=='ZWROT') ? numPL(g.total) : ''
+        ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'));
+      });
+    }
+    const y = $('ordersYear').value, m = String(Number($('ordersMonth').value)+1).padStart(2,'0');
+    downloadCSV(`zamowienia_pozycje_${y}-${m}.csv`, rows);
+  }
+  function exportOrdersGroupsCSV() {
+    const header = ['DATA','STATUS','KLIENT','LICZBA POZYCJI','POZYCJE','CENA'];
+    const rows = [header.join(';')];
+    for (const g of ordersGroupsAll) {
+      const items = g.items.slice().sort((a,b)=>(a.size||"").localeCompare(b.size||""));
+      const details = items.map(it => `${it.size||''}/${it.color||''} – ${(it.designText||'').replace(/;/g,',')}`).join(' | ');
+      rows.push([
+        dShort(g.date),
+        g.status || 'ZAMÓWIENIE PRZYJĘTE',
+        g.customer || '',
+        String(items.length),
+        details,
+        (g.status!=='ZWROT') ? numPL(g.total) : ''
+      ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'));
+    }
+    const y = $('ordersYear').value, m = String(Number($('ordersMonth').value)+1).padStart(2,'0');
+    downloadCSV(`zamowienia_zamowienia_${y}-${m}.csv`, rows);
+  }
+  function exportExpensesCSV() {
+    const header = ['DATA','NAZWA','UWAGI','KWOTA'];
+    const rows = [header.join(';')];
+    for (const e of expensesList) {
+      rows.push([
+        dShort(e.date),
+        (e.name||'').replace(/;/g, ','),
+        (e.note||'').replace(/;/g, ','),
+        numPL(e.amount || 0)
+      ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'));
+    }
+    const y = $('expYear').value, m = String(Number($('expMonth').value)+1).padStart(2,'0');
+    downloadCSV(`koszty_${y}-${m}.csv`, rows);
   }
 
-  // --- Advanced stats rendering ---
-  async function renderAdvancedStats(){
-    const period = $('advPeriod').value;
-    const y = Number($('advYear').value || new Date().getFullYear());
-    const m = Number($('advMonth').value || new Date().getMonth());
-    let startDate = new Date(1970,0,1), endDate = new Date(2099,11,31,23,59,59);
-    if(period==='month'){ startDate = new Date(y,m,1,0,0,0); endDate = new Date(y,m+1,0,23,59,59); }
-    if(period==='week'){ const today = new Date(); const day = today.getDay()||7; startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate()-(day-1),0,0,0); endDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()+6,23,59,59); }
-    if(period==='year'){ startDate = new Date(y,0,1,0,0,0); endDate = new Date(y,11,31,23,59,59); }
-    const includeReturns = $('advIncludeReturns').checked;
-
-    // collect groups in range
-    const groupsInRange = ordersGroupsAll.filter(g=>{
-      const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
-      return d >= startDate && d <= endDate;
+  /* ADVANCED STATS implementation */
+  async function fetchAllOrderItems(){
+    const snap = await getDocs(query(collection(db,"orderItems")));
+    const docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()}));
+    return docs;
+  }
+  async function fetchExpensesForRange(startDate, endDate){
+    const snap = await getDocs(query(collection(db,'expenses')));
+    const arr=[]; snap.forEach(d=>arr.push({id:d.id,...d.data()}));
+    return arr.filter(e=>{
+      const dt = e.date?.toDate?e.date.toDate():new Date(e.date);
+      return dt>=startDate && dt<=endDate;
     });
+  }
 
-    // revenue / costs by label
-    const labelsMap = new Map();
-    const labelFor = dt=>{
-      if(period==='week' || period==='month') return `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}`;
-      if(period==='year') return `${String(dt.getMonth()+1).padStart(2,'0')}`;
-      return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+  function createEmptyCharts(){
+    const commonOpts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      aspectRatio: 2,
+      scales: { y: { beginAtZero: true } }
     };
 
-    // init
-    for(const g of groupsInRange){
-      const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
-      const lb = labelFor(d);
-      if(!labelsMap.has(lb)) labelsMap.set(lb,{revenue:0,costs:0,count:0});
-      if(g.status !== 'ZWROT' || includeReturns) labelsMap.get(lb).revenue += Number(g.total||0);
-      labelsMap.get(lb).count += 1;
-    }
+    const ctxO = $("chartOrders").getContext('2d');
+    chartOrders = new Chart(ctxO, { type:'bar', data:{labels:[], datasets:[{label:'Zamówienia', data:[]}] }, options:commonOpts });
 
-    // include expenses by label
-    const expensesInRange = expensesList.filter(e=>{
-      const d = e.date?.toDate?e.date.toDate(): new Date(e.date);
-      return d >= startDate && d <= endDate;
-    });
-    for(const e of expensesInRange){
-      const d = e.date?.toDate?e.date.toDate(): new Date(e.date);
-      const lb = labelFor(d);
-      if(!labelsMap.has(lb)) labelsMap.set(lb,{revenue:0,costs:0,count:0});
-      labelsMap.get(lb).costs += Number(e.amount || 0);
-    }
+    const ctxS = $("chartSizes").getContext('2d');
+    chartSizes = new Chart(ctxS, { type:'bar', data:{labels:[], datasets:[{label:'Ilość', data:[]}] }, options:commonOpts });
 
-    const labels = Array.from(labelsMap.keys()).sort((a,b)=>{
-      const na = Number(a.replace(/\D/g,''))||0, nb = Number(b.replace(/\D/g,''))||0;
-      return na - nb;
-    });
-    const revArr = labels.map(l=>labelsMap.get(l).revenue || 0);
-    const costArr = labels.map(l=>labelsMap.get(l).costs || 0);
-    const netArr = revArr.map((v,i)=> v - (costArr[i]||0));
-    const ordersCountArr = labels.map(l=>labelsMap.get(l).count || 0);
-
-    // update kpis
-    const totalRevenue = revArr.reduce((s,v)=>s+v,0);
-    const totalCosts = costArr.reduce((s,v)=>s+v,0);
-    const totalNet = totalRevenue - totalCosts;
-    $('advRevenue').textContent = fmt2(totalRevenue);
-    $('advCosts').textContent = fmt2(totalCosts);
-    $('advNet').textContent = fmt2(totalNet);
-
-    const ordersCount = groupsInRange.filter(g=> includeReturns ? true : g.status !== 'ZWROT').length || 1;
-    $('advAOV').textContent = fmt2(totalRevenue / ordersCount);
-
-    const returnsCount = ordersGroupsAll.filter(g=>{
-      const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
-      return d >= startDate && d <= endDate && g.status === 'ZWROT';
-    }).length;
-    const returnsPct = Math.round((returnsCount / (groupsInRange.length || 1)) * 100);
-    $('advReturnsPct').textContent = returnsPct + '%';
-
-    // margin
-    const marginArr = labels.map((l,i)=>{
-      const rev = revArr[i] || 0; const c = costArr[i] || 0;
-      return rev === 0 ? 0 : Math.max(0, ((rev - c) / rev) * 100);
-    });
-    $('advAvgMargin').textContent = (marginArr.length ? Math.round(marginArr.reduce((s,v)=>s+v,0)/marginArr.length) : 0) + '%';
-
-    // update charts
-    if(charts.finances){ charts.finances.data.labels = labels; charts.finances.data.datasets[0].data = revArr; charts.finances.data.datasets[1].data = costArr; charts.finances.data.datasets[2].data = netArr; charts.finances.update(); }
-    if(charts.orders){ charts.orders.data.labels = labels; charts.orders.data.datasets[0].data = ordersCountArr; charts.orders.update(); }
-    if(charts.costBreakdown){
-      const buckets = {};
-      for(const e of expensesInRange){
-        const name = (e.name||'').toLowerCase();
-        let cat='Inne';
-        if(/koszulk|materi|t-shirt|shirt/.test(name)) cat='Materiały';
-        else if(/druk|sitodruk/.test(name)) cat='Druk';
-        else if(/wysył|paczka|kurier/.test(name)) cat='Wysyłka';
-        else if(/reklam|facebook|google|ads|marketing/.test(name)) cat='Marketing';
-        buckets[cat] = (buckets[cat]||0) + Number(e.amount||0);
-      }
-      charts.costBreakdown.data.labels = Object.keys(buckets);
-      charts.costBreakdown.data.datasets[0].data = Object.values(buckets);
-      charts.costBreakdown.update();
-    }
-    if(charts.topDesigns){
-      const designCounts = {};
-      for(const g of ordersGroupsAll){
-        const d = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
-        if(d < startDate || d > endDate) continue;
-        if(!includeReturns && g.status === 'ZWROT') continue;
-        for(const it of g.items){ const id = it.designId || 'custom'; designCounts[id] = (designCounts[id]||0) + 1; }
-      }
-      const arr = Object.entries(designCounts).map(([id,c])=>({ id, name: designMap.get(id)?.name || (id==='custom'?'CUSTOM':id), count:c })).sort((a,b)=>b.count-a.count).slice(0,10);
-      charts.topDesigns.data.labels = arr.map(x=>x.name); charts.topDesigns.data.datasets[0].data = arr.map(x=>x.count); charts.topDesigns.update();
-      // fill top designs table
-      const tb = $('advTopDesignsTbody'); tb.innerHTML=''; arr.forEach(a=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${(a.name||'').replace(/</g,'&lt;')}</td><td>${a.count}</td>`; tb.appendChild(tr); });
-    }
-
-    if(charts.margin){ charts.margin.data.labels = labels; charts.margin.data.datasets[0].data = marginArr; charts.margin.update(); }
-    if(charts.cumNet){ let acc=0; const cum = netArr.map(v=> acc += v); charts.cumNet.data.labels = labels; charts.cumNet.data.datasets[0].data = cum; charts.cumNet.update(); }
-
-    // sizes
-    const sizeMap = {};
-    for(const g of ordersGroupsAll){
-      const gd = g.date?.toDate?g.date.toDate(): new Date(g.date || Date.now());
-      if(gd < startDate || gd > endDate) continue;
-      if(!($('sizeIncludeReturns').checked) && g.status === 'ZWROT') continue;
-      for(const it of g.items){
-        const sz = it.size || 'UNKNOWN';
-        sizeMap[sz] = (sizeMap[sz]||0) + 1;
-      }
-    }
-    const sizeLabels = Object.keys(sizeMap).sort(); const sizeData = sizeLabels.map(l=>sizeMap[l]);
-    if(charts.sizes){ charts.sizes.data.labels = sizeLabels; charts.sizes.data.datasets[0].data = sizeData; charts.sizes.update(); }
-
-    // size table
-    const tsz = $('advSizeTbody'); tsz.innerHTML = '';
-    for(const s of sizeLabels){ const tr=document.createElement('tr'); tr.innerHTML = `<td>-</td><td>${s}</td><td>${sizeMap[s]}</td>`; tsz.appendChild(tr); }
-
-    // adv detail
-    const tbody = $('advDetailTbody'); tbody.innerHTML = '';
-    tbody.appendChild(trRow('Przychód (sumarycznie)', fmt2(totalRevenue)+' zł'));
-    tbody.appendChild(trRow('Koszty (sumarycznie)', fmt2(totalCosts)+' zł'));
-    tbody.appendChild(trRow('Zysk netto', fmt2(totalNet)+' zł'));
-    tbody.appendChild(trRow('AOV', fmt2(totalRevenue / ordersCount)+' zł'));
-    tbody.appendChild(trRow('Udział zwrotów', returnsPct + ' %'));
+    const ctxD = $("chartDesigns").getContext('2d');
+    chartDesigns = new Chart(ctxD, { type:'bar', data:{labels:[], datasets:[{label:'Ilość', data:[]}] }, options:commonOpts });
   }
 
-  function trRow(k,v){ const tr=document.createElement('tr'); tr.innerHTML = `<td>Finanse</td><td>${k}</td><td>${v}</td>`; return tr; }
+  function startOfWeek(dt){ const d=new Date(dt); const day=d.getDay(); const diff=d.getDate()-(day||7)+1; return new Date(d.getFullYear(),d.getMonth(),diff,0,0,0); }
+  function endOfWeek(dt){ const s=startOfWeek(dt); return new Date(s.getFullYear(),s.getMonth(),s.getDate()+6,23,59,59); }
 
-  // --- utility and bootstrap ---
-  (function defaults(){
-    const now = new Date();
-    if($('advMonth')) $('advMonth').value = String(now.getMonth());
-    if($('advYear')) $('advYear').value = String(now.getFullYear());
-    if($('ordersMonth')) $('ordersMonth').value = String(now.getMonth());
-    if($('ordersYear')) $('ordersYear').value = String(now.getFullYear());
-  })();
+  async function renderAdvancedStats(){
+    const period=$("advPeriod").value;
+    const anchorMonth=Number($("advAnchorMonth").value); const anchorYear=Number($("advAnchorYear").value);
+    let startDate, endDate;
+    if(period==='week'){
+      const today=new Date(anchorYear, anchorMonth, new Date().getDate());
+      startDate=startOfWeek(today); endDate=endOfWeek(today);
+    } else if(period==='month'){
+      startDate=new Date(anchorYear, anchorMonth,1,0,0,0);
+      endDate=new Date(anchorYear, anchorMonth+1,0,23,59,59);
+    } else if(period==='year'){
+      startDate=new Date(anchorYear,0,1,0,0,0);
+      endDate=new Date(anchorYear,11,31,23,59,59);
+    } else {
+      startDate=new Date(1970,0,1); endDate=new Date(2099,11,31,23,59,59);
+    }
 
-  // start listeners when user logged in (onAuthStateChanged does this)
-  // note: startListeners() called after onAuthStateChanged when logged
+    const allItems = await fetchAllOrderItems();
+    const includeReturns = $("advIncludeReturns").checked;
+    const filtered = allItems.filter(it=>{
+      const dt = it.date?.toDate?it.date.toDate():new Date(it.date);
+      if(!(dt>=startDate && dt<=endDate)) return false;
+      if(!includeReturns && it.status==='ZWROT') return false;
+      return true;
+    });
 
-  // expose helper for debug
-  window.renderAdvancedStats = renderAdvancedStats;
+    const groups = new Map();
+    for(const it of allItems){
+      const gid=it.orderGroupId||it.id; if(!groups.has(gid)) groups.set(gid,{total:0, status:it.status||'ZAMÓWIENIE PRZYJĘTE', date:it.date?.toDate?it.date.toDate():new Date(it.date)});
+      const g=groups.get(gid); if(it.orderTotalGross!=null) g.total=Number(it.orderTotalGross);
+    }
+    let revenue=0; for(const [k,g] of groups){ const dt=g.date; if(dt>=startDate && dt<=endDate){ if(g.status!=='ZWROT' || includeReturns) revenue+=Number(g.total||0); }}
+
+    const expensesInRange = await fetchExpensesForRange(startDate,endDate);
+    const costs = expensesInRange.reduce((acc,e)=>acc+Number(e.amount||0),0);
+
+    $("advRevenue").textContent=fmt2(revenue); $("advCosts").textContent=fmt2(costs); $("advNet").textContent=fmt2(revenue-costs);
+
+    const byTime=new Map();
+    filtered.forEach(it=>{
+      const dt=it.date?.toDate?it.date.toDate():new Date(it.date);
+      let key;
+      if(period==='week') key=`${dt.getDate()}.${dt.getMonth()+1}`;
+      else if(period==='month') key=String(dt.getDate()).padStart(2,'0');
+      else if(period==='year') key=`${String(dt.getMonth()+1).padStart(2,'0')}`;
+      else key=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+      byTime.set(key,(byTime.get(key)||0)+1);
+    });
+    const labelsTime = Array.from(byTime.keys()).sort((a,b)=>{ const na=Number(a.replace(/\D/g,''))||0; const nb=Number(b.replace(/\D/g,''))||0; return na-nb; });
+    const dataTime = labelsTime.map(l=>byTime.get(l)||0);
+    chartOrders.data.labels = labelsTime; chartOrders.data.datasets[0].data = dataTime; chartOrders.update();
+
+    const sizesCount = {};
+    filtered.forEach(it=>{ sizesCount[it.size||'UNKNOWN'] = (sizesCount[it.size||'UNKNOWN']||0)+1; });
+    const sizeLabels = Object.keys(sizesCount).sort(); const sizeData = sizeLabels.map(l=>sizesCount[l]);
+    chartSizes.data.labels = sizeLabels; chartSizes.data.datasets[0].data = sizeData; chartSizes.update();
+
+    const designCounts = {};
+    filtered.forEach(it=>{
+      const id = it.designId||'custom'; designCounts[id] = (designCounts[id]||0)+1;
+    });
+    const designArr = Object.entries(designCounts).map(([id,c])=>({id,count:c,name: designMap.get(id)?.name|| (id==='custom'?'CUSTOM':id)}));
+    designArr.sort((a,b)=>b.count-a.count);
+    const top = designArr.slice(0,10);
+    chartDesigns.data.labels = top.map(t=>t.name); chartDesigns.data.datasets[0].data = top.map(t=>t.count); chartDesigns.update();
+
+    const tbody = $("advListTbody"); tbody.innerHTML='';
+    for(const s of sizeLabels){ const tr=document.createElement('tr'); tr.innerHTML=`<td>Rozmiar</td><td>${s}</td><td>${sizesCount[s]}</td>`; tbody.appendChild(tr); }
+    for(const d of top){ const tr=document.createElement('tr'); tr.innerHTML=`<td>Wzór</td><td>${d.name}</td><td>${d.count}</td>`; tbody.appendChild(tr); }
+  }
+
+  // helper: file to data URL
+  function fileToDataUrl(file){ return new Promise((res,rej)=>{ const rdr=new FileReader(); rdr.onload=()=>res(rdr.result); rdr.onerror=rej; rdr.readAsDataURL(file); }); }
 
 </script>
 </body>
