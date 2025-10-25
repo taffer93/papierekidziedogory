@@ -585,27 +585,55 @@
 
   // ===== AUTH =====
   loginBtn.onclick = async () => {
-    loginMsg.textContent = "Logowanie…";
-    try {
-      await setPersistence(auth, browserLocalPersistence);
-      await signInWithEmailAndPassword(auth, $("email").value, $("password").value);
-      loginMsg.textContent = "";
-    } catch (e) {
-      console.error(e);
-      loginMsg.textContent = "Błąd: " + (e.code || e.message);
-    }
-  };
+  const email = $("email").value.trim();
+  const pass = $("password").value.trim();
+  if (!email || !pass) {
+    loginMsg.textContent = "Podaj e-mail i hasło";
+    return;
+  }
 
-  onAuthStateChanged(auth, u => {
-    if (u) {
-      loginCard.style.display = "none";
-      appWrap.style.display = "";
-      initApp();
+  loginMsg.textContent = "Trwa logowanie...";
+
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    const userCred = await signInWithEmailAndPassword(auth, email, pass);
+
+    if (userCred?.user) {
+      loginMsg.textContent = "Zalogowano ✅";
+      $("loginCard").style.display = "none";
+      $("app").style.display = "";
+      $("userInfo").textContent = userCred.user.email;
+      // natychmiastowe włączenie nasłuchów
+      startListeners?.();
     } else {
-      loginCard.style.display = "";
-      appWrap.style.display = "none";
+      loginMsg.textContent = "Nie udało się zalogować.";
     }
-  });
+  } catch (err) {
+    console.error("Błąd logowania:", err);
+    let msg = "Błąd logowania.";
+    if (err.code === "auth/invalid-email") msg = "Nieprawidłowy e-mail.";
+    else if (err.code === "auth/user-not-found") msg = "Nie znaleziono użytkownika.";
+    else if (err.code === "auth/wrong-password") msg = "Nieprawidłowe hasło.";
+    else if (err.code === "auth/network-request-failed") msg = "Brak połączenia z internetem.";
+    loginMsg.textContent = msg;
+  }
+};
+
+  onAuthStateChanged(auth, user => {
+  if (user) {
+    console.log('✅ Zalogowano jako:', user.email);
+    $('loginCard').style.display = 'none';
+    $('app').style.display = '';
+    $('userInfo').textContent = user.email || '';
+    startListeners?.();
+  } else {
+    console.log('🚪 Wylogowano');
+    $('loginCard').style.display = '';
+    $('app').style.display = 'none';
+    $('userInfo').textContent = '';
+    stopListeners?.();
+  }
+});
 
   // ===== INIT APP (populate selects, handlers) =====
   async function initApp(){
